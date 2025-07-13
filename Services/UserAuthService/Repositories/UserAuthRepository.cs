@@ -1,22 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Models;
 using UserAuthService.Data;
-using UserAuthService.Models;
 
 namespace UserAuthService.Repositories
 {
-    public interface IUserRepository
+    public interface IUserAuthRepository
     {
         Task<User?> GetByUsernameAsync(string username);
         Task<bool> ExistsByUsernameOrEmailAsync(string username, string email);
         Task AddUserAsync(User user);
         Task SaveChangesAsync();
+        Task<User?> GetByIdentifierAsync(string identifier);
     }
 
-    public class UserRepository : IUserRepository
+    public class UserAuthAuthRepository : IUserAuthRepository
     {
         private readonly AppDbContext _context;
 
-        public UserRepository(AppDbContext context)
+        public UserAuthAuthRepository(AppDbContext context)
         {
             _context = context;
         }
@@ -42,6 +43,15 @@ namespace UserAuthService.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+        
+        public async Task<User?> GetByIdentifierAsync(string identifier)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u =>
+                    u.Username == identifier ||
+                    u.Email == identifier ||
+                    u.Phone == identifier);
         }
     }
 }

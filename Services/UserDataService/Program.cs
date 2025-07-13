@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using UserAuthService.Data;
-using UserAuthService.Repositories;
-using UserAuthService.Services;
+using UserDataService.Data;
+using UserDataService.Repositories;
+using UserDataService.Services;
 
-namespace UserAuthService
+namespace UserDataService
 {
     public class Program
     {
@@ -20,11 +20,8 @@ namespace UserAuthService
                 options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // ------------------ JWT ------------------
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddSingleton<JwtService>();
-
-            builder.Services.AddAuthentication("Bearer")
-                .AddJwtBearer("Bearer", options =>
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
@@ -39,12 +36,14 @@ namespace UserAuthService
                     };
                 });
 
+            builder.Services.AddAuthorization();
+
             // ------------------ CORS ------------------
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // 允许前端端口
+                    policy.WithOrigins("http://localhost:5173") // 前端地址
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -54,7 +53,7 @@ namespace UserAuthService
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new() { Title = "Auth API", Version = "v1" });
+                c.SwaggerDoc("v1", new() { Title = "User Data API", Version = "v1" });
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
@@ -78,10 +77,10 @@ namespace UserAuthService
                 });
             });
 
-            // ------------------ Controllers & Repositories ------------------
+            // ------------------ Controllers & Services ------------------
             builder.Services.AddControllers();
-            builder.Services.AddScoped<IUserAuthRepository, UserAuthAuthRepository>();
-            builder.Services.AddAuthorization();
+            builder.Services.AddScoped<IUserDataRepository, UserDataRepository>();
+            builder.Services.AddScoped<IDataService, DataService>();
 
             var app = builder.Build();
 
@@ -96,7 +95,7 @@ namespace UserAuthService
             app.UseSwaggerUI();
 
             app.UseRouting();
-            app.UseCors(); // 启用 CORS，必须在 UseRouting 和 UseAuthorization 之间
+            app.UseCors(); // 必须在 routing 和 auth 之间
             app.UseAuthentication();
             app.UseAuthorization();
 

@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using UserAuthService.Models;
+using Models;
 
 namespace UserAuthService.Services;
 
