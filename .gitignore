@@ -1,3 +1,5 @@
+.vs/
+.vscode/
 bin/
 obj/
 /packages/
@@ -6,4 +8,9 @@ riderModule.iml
 appsettings.json
 /node_modules
 /.idea
+*.i
+*.o
+*.obj
+*.s
+*.exe
 *.zip
