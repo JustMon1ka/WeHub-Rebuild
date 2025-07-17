@@ -222,7 +222,7 @@
   | POST   | /api/posts/comment   | 发表评论或者回复                               |
   | DELETE | /api/posts/comment   | 根据comment_id删除某条评论或者回复             |
   | GET    | /api/posts/comments  | 根据post_id获取该帖子的所有评论于回复          |
-  | POST   | /api/posts/repost    | 将该条转发信息存储到数据库中                   |
+  | POST   | /api/posts/forward    | 将该条转发信息存储到数据库中                   |
   | POST   | /api/posts/favorite  | 收藏某个帖子                                   |
   | GET    | /api/posts/favorites | 获取某用户的帖子收藏列表                       |
 * 4.1.2 模块3-帖子搜索与推荐模块-接口概览
@@ -638,7 +638,7 @@
 
 ---
 
-- 4.2.14 POST /api/posts/repost
+- 4.2.14 POST /api/posts/forward
 
   * 功能描述：转发帖子
   * 请求头：
@@ -793,6 +793,71 @@
 | `CreateTime` | datetime    | 创建时间 | 默认当前时间 |      |
 
 * **数据关系**：绘制 ER 图或说明表之间的关联关系（外键关联）。指出与其他模块共享的表或字段，并注明数据约束和索引策略。
+
+#### 5.1 数据表概览
+- 5.1.1 Post表
+  |字段名	|数据类型	|长度（B）	|说明	|备注|
+  | ---------- | ---------- | ------- | ----- | ----- |
+  |POST_ID	|NUMBER(*,0)	|1-22	|帖子唯一标识	|PK|
+  |TITLE	|VARCHAR2	|200	|帖子标题|
+  |CONTENT	|CLOB	|<=128M	|帖子内容|
+  |CREATED_AT	|DATE	|7	|创建时间|
+  |IS_HIDDEN	|NUMBER(1,0)|	1|	是否隐藏|
+  |IS_DELETED	|NUMBER(1,0)	|1	|是否被删除|
+  |VIEW_COUNT	|NUMBER(*,0)	|1-22	|查看数|
+  |LIKE_COUNT	|NUMBER(*,0)	|1-22	|点赞数|
+  |DISLIKE_COUNT	|NUMBER(*,0)	|1-22	|点踩数|
+  |POSTER_ID	|NUMBER(*,0)	|1-22	|发布者ID	|FK|
+- 5.1.2 Tag表
+  | 字段名  | 数据类型       | 长度（B） | 说明         | 备注 |
+  |---------|----------------|-----------|--------------|------|
+  | TAG_ID  | NUMBER(*,0)   | 1-22      | 标签唯一标识 | PK   |
+  | NAME    | VARCHAR2      | 200       | 标签名       |      |
+- 5.1.3 PostTag表
+  | 字段名   | 数据类型     | 长度（B） | 说明     | 备注                |
+  |----------|--------------|-----------|----------|---------------------|
+  | post_id  | NUMBER(*,0) | 1-22      | 帖子ID   | FK                  |
+  | tag_id   | NUMBER(*,0) | 1-22      | 标签ID   | FK                  |
+  |          |              |           |          | PRIMARY KEY(post_id, tag_id) |
+- 5.1.4 Forward表
+  | 字段名       | 数据类型       | 长度（B） | 说明         | 备注 |
+  |--------------|----------------|-----------|--------------|------|
+  | FORWARD_ID   | NUMBER(*,0)   | 1-22      | 活动唯一标识 | PK   |
+  | COMMENT      | CLOB          | <=128T    | 评论         |      |
+  | CREATE_AT    | DATE          | 7         | 创建时间     |      |
+  | FORWARDER_ID | NUMBER(*,0)   | 1-22      | 转发者ID     | FK   |
+- 5.1.5 Comment表
+  | 字段名         | 数据类型       | 长度（B） | 说明           | 备注 |
+  |----------------|----------------|-----------|----------------|------|
+  | COMMENT_ID     | NUMBER(*,0)   | 1-22      | 评论唯一标识   | PK   |
+  | POST_ID        | NUMBER(*,0)   | 1-22      | 评论所属的帖子的id | FK |
+  | CONTENT        | CLOB          | <=128T    | 内容           |      |
+  | LIKE_COUNT     | NUMBER(*,0)   | 1-22      | 点赞数         |      |
+  | DISLIKE_COUNT  | NUMBER(*,0)   | 1-22      | 点踩数         |      |
+  | IS_DELETED     | NUMBER(1,0)   | 1         | 是否被删除     |      |
+  | COMMENTER_ID   | NUMBER(*,0)   | 1-22      | 评论发表者ID   | FK   |
+- 5.1.6 Reply表
+  | 字段名       | 数据类型       | 长度（B） | 说明           | 备注 |
+  |--------------|----------------|-----------|----------------|------|
+  | REPLY_ID     | NUMBER(*,0)   | 1-22      | 回复唯一标识   | PK   |
+  | COMMENT_ID   | NUMBER(*,0)   | 1-22      | 回复的评论的id | FK   |
+  | CONTENT      | CLOB          | <=128T    | 内容           |      |
+  | IS_DELETED   | NUMBER(1,0)   | 1         | 是否被删除     |      |
+  | REPLIER_ID   | NUMBER(*,0)   | 1-22      | 回复发布者ID   | FK   |
+- 5.1.7 Media表
+  | 字段名   | 数据类型     | 长度（B） | 说明         | 备注 |
+  |----------|--------------|-----------|--------------|------|
+  | MEDIA_ID | NUMBER(*,0) | 1-22      | 媒体唯一标识 | PK   |
+  | TYPE     | VARCHAR2    | 10        | 媒体类型     |      |
+  | URL      | VARCHAR2    | 255       | 媒体URL      |      |
+- 5.1.8 Like表
+  | 字段名       | 数据类型     | 长度（B） | 说明     | 备注                      |
+  |--------------|--------------|-----------|----------|---------------------------|
+  | user_id      | NUMBER(*,0) | 1-22      | 用户ID   | FK                        |
+  | target_type  | VARCHAR2    | 10        | 类型（帖子/评论） |                           |
+  | type         | NUMBER(1,0) | 1         | 点赞还是点踩                           |  |
+  | target_id    | NUMBER(*,0) | 1-22      | 目标ID   | FK                        |
+  |              |             |           |          | PRIMARY KEY(user_id, target_id) |
 
 ### 6. 权限与用户角色控制
 
