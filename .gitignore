@@ -6,6 +6,7 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 appsettings.json
+appsettings.Development.json
 /node_modules
 /.idea
 *.i
@@ -14,3 +15,4 @@ appsettings.json
 *.s
 *.exe
 *.zip
+*.pdf
