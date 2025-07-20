@@ -41,6 +41,13 @@ modules
 }
 ```
 
+生成的HTML中使用了大量的TailwindCSS的类名，请阅读官方文档[TailwindCSS](https://tailwindcss.com/docs/installation/using-vite#vue)了解其用法。可以安装VSCode插件[Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)来获得更好的开发体验。
+> tailwindcss默认单位是rem，1rem = 16px。
+> tailwindcss中文文档是旧版(v3.x)的，不建议使用，安装的是最新版本(v4.1)
+
+生成的HTML页面中的Head标签下的内容是全局内容，已在base.css中定义
+
+APP.vue中添加的所有组件都会被渲染到主页面中，谨慎添加！！！
 
 > core文件夹是包含一些全局组件和页面，比如Sidebar侧边栏等。
 

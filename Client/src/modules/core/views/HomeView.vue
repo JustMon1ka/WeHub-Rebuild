@@ -7,5 +7,7 @@ import {loginForm} from "@/modules/auth/public.ts";
   <main>
     <TheWelcome />
   </main>
-  <loginForm />
+  <div class="w-full max-w-[500px]">
+    <loginForm />
+  </div>>
 </template>
