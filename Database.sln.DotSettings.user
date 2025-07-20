@@ -6,6 +6,12 @@
     &lt;TestId&gt;xUnit::95890EE9-7B63-40A5-8079-CDEB29BA8F04::net8.0::AuthControllerTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::15E2904F-C8BB-46B5-8E51-7AE8E1992C1F::net8.0::UserDataService.Tests.UserLifecycleTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::95890EE9-7B63-40A5-8079-CDEB29BA8F04::net8.0::UserAuthService.Tests.LoginBy3Methods&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::B012A8D9-FF63-447B-9D63-4E2E63A0B325::net8.0::PostService.Tests.Publish_Get_Delete_Post&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=a0781cc0_002Dac30_002D44d3_002D88ed_002D1947f7f2eb88/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Publish_Get_Delete_Post" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;xUnit::B012A8D9-FF63-447B-9D63-4E2E63A0B325::net8.0::PostService.Tests.Publish_Get_Delete_Post&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	</wpf:ResourceDictionary>
