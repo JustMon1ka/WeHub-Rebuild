@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import authRouter from './modules/auth/router.ts'
 import coreRouter from './modules/core/router.ts'
+import notFound from './NotFound.vue'
 // import yourRouter from './yourModule/router.ts'
 
 
@@ -10,6 +11,13 @@ const router = createRouter({
     ...coreRouter.getRoutes(),
     ...authRouter.getRoutes(),
     // ...yourRouter.getRoutes(),
+    // your router must be imported before NotFound route
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: notFound,
+      meta: { title: '404', navi: true, recommend: false },
+    },
   ],
 })
 
