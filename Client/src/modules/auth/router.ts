@@ -8,12 +8,14 @@ export const authRouter = createRouter({
         {
           path: '/register',
           name: 'register',
-          component: RegisterView
+          component: RegisterView,
+          meta: { title: 'Register', navi: false, recommend: false}
         },
         {
           path: '/login',
           name: 'login',
-          component: LoginView
+          component: LoginView,
+          meta: { title: 'Login', navi: false, recommend: false }
         }
     ]
 })

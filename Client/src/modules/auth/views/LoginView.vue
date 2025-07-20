@@ -1,6 +1,6 @@
 ﻿<template>
   <body class="bg-slate-900 text-slate-200">
-  <div class="flex items-center justify-center min-h-screen px-4">
+  <div class="flex items-center justify-center h-screen px-4">
     <div class="w-full max-w-[500px]">
       <!-- Logo 和标题 -->
       <div class="text-center mb-8">
@@ -41,8 +41,3 @@ async function login() {
 }
 </script>
 
-<style>
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-</style>
