@@ -1,7 +1,6 @@
 ﻿import { createRouter, createWebHistory } from 'vue-router'
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
-import MeView from './views/MeView.vue'
 
 export const authRouter = createRouter({
     history: createWebHistory(),
@@ -9,17 +8,14 @@ export const authRouter = createRouter({
         {
           path: '/register',
           name: 'register',
-          component: RegisterView
+          component: RegisterView,
+          meta: { title: 'Register', navi: false, recommend: false}
         },
         {
           path: '/login',
           name: 'login',
-          component: LoginView
-        },
-        {
-          path: '/me',
-          name: 'me',
-          component: MeView
+          component: LoginView,
+          meta: { title: 'Login', navi: false, recommend: false }
         }
     ]
 })
