@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using UserAuthService.Data;
 using UserAuthService.Repositories;
 using UserAuthService.Services;
+using UserAuthService.Services.Interfaces;
 
 namespace UserAuthService
 {
@@ -80,7 +81,7 @@ namespace UserAuthService
 
             // ------------------ Controllers & Repositories ------------------
             builder.Services.AddControllers();
-            builder.Services.AddScoped<IUserAuthRepository, UserAuthAuthRepository>();
+            builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>();
             builder.Services.AddAuthorization();
 
             var app = builder.Build();

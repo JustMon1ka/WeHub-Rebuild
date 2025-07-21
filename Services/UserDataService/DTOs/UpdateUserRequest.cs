@@ -1,6 +1,6 @@
-﻿namespace UserAuthService.DTOs;
+﻿namespace UserDataService.DTOs;
 
-public class RegisterRequest
+public class UpdateUserRequest
 {
     public string Username { get; set; } = null!;
     public string Password { get; set; } = null!;

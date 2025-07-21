@@ -3,56 +3,49 @@ using Models;
 using UserAuthService.Data;
 using UserAuthService.DTOs;
 using UserAuthService.Repositories;
+using UserAuthService.Services.Interfaces;
 
-namespace UserAuthService.Services
+namespace UserAuthService.Services;
+public class AuthService : IAuthService
 {
-    public interface IAuthService
+    private readonly JwtService _jwtService;
+    private readonly IUserAuthRepository _userAuthRepo;
+
+    public AuthService(IUserAuthRepository userAuthRepo, JwtService jwtService)
     {
-        Task<(bool Success, string Message)> RegisterAsync(RegisterRequest request);
-        Task<string?> LoginAsync(LoginRequest request);
+        _userAuthRepo = userAuthRepo;
+        _jwtService = jwtService;
     }
 
-    public class AuthService : IAuthService
+    public async Task<(bool Success, string Message)> RegisterAsync(RegisterRequest request)
     {
-        private readonly JwtService _jwtService;
-        private readonly IUserAuthRepository _userAuthRepo;
+        if (await _userAuthRepo.ExistsByUsernameOrEmailOrPhoneAsync(request.Username, request.Email, request.Phone))
+            return (false, "Username or Email or Phone already exists.");
 
-        public AuthService(IUserAuthRepository userAuthRepo, JwtService jwtService)
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        var user = new User
         {
-            _userAuthRepo = userAuthRepo;
-            _jwtService = jwtService;
-        }
+            Username = request.Username,
+            Email = request.Email,
+            Phone = request.Phone,
+            PasswordHash = hashedPassword,
+            Status = 1
+        };
 
-        public async Task<(bool Success, string Message)> RegisterAsync(RegisterRequest request)
-        {
-            if (await _userAuthRepo.ExistsByUsernameOrEmailAsync(request.Username, request.Email))
-                return (false, "Username or Email already exists.");
+        await _userAuthRepo.AddUserAsync(user);
+        await _userAuthRepo.SaveChangesAsync();
 
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        return (true, "Registration successful.");
+    }
 
-            var user = new User
-            {
-                Username = request.Username,
-                Email = request.Email,
-                Phone = request.Phone,
-                PasswordHash = hashedPassword,
-                Status = 0
-            };
+    public async Task<string?> LoginAsync(LoginRequest request)
+    {
+        var user = await _userAuthRepo.GetByIdentifierAsync(request.Identifier);
 
-            await _userAuthRepo.AddUserAsync(user);
-            await _userAuthRepo.SaveChangesAsync();
+        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            return null;
 
-            return (true, "Registration successful.");
-        }
-
-        public async Task<string?> LoginAsync(LoginRequest request)
-        {
-            var user = await _userAuthRepo.GetByIdentifierAsync(request.Identifier);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                return null;
-
-            return _jwtService.GenerateToken(user);
-        }
+        return _jwtService.GenerateToken(user);
     }
 }
