@@ -4,8 +4,8 @@ import {loginForm} from "@/modules/auth/public.ts";
 </script>
 
 <template>
-  <main>
-    <TheWelcome />
-  </main>
-  <loginForm />
+  <div class="flex flex-col p-6">
+    <TheWelcome class="flex-auto"/>
+    <loginForm class="flex-auto"/>
+  </div>
 </template>
