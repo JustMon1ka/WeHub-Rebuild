@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-#
+# 
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "services", "services", "{1D4447C9-B73F-4590-AB1D-F9C9834FE738}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserAuthService", "Services\UserAuthService\UserAuthService.csproj", "{12D73B52-A2BC-468B-9F8D-0DCFCB5C3028}"
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Shared\Services\Services.csproj", "{8AB8839B-8C6D-4EB9-AFE0-DC305B089FEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DTOs", "Services\Shared\DTOs\DTOs.csproj", "{E8ACA20F-F96C-49F6-99DD-00AAD22EC28D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CircleService", "Services\CircleService\CircleService.csproj", "{EE8D015C-35E3-4053-8D24-76024A4C0C68}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +57,10 @@ Global
 		{E8ACA20F-F96C-49F6-99DD-00AAD22EC28D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8ACA20F-F96C-49F6-99DD-00AAD22EC28D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8ACA20F-F96C-49F6-99DD-00AAD22EC28D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE8D015C-35E3-4053-8D24-76024A4C0C68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE8D015C-35E3-4053-8D24-76024A4C0C68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE8D015C-35E3-4053-8D24-76024A4C0C68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE8D015C-35E3-4053-8D24-76024A4C0C68}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{12D73B52-A2BC-468B-9F8D-0DCFCB5C3028} = {1D4447C9-B73F-4590-AB1D-F9C9834FE738}
@@ -66,5 +72,6 @@ Global
 		{15E2904F-C8BB-46B5-8E51-7AE8E1992C1F} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}
 		{8AB8839B-8C6D-4EB9-AFE0-DC305B089FEA} = {E69961BE-2220-43B8-B405-1AFBDCE14C15}
 		{E8ACA20F-F96C-49F6-99DD-00AAD22EC28D} = {E69961BE-2220-43B8-B405-1AFBDCE14C15}
+		{EE8D015C-35E3-4053-8D24-76024A4C0C68} = {1D4447C9-B73F-4590-AB1D-F9C9834FE738}
 	EndGlobalSection
 EndGlobal
