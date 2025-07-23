@@ -22,7 +22,7 @@ namespace Services.Tests
             _testConnection = cf.CreateConnection(_natsUrl);
             _service = new NatsService(_natsUrl);
 
-            // 确保连接建立
+            // 脠路卤拢脕卢陆脫陆篓脕垄
             await Task.Delay(100);
         }
 
@@ -47,10 +47,10 @@ namespace Services.Tests
             var testSubject = "user.test_user.notifications";
             var streamName = "TEST_STREAM_" + Guid.NewGuid().ToString("N");
 
-            // 使用 JetStreamManagement 来管理流
+            // 脢鹿脫脙 JetStreamManagement 脌麓鹿脺脌铆脕梅
             var jsm = _testConnection.CreateJetStreamManagementContext();
 
-            // 创建流配置
+            // 麓麓陆篓脕梅脜盲脰脙
             var streamConfig = StreamConfiguration.Builder()
                 .WithName(streamName)
                 .WithSubjects("user.*.notifications")
@@ -59,13 +59,13 @@ namespace Services.Tests
 
             try
             {
-                // 添加流
+                // 脤铆录脫脕梅
                 jsm.AddStream(streamConfig);
 
-                // 获取 JetStream 上下文用于正常操作
+                // 禄帽脠隆 JetStream 脡脧脧脗脦脛脫脙脫脷脮媒鲁拢虏脵脳梅
                 var js = _testConnection.CreateJetStreamContext();
 
-                // 创建Pull订阅
+                // 麓麓陆篓Pull露漏脭脛
                 var sub = js.PullSubscribe(
                     subject: testSubject,
                     options: PullSubscribeOptions.Builder()
@@ -97,7 +97,7 @@ namespace Services.Tests
             }
             finally
             {
-                // 清理测试流
+                // 脟氓脌铆虏芒脢脭脕梅
                 var jsmForCleanup = _testConnection.CreateJetStreamManagementContext();
                 jsmForCleanup.DeleteStream(streamName);
             }
@@ -110,7 +110,7 @@ namespace Services.Tests
             var testSubject = "user.test_user.messages";
             var streamName = "TEST_STREAM_" + Guid.NewGuid().ToString("N");
 
-            // 创建流
+            // 麓麓陆篓脕梅
             var jsm = _testConnection.CreateJetStreamManagementContext();
             var config = StreamConfiguration.Builder()
                 .WithName(streamName)
@@ -125,7 +125,7 @@ namespace Services.Tests
                 var received = false;
                 var manualReset = new ManualResetEvent(false);
 
-                // 2. 启动订阅
+                // 2. 脝么露炉露漏脭脛
                 _service.SubscribeAsync("test_user", NotificationType.Chat,
                     notification => {
                         received = true;
@@ -134,18 +134,18 @@ namespace Services.Tests
                     },
                     CancellationToken.None);
 
-                // 3. 确保订阅已注册
+                // 3. 脠路卤拢露漏脭脛脪脩脳垄虏谩
                 Thread.Sleep(500);
 
                 // Act
                 var js = _testConnection.CreateJetStreamContext();
 
-                // 发布
+                // 路垄虏录
                 js.Publish(testSubject,
                     Encoding.UTF8.GetBytes(JsonSerializer.Serialize(
                         new Notification { SenderId = "test" , ReceiverId = "test_user" , Type = NotificationType.Chat, EntityId = null, EntityType = null})));
 
-                // 等待消息（最多20秒）
+                // 碌脠麓媒脧没脧垄拢篓脳卯露脿20脙毛拢漏
                 manualReset.WaitOne(20000);
 
                 // Assert
@@ -153,7 +153,7 @@ namespace Services.Tests
             }
             finally
             {
-                // 清理流
+                // 脟氓脌铆脕梅
                 jsm.DeleteStream(streamName);
             }
         }
