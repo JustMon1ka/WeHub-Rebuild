@@ -1,4 +1,6 @@
 using CircleService.Data;
+using CircleService.Repositories;
+using CircleService.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,16 +9,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. 注册数据库上下文
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// TODO: 在这里注册 Services 和 Repositories
-// builder.Services.AddScoped<ICircleRepository, CircleRepository>();
-// builder.Services.AddScoped<ICircleService, CircleService.Services.CircleService>();
+// 2. 注册 Services 和 Repositories
+builder.Services.AddScoped<ICircleRepository, CircleRepository>();
+builder.Services.AddScoped<ICircleService, CircleService.Services.CircleService>();
+builder.Services.AddScoped<ICircleMemberRepository, CircleMemberRepository>();
+builder.Services.AddScoped<ICircleMemberService, CircleMemberService>();
+builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
+builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
 
-// 2. 添加控制器服务
+
+// 3. 添加控制器服务
 builder.Services.AddControllers();
 
-// 3. 配置 CORS
+// 4. 配置 CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -28,7 +37,7 @@ builder.Services.AddCors(options =>
 });
 
 
-// 4. 配置 Swagger (用于 API 文档和测试)
+// 5. 配置 Swagger (用于 API 文档和测试)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
