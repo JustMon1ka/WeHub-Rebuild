@@ -42,4 +42,24 @@ public class ActivityParticipantRepository : IActivityParticipantRepository
         _context.ActivityParticipants.Update(participant);
         await _context.SaveChangesAsync();
     }
+
+    public async Task RemoveAsync(ActivityParticipant participant)
+    {
+        _context.ActivityParticipants.Remove(participant);
+        await _context.SaveChangesAsync();
+    }
+    
+    public async Task RemoveUserParticipationInCircleAsync(int circleId, int userId)
+    {
+        // 找到该用户在指定圈子所有活动中的参与记录
+        var participationsToRemove = await _context.ActivityParticipants
+            .Where(ap => ap.UserId == userId && _context.Activities.Any(a => a.ActivityId == ap.ActivityId && a.CircleId == circleId))
+            .ToListAsync();
+
+        if (participationsToRemove.Any())
+        {
+            _context.ActivityParticipants.RemoveRange(participationsToRemove);
+            await _context.SaveChangesAsync();
+        }
+    }
 } 

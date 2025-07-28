@@ -18,10 +18,11 @@ public interface ICircleService
     Task<CircleDto?> GetCircleByIdAsync(int id);
 
     /// <summary>
-    /// 异步获取所有圈子的DTO列表
+    /// 异步获取所有圈子的DTO列表，支持按名称模糊搜索
     /// </summary>
+    /// <param name="name">可选的圈子名称，用于模糊搜索</param>
     /// <returns>返回所有圈子的DTO列表</returns>
-    Task<IEnumerable<CircleDto>> GetAllCirclesAsync();
+    Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null);
 
     /// <summary>
     /// 异步创建一个新圈子
@@ -43,6 +44,7 @@ public interface ICircleService
     /// 异步删除一个圈子
     /// </summary>
     /// <param name="id">要删除的圈子ID</param>
+    /// <param name="deleterId">执行删除操作的用户ID</param>
     /// <returns>返回一个布尔值，表示删除是否成功</returns>
-    Task<bool> DeleteCircleAsync(int id);
+    Task<bool> DeleteCircleAsync(int id, int deleterId);
 } 

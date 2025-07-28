@@ -35,4 +35,11 @@ public interface IActivityParticipantRepository
     /// </summary>
     /// <param name="participant">要更新的参与记录实体</param>
     Task UpdateAsync(ActivityParticipant participant);
+
+    /// <summary>
+    /// 异步移除一个用户在特定圈子内的所有活动参与记录
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="userId">用户ID</param>
+    Task RemoveUserParticipationInCircleAsync(int circleId, int userId);
 } 
