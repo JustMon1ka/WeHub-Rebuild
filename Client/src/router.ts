@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import authRouter from './modules/auth/router.ts'
 import coreRouter from './modules/core/router.ts'
+import postCreateRouter from './modules/postCreate/router.ts'
 import notFound from './NotFound.vue'
 // import yourRouter from './yourModule/router.ts'
 
@@ -10,6 +11,7 @@ const router = createRouter({
   routes: [
     ...coreRouter.getRoutes(),
     ...authRouter.getRoutes(),
+    ...postCreateRouter.getRoutes(),
     // ...yourRouter.getRoutes(),
     // your router must be imported before NotFound route
     {

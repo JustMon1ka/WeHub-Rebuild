@@ -13,16 +13,18 @@
     &lt;TestId&gt;xUnit::B012A8D9-FF63-447B-9D63-4E2E63A0B325::net8.0::PostService.Tests.Publish_Get_Delete_Post&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=4057661e_002D9dd6_002D44d9_002D81e8_002D177c8af61085/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="LoginBy3Methods" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=4057661e_002D9dd6_002D44d9_002D81e8_002D177c8af61085/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="LoginBy3Methods" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::95890EE9-7B63-40A5-8079-CDEB29BA8F04::net8.0::UserAuthService.Tests.LoginBy3Methods&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::59F9D0AA-AC24-47C2-BCA3-37E4A856E6C1::net8.0::MediaService.Test.Upload_Download&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::67EB285F-961C-476D-8048-9F928B3A3578::net8.0::TagService.Test.AddGetTag&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=a0781cc0_002Dac30_002D44d3_002D88ed_002D1947f7f2eb88/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Publish_Get_Delete_Post" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=a0781cc0_002Dac30_002D44d3_002D88ed_002D1947f7f2eb88/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Publish_Get_Delete_Post" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::B012A8D9-FF63-447B-9D63-4E2E63A0B325::net8.0::PostService.Tests.Publish_Get_Delete_Post&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::59F9D0AA-AC24-47C2-BCA3-37E4A856E6C1::net8.0::MediaService.Test.Upload_Download.Upload_File_Should_Exist&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::67EB285F-961C-476D-8048-9F928B3A3578::net8.0::TagService.Test.AddGetTag.LoginAddGet&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	</wpf:ResourceDictionary>

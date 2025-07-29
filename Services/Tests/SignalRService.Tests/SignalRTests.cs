@@ -39,19 +39,19 @@ namespace SignalRService.Tests
             NotificationType type = NotificationType.Like;
             var cts = new CancellationTokenSource();
 
-            // 模拟用户订阅
+            // 脛拢脛芒脫脙禄搂露漏脭脛
             var subscribeTask = _service.SubscribeAsync(receiverId, type, cts.Token);
-            await Task.Delay(10, CancellationToken.None); // 确保订阅添加
+            await Task.Delay(10, CancellationToken.None); // 脠路卤拢露漏脭脛脤铆录脫
            
 
-            // 验证订阅状态（调试用）
+            // 脩茅脰陇露漏脭脛脳麓脤卢拢篓碌梅脢脭脫脙拢漏
             var isSubscribedMethod = typeof(NotificationService)
                 .GetMethod("IsSubscribed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             Assert.NotNull(isSubscribedMethod);
             bool isSubscribed = (bool)isSubscribedMethod.Invoke(_service, new object[] { receiverId, type });
-            Assert.True(isSubscribed, $"用户 {receiverId} 未订阅类型 {type}");
+            Assert.True(isSubscribed, $"脫脙禄搂 {receiverId} 脦麓露漏脭脛脌脿脨脥 {type}");
 
-            // 模拟 Clients.User
+            // 脛拢脛芒 Clients.User
             _clientsMock.Setup(c => c.User(receiverId)).Returns(_clientProxyMock.Object);
 
             // Act
@@ -79,7 +79,7 @@ namespace SignalRService.Tests
                     Times.Once()
             );
 
-            // 调试：检查 _subscriptions`
+            // 碌梅脢脭拢潞录矛虏茅 _subscriptions`
             var subscriptionsField = typeof(NotificationService)
                 .GetField("_subscriptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var subscriptions = (Dictionary<string, HashSet<NotificationType>>)subscriptionsField.GetValue(_service);
@@ -91,7 +91,7 @@ namespace SignalRService.Tests
             }
             catch (OperationCanceledException)
             {
-                // 预期取消
+                // 脭陇脝脷脠隆脧没
             }
         }
 
@@ -104,21 +104,21 @@ namespace SignalRService.Tests
             NotificationType type = NotificationType.Like;
             var cts = new CancellationTokenSource();
 
-            // 用户订阅其他类型
+            // 脫脙禄搂露漏脭脛脝盲脣没脌脿脨脥
             var subscribeTask = _service.SubscribeAsync(receiverId, NotificationType.Chat, cts.Token);
-            await Task.Delay(10, CancellationToken.None); // 确保订阅添加
+            await Task.Delay(10, CancellationToken.None); // 脠路卤拢露漏脭脛脤铆录脫
             
 
-            // 验证订阅状态（调试用）
+            // 脩茅脰陇露漏脭脛脳麓脤卢拢篓碌梅脢脭脫脙拢漏
             var isSubscribedMethod = typeof(NotificationService)
                 .GetMethod("IsSubscribed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             Assert.NotNull(isSubscribedMethod);
             bool isSubscribed = (bool)isSubscribedMethod.Invoke(_service, new object[] { receiverId, NotificationType.Chat });
-            Assert.True(isSubscribed, $"用户 {receiverId} 未订阅类型 {NotificationType.Chat}");
+            Assert.True(isSubscribed, $"脫脙禄搂 {receiverId} 脦麓露漏脭脛脌脿脨脥 {NotificationType.Chat}");
             isSubscribed = (bool)isSubscribedMethod.Invoke(_service, new object[] { receiverId, type });
-            Assert.False(isSubscribed, $"用户 {receiverId} 不应订阅类型 {type}");
+            Assert.False(isSubscribed, $"脫脙禄搂 {receiverId} 虏禄脫娄露漏脭脛脌脿脨脥 {type}");
 
-            // 模拟 Clients.User（确保不调用）
+            // 脛拢脛芒 Clients.User拢篓脠路卤拢虏禄碌梅脫脙拢漏
             _clientsMock.Setup(c => c.User(It.IsAny<string>())).Returns(_clientProxyMock.Object);
 
             // Act
@@ -131,7 +131,7 @@ namespace SignalRService.Tests
                 It.IsAny<object[]>(),
                 It.IsAny<CancellationToken>()), Times.Never());
 
-            // 调试：检查 _subscriptions
+            // 碌梅脢脭拢潞录矛虏茅 _subscriptions
             var subscriptionsField = typeof(NotificationService)
                 .GetField("_subscriptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var subscriptions = (Dictionary<string, HashSet<NotificationType>>)subscriptionsField.GetValue(_service);
@@ -144,7 +144,7 @@ namespace SignalRService.Tests
             }
             catch (OperationCanceledException)
             {
-                // 预期取消
+                // 脭陇脝脷脠隆脧没
             }
         }
 
@@ -156,7 +156,7 @@ namespace SignalRService.Tests
             string groupId = "group123";
             NotificationType type = NotificationType.Chat;
 
-            // 模拟 Clients.Group 返回 IClientProxy
+            // 脛拢脛芒 Clients.Group 路碌禄脴 IClientProxy
             _clientsMock.Setup(c => c.Group(groupId)).Returns(_clientProxyMock.Object);
 
             // Act
@@ -166,9 +166,9 @@ namespace SignalRService.Tests
             _clientsMock.Verify(c => c.Group(groupId), Times.Once());
             _clientProxyMock.Verify(p => p.SendCoreAsync(
                 "ReceiveNotification",
-                It.Is<object[]>(args => args.Length > 0 && // 确保数组不为空
+                It.Is<object[]>(args => args.Length > 0 && // 脠路卤拢脢媒脳茅虏禄脦陋驴脮
                                args[0] != null &&
-                               args[0].GetType() == typeof(Notification) && // 替换 is
+                               args[0].GetType() == typeof(Notification) && // 脤忙禄禄 is
                                ((Notification)args[0]).SenderId == senderId &&
                                ((Notification)args[0]).ReceiverId == groupId &&
                                ((Notification)args[0]).Type == type &&
@@ -193,17 +193,17 @@ namespace SignalRService.Tests
             // Assert
             var isSubscribedMethod = typeof(NotificationService)
                 .GetMethod("IsSubscribed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            Assert.NotNull(isSubscribedMethod); // 确保方法存在
+            Assert.NotNull(isSubscribedMethod); // 脠路卤拢路陆路篓麓忙脭脷
             bool isSubscribed = (bool)isSubscribedMethod.Invoke(_service, new object[] { userId, type });
-            Xunit.Assert.True(isSubscribed, $"用户 {userId} 未订阅类型 {type}");
-            cts.Cancel(); // 同步取消
+            Xunit.Assert.True(isSubscribed, $"脫脙禄搂 {userId} 脦麓露漏脭脛脌脿脨脥 {type}");
+            cts.Cancel(); // 脥卢虏陆脠隆脧没
             try
             {
-                await subscribeTask; // 等待任务完成
+                await subscribeTask; // 碌脠麓媒脠脦脦帽脥锚鲁脡
             }
             catch (OperationCanceledException)
             {
-                // 预期取消
+                // 脭陇脝脷脠隆脧没
             }
         }
 
@@ -215,24 +215,24 @@ namespace SignalRService.Tests
             NotificationType type = NotificationType.Like;
             var cts = new CancellationTokenSource();
 
-            // 先订阅
+            // 脧脠露漏脭脛
             var subscribeTask = _service.SubscribeAsync(userId, type, cts.Token);
-            await Task.Delay(10, CancellationToken.None); // 短暂等待，确保订阅添加
-            // 验证订阅已添加
+            await Task.Delay(10, CancellationToken.None); // 露脤脭脻碌脠麓媒拢卢脠路卤拢露漏脭脛脤铆录脫
+            // 脩茅脰陇露漏脭脛脪脩脤铆录脫
             var isSubscribedMethod = typeof(NotificationService)
                 .GetMethod("IsSubscribed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             Assert.NotNull(isSubscribedMethod);
             bool isSubscribed = (bool)isSubscribedMethod.Invoke(_service, new object[] { userId, type });
-            Assert.True(isSubscribed, $"用户 {userId} 未订阅类型 {type}");
+            Assert.True(isSubscribed, $"脫脙禄搂 {userId} 脦麓露漏脭脛脌脿脨脥 {type}");
 
-            // Act: 取消订阅
+            // Act: 脠隆脧没露漏脭脛
             await _service.UnsubscribeAsync(userId);
 
-            // Assert: 验证订阅已移除
+            // Assert: 脩茅脰陇露漏脭脛脪脩脪脝鲁媒
             isSubscribed = (bool)isSubscribedMethod.Invoke(_service, new object[] { userId, type });
-            Assert.False(isSubscribed, $"用户 {userId} 的类型 {type} 订阅未移除");
+            Assert.False(isSubscribed, $"脫脙禄搂 {userId} 碌脛脌脿脨脥 {type} 露漏脭脛脦麓脪脝鲁媒");
 
-            // 调试：检查 _subscriptions 状态
+            // 碌梅脢脭拢潞录矛虏茅 _subscriptions 脳麓脤卢
             var subscriptionsField = typeof(NotificationService)
                 .GetField("_subscriptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var subscriptions = (Dictionary<string, HashSet<NotificationType>>)subscriptionsField.GetValue(_service);
