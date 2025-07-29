@@ -8,7 +8,8 @@ namespace PostService.Services
         Task<List<Post>> GetPostsByIdsAsync(List<long> ids);
         Task<Post?> GetPostByIdAsync(long postId);
         Task DeletePostAsync(long postId);
-        Task<Post> PublishPostAsync(long userId, string content);
+        Task<Post> PublishPostAsync(long userId, long circleId, string title, string content, List<long> tags);
+        Task<List<string>> GetTagsByPostIdAsync(long postId);
     }
     
     public class PostService : IPostService
@@ -35,9 +36,14 @@ namespace PostService.Services
             await _postRepository.MarkAsDeletedAsync(postId);
         }
         
-        public async Task<Post> PublishPostAsync(long userId, string content)
+        public async Task<Post> PublishPostAsync(long userId, long circleId, string title, string content, List<long> tags)
         {
-            return await _postRepository.InsertPostAsync(userId, content);
+            return await _postRepository.InsertPostAsync(userId, circleId, title, content, tags);
+        }
+        
+        public async Task<List<string>> GetTagsByPostIdAsync(long postId)
+        {
+            return await _postRepository.GetTagNamesByPostIdAsync(postId);
         }
     }
 }

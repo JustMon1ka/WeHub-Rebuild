@@ -10,4 +10,5 @@ public class PostResponse
     public DateTime CreatedAt { get; set; }             // 创建时间
     public int Views { get; set; }                      // 浏览量
     public int Likes { get; set; }                      // 点赞数
+    public long CircleId { get; set; }                  // 所属圈子Id
 }

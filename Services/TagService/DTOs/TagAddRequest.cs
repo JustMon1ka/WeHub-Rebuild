@@ -2,5 +2,5 @@
 
 public class TagAddRequest
 {
-    public string TagName { get; set; } = string.Empty;
+    public List<string> TagsName { get; set; } = [];
 }

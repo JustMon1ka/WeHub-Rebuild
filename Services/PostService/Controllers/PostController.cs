@@ -54,7 +54,7 @@ public class PostController : ControllerBase
                 UserId = post.UserId ?? 0,
                 Title = post.Title ?? "",
                 Content = post.Content ?? "",
-                Tags = new List<string>(), // 未来支持标签
+                Tags = post.TagNames,  // 使用附加的 Tags
                 CreatedAt = post.CreatedAt ?? DateTime.MinValue,
                 Views = post.Views ?? 0,
                 Likes = post.Likes ?? 0
@@ -119,23 +119,26 @@ public class PostController : ControllerBase
                 return BaseHttpResponse<PostResponse>.Fail(404, "帖子不存在");
             }
 
+            // ✅ 调用 Service 获取标签名
+            var tagNames = await _postService.GetTagsByPostIdAsync(post_id);
+
             var response = new PostResponse
             {
                 PostId = post.PostId,
                 UserId = post.UserId ?? 0,
                 Title = post.Title ?? "",
                 Content = post.Content ?? "",
-                Tags = new List<string>(), // 如果有标签数据，映射到这里
+                Tags = tagNames,   // ✅ 填充标签
                 CreatedAt = post.CreatedAt ?? DateTime.MinValue,
                 Views = post.Views ?? 0,
-                Likes = post.Likes ?? 0
+                Likes = post.Likes ?? 0,
+                CircleId = post.CircleId
             };
 
             return BaseHttpResponse<PostResponse>.Success(response);
         }
         catch (Exception ex)
         {
-            // 建议记录日志
             return BaseHttpResponse<PostResponse>.Fail(500, "服务器内部错误：" + ex.Message);
         }
     }
@@ -155,9 +158,16 @@ public class PostController : ControllerBase
             }
 
             long userId = long.Parse(userIdClaim.Value);
+            
+            // 如果未填 CircleId，用 100000 作为默认值
+            long circleId = postPublishRequest.CircleId ?? 100000;
 
             // 发布帖子
-            var post = await _postService.PublishPostAsync(userId, postPublishRequest.Content ?? "");
+            var post = await _postService.PublishPostAsync(userId,
+                circleId,
+                postPublishRequest.Title ?? string.Empty,
+                postPublishRequest.Content ?? string.Empty,
+                postPublishRequest.Tags ?? new List<long>());
 
             return BaseHttpResponse<PostPublishResponse>.Success(new PostPublishResponse
             {

@@ -29,7 +29,7 @@ public class AddGetTag
     }
 
     [Fact(DisplayName = "登录 - 添加tag - 获取tag")]
-    public async Task LoginAddGet()
+    public async Task LoginAddGet_Batch()
     {
         // Step1. 登录
         var user = new LoginRequest
@@ -45,30 +45,27 @@ public class AddGetTag
         token.Should().NotBeNullOrEmpty();
         _output.WriteLine($"Step1. 登录成功，token：{token}");
         _tag.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        
-        // Step2. 添加第一个标签
-        var tag1Req = new TagAddRequest { TagName = "科技" };
-        var tag1Response = await _tag.PostAsJsonAsync("/api/tags/add", tag1Req);
-        tag1Response.EnsureSuccessStatusCode();
-        var tag1Json = JObject.Parse(await tag1Response.Content.ReadAsStringAsync());
-        tag1Json["data"]?["tagId"].Should().NotBeNull();
-        var tag1Id = tag1Json["data"]?["tagId"]!.Value<long>();
-        _output.WriteLine($"Step2. 添加标签1成功，ID: {tag1Id}");
 
-        // Step3. 添加第二个标签
-        var tag2Req = new TagAddRequest { TagName = "生活" };
-        var tag2Response = await _tag.PostAsJsonAsync("/api/tags/add", tag2Req);
-        tag2Response.EnsureSuccessStatusCode();
-        var tag2Json = JObject.Parse(await tag2Response.Content.ReadAsStringAsync());
-        tag2Json["data"]?["tagId"].Should().NotBeNull();
-        var tag2Id = tag2Json["data"]?["tagId"]!.Value<long>();
-        _output.WriteLine($"Step3. 添加标签2成功，ID: {tag2Id}");
+        // Step2. 一次性添加多个标签
+        var tagReq = new TagAddRequest { TagsName = new List<string> { "科技", "生活" } };
+        var addResponse = await _tag.PostAsJsonAsync("/api/tags/add", tagReq);
+        addResponse.EnsureSuccessStatusCode();
+        var addJson = JObject.Parse(await addResponse.Content.ReadAsStringAsync());
+        _output.WriteLine("Step2. 批量添加标签返回：" + addJson.ToString());
 
-        // Step4. 批量获取标签
-        var getResponse = await _tag.GetAsync($"/api/tags?ids={tag1Id},{tag2Id}");
+        var addData = addJson["data"] as JArray;
+        addData.Should().NotBeNull();
+        addData!.Count.Should().BeGreaterThanOrEqualTo(2);
+
+        var tagIds = addData.Select(d => d["tagId"]!.Value<long>()).ToList();
+        _output.WriteLine($"Step2. 标签ID列表：{string.Join(", ", tagIds)}");
+
+        // Step3. 批量获取标签
+        var idsParam = string.Join(",", tagIds);
+        var getResponse = await _tag.GetAsync($"/api/tags?ids={idsParam}");
         getResponse.EnsureSuccessStatusCode();
         var getJson = JObject.Parse(await getResponse.Content.ReadAsStringAsync());
-        _output.WriteLine("Step4. 获取标签返回：" + getJson.ToString());
+        _output.WriteLine("Step3. 获取标签返回：" + getJson.ToString());
 
         var data = getJson["data"] as JArray;
         data.Should().NotBeNull();

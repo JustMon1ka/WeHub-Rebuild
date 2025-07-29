@@ -19,22 +19,21 @@ public class TagController : ControllerBase
     
     [HttpPost("add")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<BaseHttpResponse<TagAddResponse>> AddTag([FromBody] TagAddRequest request)
+    public async Task<BaseHttpResponse<List<TagAddResponse>>> AddTag([FromBody] TagAddRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.TagName))
+        if (request.TagsName == null || request.TagsName.Count == 0)
         {
-            return BaseHttpResponse<TagAddResponse>.Fail(400, "标签名不能为空");
+            return BaseHttpResponse<List<TagAddResponse>>.Fail(400, "标签名列表不能为空");
         }
 
         try
         {
-            var result = await _tagService.AddTagAsync(request.TagName);
-            return BaseHttpResponse<TagAddResponse>.Success(result);
+            var result = await _tagService.AddTagsAsync(request.TagsName);
+            return BaseHttpResponse<List<TagAddResponse>>.Success(result);
         }
         catch (Exception ex)
         {
-            // 可以在这里记录日志
-            return BaseHttpResponse<TagAddResponse>.Fail(500, $"服务器错误: {ex.Message}");
+            return BaseHttpResponse<List<TagAddResponse>>.Fail(500, $"服务器错误: {ex.Message}");
         }
     }
 

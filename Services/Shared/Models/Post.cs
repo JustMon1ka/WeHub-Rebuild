@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
+using Models;
 
 namespace PostService.Models;
 
@@ -36,7 +38,14 @@ public class Post
 
     [Column("DISLIKES")]
     public int? Dislikes { get; set; }
+    
+    [Column("CIRCLE_ID")]
+    public long CircleId { get; set; }
+    
+    [NotMapped]
+    public List<string> TagNames { get; set; } = new List<string>();
 
     // 可选：导航属性
     // public virtual User? User { get; set; }
+    public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
 }

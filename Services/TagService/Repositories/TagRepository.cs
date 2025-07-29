@@ -6,11 +6,11 @@ namespace TagService.Repositories
 {
     public interface ITagRepository
     {
-        Task<Tag?> GetByNameAsync(string name);
+        Task<List<Tag>> GetByNamesAsync(List<string> tagNames);
+        Task AddRangeAsync(List<Tag> tags);
         Task<Tag?> GetByIdAsync(long id);
         Task<List<Tag>> GetByIdsAsync(List<long> ids);
-        Task<Tag> AddAsync(Tag tag);
-        Task<Tag> UpdateAsync(Tag tag);
+        Task UpdateRangeAsync(List<Tag> tags);
         Task<List<Tag>> GetPopularTagsAsync(int count);
     }
 
@@ -23,9 +23,11 @@ namespace TagService.Repositories
             _db = db;
         }
 
-        public async Task<Tag?> GetByNameAsync(string name)
+        public async Task<List<Tag>> GetByNamesAsync(List<string> tagNames)
         {
-            return await _db.Tags.FirstOrDefaultAsync(t => t.TagName == name);
+            return await _db.Tags
+                .Where(t => tagNames.Contains(t.TagName))
+                .ToListAsync();
         }
 
         public async Task<Tag?> GetByIdAsync(long id)
@@ -38,18 +40,16 @@ namespace TagService.Repositories
             return await _db.Tags.Where(t => ids.Contains(t.TagId)).ToListAsync();
         }
 
-        public async Task<Tag> AddAsync(Tag tag)
+        public async Task AddRangeAsync(List<Tag> tags)
         {
-            _db.Tags.Add(tag);
+            _db.Tags.AddRange(tags);
             await _db.SaveChangesAsync();
-            return tag;
         }
 
-        public async Task<Tag> UpdateAsync(Tag tag)
+        public async Task UpdateRangeAsync(List<Tag> tags)
         {
-            _db.Tags.Update(tag);
+            _db.Tags.UpdateRange(tags);
             await _db.SaveChangesAsync();
-            return tag;
         }
 
         /// <summary>

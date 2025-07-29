@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Models;
+using PostService.Models;
 
 namespace TagService.Models;
 
@@ -18,4 +20,6 @@ public class Tag
     
     [Column("LAST_QUOTE")]
     public DateTime? LastQuote { get; set; }
+    
+    public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
 }

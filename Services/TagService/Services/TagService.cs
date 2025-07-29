@@ -6,7 +6,7 @@ namespace TagService.Services
 {
     public interface ITagService
     {
-        Task<TagAddResponse> AddTagAsync(string tagName);
+        Task<List<TagAddResponse>> AddTagsAsync(List<string> tagNames);
         Task<List<TagsGetResponse>> GetTagsAsync(List<long> ids);
         Task<List<PopularTagsResponse>> GetPopularTagsAsync();
     }
@@ -20,31 +20,59 @@ namespace TagService.Services
             _tagRepo = tagRepo;
         }
 
-        public async Task<TagAddResponse> AddTagAsync(string tagName)
+        public async Task<List<TagAddResponse>> AddTagsAsync(List<string> tagNames)
         {
-            if (string.IsNullOrWhiteSpace(tagName))
+            var distinctNames = tagNames
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => n.Trim())
+                .Distinct()
+                .ToList();
+
+            if (distinctNames.Count == 0)
                 throw new ArgumentException("标签名不能为空");
 
-            var tag = await _tagRepo.GetByNameAsync(tagName);
+            // 一次性查询数据库已有的标签
+            var existingTags = await _tagRepo.GetByNamesAsync(distinctNames);
+            var existingDict = existingTags.ToDictionary(t => t.TagName, t => t);
 
-            if (tag == null)
+            var now = DateTime.UtcNow;
+            var result = new List<TagAddResponse>();
+            var newTags = new List<Tag>();
+
+            foreach (var name in distinctNames)
             {
-                tag = new Tag
+                if (existingDict.TryGetValue(name, out var tag))
                 {
-                    TagName = tagName,
-                    Count = 1,
-                    LastQuote = DateTime.UtcNow
-                };
-                tag = await _tagRepo.AddAsync(tag);
-            }
-            else
-            {
-                tag.Count += 1;
-                tag.LastQuote = DateTime.UtcNow;
-                await _tagRepo.UpdateAsync(tag);
+                    // 已存在 -> 只更新计数
+                    tag.Count += 1;
+                    tag.LastQuote = now;
+                }
+                else
+                {
+                    // 不存在 -> 准备新增
+                    var newTag = new Tag
+                    {
+                        TagName = name,
+                        Count = 1,
+                        LastQuote = now
+                    };
+                    newTags.Add(newTag);
+                }
             }
 
-            return new TagAddResponse { TagId = tag.TagId };
+            // 批量插入新标签（一次 SaveChanges）
+            if (newTags.Count > 0)
+                await _tagRepo.AddRangeAsync(newTags);
+
+            // 批量更新已有标签（一次 SaveChanges）
+            if (existingTags.Count > 0)
+                await _tagRepo.UpdateRangeAsync(existingTags);
+
+            // 返回所有标签的 ID
+            foreach (var t in existingTags.Concat(newTags))
+                result.Add(new TagAddResponse { TagId = t.TagId });
+
+            return result;
         }
 
         public async Task<List<TagsGetResponse>> GetTagsAsync(List<long> ids)
