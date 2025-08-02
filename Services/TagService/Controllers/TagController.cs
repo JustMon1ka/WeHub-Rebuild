@@ -19,7 +19,7 @@ public class TagController : ControllerBase
     
     [HttpPost("add")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<BaseHttpResponse<List<TagAddResponse>>> AddTag([FromBody] TagAddRequest request)
+    public async Task<BaseHttpResponse<List<TagAddResponse>>> AddTags([FromBody] TagAddRequest request)
     {
         if (request.TagsName == null || request.TagsName.Count == 0)
         {
