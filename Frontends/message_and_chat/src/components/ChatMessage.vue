@@ -1,12 +1,11 @@
 <template>
   <div class="chat-message-wrapper">
-
-
-    <!-- 使用绝对定位强制布局 -->
     <div :class="isSelf ? 'my-message' : 'other-message'">
       <!-- 对方消息：头像在左 -->
-      <img v-if="!isSelf" class="message-avatar" :src="props.message.sender.avatar" alt="对方头像" />
-      
+      <router-link v-if="!isSelf" to="/otherUserHomepage">
+        <img class="message-avatar" :src="props.message.sender.avatar" alt="对方头像" />
+      </router-link>
+     
       <div class="message-bubble">
         <template v-if="props.message.type === 'image'">
           <img class="msg-image" :src="props.message.content" alt="图片显示失败"/>
@@ -17,7 +16,12 @@
       </div>
       
       <!-- 自己消息：头像在右 -->
-      <img v-if="isSelf" class="message-avatar" :src="props.message.sender.avatar" alt="我的头像" />
+      <div v-if="isSelf" class="avatar-wrapper">
+        <router-link to="/personalHomepage">
+          <img class="message-avatar" :src="props.message.sender.avatar" alt="我的头像" />
+        </router-link>
+      </div>
+      
     </div>
   </div>
 </template>
@@ -33,7 +37,7 @@ const props = defineProps<{
 
 // 替换表情为图片
 function renderContent(content: string) {
-  let html = content.replace(/\[emoji:(\w+)\]/g, (match, p1) => {
+  let html = content.replace(/\[emoji:(\w+)\]/g, (_match, p1) => {
     return `<img src="/emoji/${p1}.png" alt="${p1}" class="emoji-img" />`;
   });
   return html;
@@ -51,9 +55,13 @@ function renderContent(content: string) {
   width: 36px;
   height: 36px;
   border-radius: 99%;
-
   object-fit: cover;
   flex-shrink: 0;
+}
+
+.my-message router-link,
+.other-message router-link {
+  display: contents;
 }
 
 .message-bubble {
@@ -102,10 +110,12 @@ function renderContent(content: string) {
 }
 
 /* 自己消息的布局 */
-.my-message .message-avatar {
+.my-message .avatar-wrapper {
   order: 2;
   margin-left: 8px;
   margin-right: 0;
+  display: flex;
+  align-items: center;
 }
 
 .my-message .message-bubble {

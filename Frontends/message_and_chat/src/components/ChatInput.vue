@@ -39,7 +39,6 @@ const emojis = [
   '😤', '😠', '😡', '🤬', '😈', '👿', '💀', '👻',
 ];
 const fileInput = ref<HTMLInputElement | null>(null)
-const imageUrl = ref<string | null>(null)
 const emit = defineEmits<{
   sendMessage: [content: string, type: 'text' | 'image']
 }>()
@@ -80,7 +79,7 @@ function onImageChange(e: Event) {
   if (files && files[0]) {
     const file = files[0];
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = () => {
       emit('sendMessage',reader.result as string,'image')
     }
     reader.readAsDataURL(file);
