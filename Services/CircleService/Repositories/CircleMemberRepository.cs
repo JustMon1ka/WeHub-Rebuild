@@ -49,4 +49,18 @@ public class CircleMemberRepository : ICircleMemberRepository
         _context.CircleMembers.Remove(member);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<Dictionary<int, int>> GetMemberCountsByCircleIdsAsync(IEnumerable<int> circleIds)
+    {
+        if (circleIds == null || !circleIds.Any())
+        {
+            return new Dictionary<int, int>();
+        }
+
+        return await _context.CircleMembers
+                             .Where(cm => circleIds.Contains(cm.CircleId) && cm.Status == CircleMemberStatus.Approved)
+                             .GroupBy(cm => cm.CircleId)
+                             .Select(g => new { CircleId = g.Key, MemberCount = g.Count() })
+                             .ToDictionaryAsync(x => x.CircleId, x => x.MemberCount);
+    }
 } 

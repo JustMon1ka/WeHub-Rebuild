@@ -41,4 +41,11 @@ public interface ICircleMemberRepository
     /// </summary>
     /// <param name="member">要移除的成员实体</param>
     Task RemoveAsync(CircleMember member);
+
+    /// <summary>
+    /// 根据一组圈子ID，异步批量获取每个圈子的成员数量
+    /// </summary>
+    /// <param name="circleIds">圈子ID的集合</param>
+    /// <returns>一个字典，其中键是圈子ID，值是对应的成员数量</returns>
+    Task<Dictionary<int, int>> GetMemberCountsByCircleIdsAsync(IEnumerable<int> circleIds);
 } 

@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalRService.Tests", "Ser
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessageService", "Services\MessageService\MessageService.csproj", "{32A9F230-8530-4AB2-ABA8-83C292E974E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CircleService.Tests", "Services\Tests\CircleService.Tests\CircleService.Tests.csproj", "{BD3B2410-0791-42A5-99BC-F8D2E75F7C2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{32A9F230-8530-4AB2-ABA8-83C292E974E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32A9F230-8530-4AB2-ABA8-83C292E974E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32A9F230-8530-4AB2-ABA8-83C292E974E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD3B2410-0791-42A5-99BC-F8D2E75F7C2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD3B2410-0791-42A5-99BC-F8D2E75F7C2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD3B2410-0791-42A5-99BC-F8D2E75F7C2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD3B2410-0791-42A5-99BC-F8D2E75F7C2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -106,5 +112,6 @@ Global
 		{E9FDA3BF-FC82-4315-A309-A2A0FCFF2F7C} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}
 		{E841EE18-32EB-490E-A302-62C8A320C9AA} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}
 		{32A9F230-8530-4AB2-ABA8-83C292E974E3} = {1D4447C9-B73F-4590-AB1D-F9C9834FE738}
+		{BD3B2410-0791-42A5-99BC-F8D2E75F7C2E} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}
 	EndGlobalSection
 EndGlobal

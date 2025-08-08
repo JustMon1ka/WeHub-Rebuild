@@ -57,4 +57,12 @@ public interface ICircleMemberService
     /// <param name="userId">用户ID</param>
     /// <returns>返回单个成员的详细信息，如果不存在则返回null</returns>
     Task<CircleMemberDto?> GetMemberDetailsAsync(int circleId, int userId);
+
+    /// <summary>
+    /// 用户主动退出一个圈子
+    /// </summary>
+    /// <param name="circleId">要退出的圈子ID</param>
+    /// <param name="userId">执行退出操作的用户ID</param>
+    /// <returns>操作结果的Service层响应</returns>
+    Task<ServiceResponse> LeaveCircleAsync(int circleId, int userId);
 } 

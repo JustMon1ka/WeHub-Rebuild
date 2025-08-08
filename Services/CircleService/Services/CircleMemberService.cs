@@ -14,11 +14,16 @@ public class CircleMemberService : ICircleMemberService
 {
     private readonly ICircleMemberRepository _memberRepository;
     private readonly ICircleRepository _circleRepository;
+    private readonly IActivityParticipantRepository _activityParticipantRepository;
 
-    public CircleMemberService(ICircleMemberRepository memberRepository, ICircleRepository circleRepository)
+    public CircleMemberService(
+        ICircleMemberRepository memberRepository, 
+        ICircleRepository circleRepository,
+        IActivityParticipantRepository activityParticipantRepository)
     {
         _memberRepository = memberRepository;
         _circleRepository = circleRepository;
+        _activityParticipantRepository = activityParticipantRepository;
     }
 
     public async Task<ServiceResponse> ApplyToJoinCircleAsync(int circleId, int userId)
@@ -122,6 +127,34 @@ public class CircleMemberService : ICircleMemberService
         }
 
         return MapToCircleMemberDto(member);
+    }
+
+    public async Task<ServiceResponse> LeaveCircleAsync(int circleId, int userId)
+    {
+        var circle = await _circleRepository.GetByIdAsync(circleId);
+        if (circle == null)
+        {
+            return ServiceResponse.Fail("圈子不存在。");
+        }
+
+        if (circle.OwnerId == userId)
+        {
+            return ServiceResponse.Fail("圈主不能退出自己的圈子。");
+        }
+
+        var member = await _memberRepository.GetByIdAsync(circleId, userId);
+        if (member == null)
+        {
+            return ServiceResponse.Fail("您不是该圈子的成员。");
+        }
+
+        // 1. 先删除该用户在此圈子内的所有活动参与记录
+        await _activityParticipantRepository.RemoveUserParticipationInCircleAsync(circleId, userId);
+
+        // 2. 再移除该用户的圈子成员身份
+        await _memberRepository.RemoveAsync(member);
+        
+        return ServiceResponse.Succeed();
     }
 
     private CircleMemberDto MapToCircleMemberDto(CircleMember member)

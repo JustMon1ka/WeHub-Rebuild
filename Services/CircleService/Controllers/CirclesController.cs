@@ -30,12 +30,13 @@ public class CirclesController : ControllerBase
     // --- Circle Management Endpoints ---
 
     /// <summary>
-    /// 获取所有圈子
+    /// 获取所有圈子，支持按名称搜索
     /// </summary>
+    /// <param name="name">可选的搜索名称</param>
     [HttpGet]
-    public async Task<IActionResult> GetAllCircles()
+    public async Task<IActionResult> GetAllCircles([FromQuery] string? name = null)
     {
-        var circles = await _circleService.GetAllCirclesAsync();
+        var circles = await _circleService.GetAllCirclesAsync(name);
         return Ok(BaseHttpResponse<object>.Success(circles));
     }
 
@@ -51,7 +52,18 @@ public class CirclesController : ControllerBase
         {
             return NotFound(BaseHttpResponse.Fail(404, "圈子不存在"));
         }
-        return Ok(BaseHttpResponse<object>.Success(circle));
+        
+        // 获取圈子成员信息
+        var members = await _memberService.GetCircleMembersAsync(id);
+        
+        // 构建包含圈子信息和成员列表的响应数据
+        var response = new 
+        {
+            Circle = circle,
+            Members = members
+        };
+        
+        return Ok(BaseHttpResponse<object>.Success(response));
     }
 
     /// <summary>
@@ -91,15 +103,40 @@ public class CirclesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCircle(int id)
     {
-        var result = await _circleService.DeleteCircleAsync(id);
+        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
+        var deleterId = 1; // TODO: 实际应从用户认证信息中获取
+        
+        var result = await _circleService.DeleteCircleAsync(id, deleterId);
         if (!result)
         {
-            return NotFound(BaseHttpResponse.Fail(404, "圈子不存在或删除失败"));
+            return NotFound(BaseHttpResponse.Fail(404, "圈子不存在或无权删除"));
         }
         return Ok(BaseHttpResponse<object>.Success(null, "圈子删除成功"));
     }
 
     // --- Circle Member Management Endpoints ---
+
+    /// <summary>
+    /// 用户主动退出一个圈子
+    /// </summary>
+    /// <param name="id">要退出的圈子ID</param>
+    [HttpDelete("{id}/membership")]
+    public async Task<IActionResult> LeaveCircle(int id)
+    {
+        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
+        var userId = 2; // TODO: 实际应从用户认证信息中获取
+
+        var result = await _memberService.LeaveCircleAsync(id, userId);
+
+        if (!result.Success)
+        {
+            // 根据不同的失败原因返回不同的状态码可能会更友好
+            // 但为保持简单，这里统一返回400 Bad Request
+            return BadRequest(BaseHttpResponse.Fail(400, result.ErrorMessage));
+        }
+
+        return Ok(BaseHttpResponse<object>.Success(null, "成功退出圈子"));
+    }
 
     /// <summary>
     /// 申请加入一个圈子

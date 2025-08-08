@@ -29,4 +29,9 @@ public class CircleDto
     /// 圈子创建时间
     /// </summary>
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// 圈子成员数量
+    /// </summary>
+    public int MemberCount { get; set; }
 } 
