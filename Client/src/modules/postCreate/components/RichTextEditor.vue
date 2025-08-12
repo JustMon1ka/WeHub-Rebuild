@@ -172,8 +172,12 @@ const processor = unified().use(remarkParse).use(remarkGfm);
 
 // 一个用于渲染 Vue 组件的 WidgetType
 class VueWidget extends WidgetType {
-  constructor(private vnode: VNode) {
+  // `fileId` 作为私有属性，用于比较
+  private fileId: string;
+
+  constructor(private vnode: VNode, fileId: string) {
     super();
+    this.fileId = fileId;
   }
 
   toDOM(view: EditorView): HTMLElement {
@@ -183,7 +187,14 @@ class VueWidget extends WidgetType {
     render(this.vnode, wrap);
     return wrap;
   }
-  ignoreEvent() { return true; } // 忽略事件，让 CodeMirror 不处理内部点击等事件
+
+  // 关键：eq 方法用于比较两个 Widget 实例
+  eq(other: VueWidget) {
+    // 只有当两个 widget 的 fileId 相同时，才认为它们是相等的
+    return this.fileId === other.fileId;
+  }
+
+  ignoreEvent() { return true; }
 }
 
 const hybridPlugin = ViewPlugin.fromClass(
@@ -271,7 +282,7 @@ const hybridPlugin = ViewPlugin.fromClass(
               const vnode = createVNode(component, props);
               decorations.push(
                 Decoration.replace({
-                  widget: new VueWidget(vnode),
+                  widget: new VueWidget(vnode, fileId),
                 }).range(nodeStart, nodeEnd)
               );
             }

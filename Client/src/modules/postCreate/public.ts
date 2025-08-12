@@ -1,9 +1,12 @@
 ﻿import axios from 'axios';
 
-axios.defaults.baseURL = '/api';
+axios.defaults.baseURL = 'http://localhost:5000/api';
 axios.interceptors.request.use(config => {
   // 设置 Bearer 认证
-  const token = localStorage.getItem('token');
+  // const token = localStorage.getItem('token');
+  // 临时测试用token，一天后过期
+  const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDAxNDAiLCJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEwMDE0MCIsInN0YXR1cyI6IjAiLCJleHAiOjE3NTQ5OTA0ODUsImlzcyI6IllvdXJBcHAiLCJhdWQiOiJZb3VyQXBwVXNlcnMifQ.bxL6RrhnzVrUju0e0yR9xiW0sRopf9oVeetXB5md_zs";
+
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -47,10 +50,10 @@ export async function getPopularTags() {
 }
 
 export async function publishPost(payload: {
-  circle_id: number | null;
+  circleId: number | null;
   title: string;
   content: string;
-  tag_ids: number[];
+  tags: number[];
 }) {
   return axios.post('/posts/publish', payload).then(res => res.data);
 }

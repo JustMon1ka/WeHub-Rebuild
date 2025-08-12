@@ -54,7 +54,7 @@
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">标签 (可选)</label>
           <TagInput
-            v-model="tagIds"
+            v-model="tags"
             class="w-full bg-slate-800 border border-slate-700 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-200 placeholder-slate-400"
             placeholder="例如：游戏攻略, 赛博朋克"
           />
@@ -80,7 +80,7 @@ import { useRouter, useRoute } from 'vue-router'
 import CommunitySelect from '../components/CommunitySelect.vue'
 import RichTextEditor from '../components/RichTextEditor.vue'
 import TagInput from '../components/TagInput.vue'
-import { publishPost } from '../public'
+import {addTags, publishPost} from '../public'
 
 const router = useRouter()
 const route = useRoute()
@@ -94,7 +94,7 @@ const left = ref('4rem')
 const circleId = ref<number | null>(null)
 const title = ref('')
 const content = ref('')
-const tagIds = ref<number[]>([])
+const tags = ref<string[]>([])
 
 onMounted(() => {
   visible.value = true
@@ -111,9 +111,29 @@ onBeforeUnmount(() => {
 
 async function publish() {
   try {
-    const payload = { circle_id: circleId.value, title: title.value, content: content.value, tag_ids: tagIds.value }
+    // 1. 先处理标签
+    // 假设 TagInput 的 v-model 绑定的就是标签名数组（string[]）
+    // 如果 TagInput 输出的是 id，需要先改成 names
+    const tagNames = tags.value // 如果不是字符串数组，要先转换
+
+    let finalTagIds: number[] = []
+    if (tagNames.length > 0) {
+      // 调用添加标签 API（返回值里应该有所有标签的 id）
+      const tagRes = await addTags(tagNames)
+      // 确保 finalTagIds 里都是 number
+      finalTagIds = tagRes.data.map((t: any) => t.tagId)
+    }
+
+    // 2. 调用发布帖子 API
+    const payload = {
+      circleId: circleId.value,
+      title: title.value,
+      content: content.value,
+      tags: finalTagIds
+    }
     const res = await publishPost(payload)
-    alert('发布成功，ID: ' + res.data.postId)
+
+    alert('发布成功，ID: ' + res.postId) // 注意根据实际返回字段调整
     close()
   } catch (err) {
     console.error(err)

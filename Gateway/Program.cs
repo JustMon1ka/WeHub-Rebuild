@@ -10,13 +10,27 @@ namespace Gateway
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // 1. 从配置文件加载 YARP 的配置信息
+            // 启用全局 CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
+            });
+
+            // 加载 YARP 配置
             builder.Services.AddReverseProxy()
                 .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
             var app = builder.Build();
 
-            // 2. 启用 YARP 反向代理中间件
+            // 使用 CORS 中间件（必须在 MapReverseProxy 之前）
+            app.UseCors("AllowAll");
+
+            // 启用 YARP 反向代理
             app.MapReverseProxy();
 
             app.Run();
