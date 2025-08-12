@@ -43,7 +43,8 @@ namespace PostService
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // 前端地址
+                    policy.WithOrigins("http://localhost:5173",// 前端地址
+                            "http://localhost:5000") 
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });

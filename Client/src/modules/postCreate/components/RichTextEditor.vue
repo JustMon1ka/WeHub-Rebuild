@@ -65,7 +65,13 @@
           <QuoteIcon class="w-4 h-4" />
         </button>
       </div>
-      <input ref="fileInput" type="file" class="hidden" @change="upload" />
+      <input
+        ref="fileInput"
+        type="file"
+        class="hidden"
+        accept="image/*,video/*,audio/*"
+        @change="handleFileChange"
+      />
     </div>
 
     <!-- CodeMirror 编辑区 -->
@@ -76,6 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 import { EditorState, EditorSelection, type Range } from '@codemirror/state';
+import type { Node } from 'unist';
 import {
   EditorView,
   keymap,
@@ -90,12 +97,13 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
-import { visit, SKIP } from 'unist-util-visit';
+import { visitParents , SKIP } from 'unist-util-visit-parents';
 import type { Link, Heading, Strong, Emphasis, InlineCode, Delete } from 'mdast';
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { LanguageDescription } from '@codemirror/language';
-
+import { createVNode, render, h, type VNode } from 'vue';
+import axios from 'axios';
 
 import {
   FolderIcon,
@@ -105,6 +113,15 @@ import {
   ItalicIcon,
   ChatBubbleLeftIcon as QuoteIcon,
 } from '@heroicons/vue/24/outline';
+
+// 导入新的预览组件
+import AudioPreview from './AudioPreview.vue';
+import ImagePreview from './ImagePreview.vue';
+import VideoPreview from './VideoPreview.vue';
+
+defineExpose({
+  uploadMedia
+});
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>();
 const props = defineProps<{ modelValue: string }>();
@@ -118,8 +135,21 @@ watch(() => props.modelValue, v => {
   }
 });
 
+// 用于解析自定义媒体标签的正则表达式
+const mediaRegex = /<type:\s*(audio|video|image),\s*fileId:\s*['"]?([\w\d-]+)['"]?(\s*,\s*length:\s*(\d+))?\s*>/;
+
+// 辅助函数：将 AST 节点转换为 HTML，现在包括了对自定义媒体标签的特别处理
 function nodeToHtml(node: any): string {
   if (node.type === 'text') {
+    // 检查文本内容是否匹配媒体标签
+    if (mediaRegex.test(node.value)) {
+      const match = node.value.match(mediaRegex);
+      const type = match[1];
+      const fileId = match[2];
+
+      // 返回一个占位符，之后会通过 WidgetType 替换
+      return `<div data-media-type="${type}" data-file-id="${fileId}"></div>`;
+    }
     return node.value.replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
   const childrenHtml = node.children ? node.children.map(nodeToHtml).join('') : (node.value || '');
@@ -140,94 +170,140 @@ function nodeToHtml(node: any): string {
 const fileInput = ref<HTMLInputElement | null>(null);
 const processor = unified().use(remarkParse).use(remarkGfm);
 
+// 一个用于渲染 Vue 组件的 WidgetType
+class VueWidget extends WidgetType {
+  constructor(private vnode: VNode) {
+    super();
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const wrap = document.createElement('span');
+    wrap.className = 'cm-vue-widget';
+    // 使用 Vue 的 render 函数将 VNode 渲染到 DOM 元素
+    render(this.vnode, wrap);
+    return wrap;
+  }
+  ignoreEvent() { return true; } // 忽略事件，让 CodeMirror 不处理内部点击等事件
+}
+
 const hybridPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
-    constructor(public view: EditorView) { this.decorations = this.buildDecos(view); }
+
+    constructor(public view: EditorView) {
+      this.decorations = this.buildDecos(view);
+    }
+
     update(update: ViewUpdate) {
       if (update.docChanged || update.selectionSet || update.viewportChanged) {
         this.decorations = this.buildDecos(update.view);
       }
     }
+
     buildDecos(view: EditorView): DecorationSet {
       const decorations: Range<Decoration>[] = [];
       const tree = processor.parse(view.state.doc.toString());
-      const { from } = view.state.selection.main;
+      const { from, to } = view.state.selection.main;
 
-      visit(tree, node => {
-        const nodeStart = node.position?.start?.offset;
-        const nodeEnd = node.position?.end?.offset;
-        if (nodeStart === undefined || nodeEnd === undefined) return;
+      // 2. 使用 unist-util-visit-parents
+      // 它会提供第二个参数 `ancestors`，即当前节点的父节点数组
+      visitParents(
+        tree,
+        (node: Node, ancestors: Node[]) => { // <-- 注意这里的第二个参数 ancestors
+          const nodeStart = node.position?.start?.offset;
+          const nodeEnd = node.position?.end?.offset;
+          if (nodeStart === undefined || nodeEnd === undefined) return;
 
-        // 如果光标在节点内部，不进行渲染，保持可编辑
-        if (from >= nodeStart && from <= nodeEnd) return;
+          // 3. 判断是否在代码块内部的方式改变了
+          // 我们通过检查祖先节点来判断，不再需要 inCodeBlock 标志
+          const isInsideCodeBlock = ancestors.some(p => p.type === 'code');
 
-        // --- 修复代码块的渲染逻辑 ---
-        if (node.type === 'code') {
-          const startLine = view.state.doc.lineAt(nodeStart);
-          const endLine = view.state.doc.lineAt(nodeEnd);
-
-          // 获取开始围栏的文本，例如 '```js\n'
-          const fenceStartText = view.state.doc.sliceString(startLine.from, startLine.to);
-
-          // 1. 隐藏开始围栏 (```js)
-          // 确保范围是从行的开头到行尾的，这样它就不会为空
-          decorations.push(
-            Decoration.mark({ class: 'cm-codeblock-fence-start' }).range(startLine.from, startLine.to)
-          );
-
-          // 2. 隐藏结束围栏 (```)
-          if (startLine.number !== endLine.number) { // 避免单行代码块重复渲染
-            decorations.push(
-              Decoration.mark({ class: 'cm-codeblock-fence-end' }).range(endLine.from, endLine.to)
-            );
+          // 如果光标或选区在节点内部，不进行渲染，保持可编辑
+          if (from >= nodeStart && to <= nodeEnd) {
+            return;
           }
 
-          // 3. 为代码块内容区域的每一行添加行级装饰器
-          // 调整循环条件，以正确处理单行或多行代码
-          for (let i = startLine.number; i <= endLine.number; i++) {
-            const line = view.state.doc.line(i);
-            let classes = 'cm-codeblock-line';
+          // --- 修复代码块的渲染逻辑 ---
+          // 这部分逻辑基本不变，但我们不再需要设置 inCodeBlock = true
+          if (node.type === 'code') {
+            const startLine = view.state.doc.lineAt(nodeStart);
+            const endLine = view.state.doc.lineAt(nodeEnd);
 
-            // 处理代码内容区域
-            if (i > startLine.number && i < endLine.number) {
-              classes += ' cm-codeblock-content-line';
-            }
-
-            // 处理第一行和最后一行
-            if (i === startLine.number) {
-              classes += ' cm-codeblock-first-line';
-            }
-            if (i === endLine.number) {
-              classes += ' cm-codeblock-last-line';
-            }
-
-            decorations.push(Decoration.line({ class: classes }).range(line.from));
-          }
-
-          return SKIP;
-        }
-
-        // --- 处理其他行内元素（保持不变） ---
-        const isInline = ['strong', 'emphasis', 'inlineCode', 'link', 'heading'].includes(node.type);
-        if (isInline && (from < nodeStart || from > nodeEnd)) {
-          const html = nodeToHtml(node);
-          if (html) {
+            // 隐藏开始和结束围栏... (这部分代码和你原来的一样)
             decorations.push(
-              Decoration.replace({
-                widget: new (class extends WidgetType {
-                  toDOM() {
-                    const wrap = document.createElement('span');
-                    wrap.innerHTML = html;
-                    return wrap;
-                  }
-                })(),
-              }).range(nodeStart, nodeEnd)
+              Decoration.mark({ class: 'cm-codeblock-fence-start' }).range(startLine.from, startLine.to)
             );
+            if (startLine.number !== endLine.number) {
+              decorations.push(
+                Decoration.mark({ class: 'cm-codeblock-fence-end' }).range(endLine.from, endLine.to)
+              );
+            }
+            // 添加行级装饰器... (这部分代码和你原来的一样)
+            for (let i = startLine.number; i <= endLine.number; i++) {
+              const line = view.state.doc.line(i);
+              let classes = 'cm-codeblock-line';
+              if (i > startLine.number && i < endLine.number) classes += ' cm-codeblock-content-line';
+              if (i === startLine.number) classes += ' cm-codeblock-first-line';
+              if (i === endLine.number) classes += ' cm-codeblock-last-line';
+              decorations.push(Decoration.line({ class: classes }).range(line.from));
+            }
+            // 使用 SKIP 阻止访问代码块的内部文本子节点
             return SKIP;
           }
+
+          // --- 处理自定义媒体标签 ---
+          const textContent = view.state.doc.sliceString(nodeStart, nodeEnd);
+          const mediaMatch = textContent.match(mediaRegex);
+          // 4. 使用新的 isInsideCodeBlock 进行判断
+          if (mediaMatch && !isInsideCodeBlock) {
+            const type = mediaMatch[1];
+            const fileId = mediaMatch[2];
+            let component;
+            let props = { fileId };
+
+            switch (type) {
+              case 'audio': component = AudioPreview; break;
+              case 'video': component = VideoPreview; break;
+              case 'image': component = ImagePreview; break;
+            }
+
+            if (component) {
+              const vnode = createVNode(component, props);
+              decorations.push(
+                Decoration.replace({
+                  widget: new VueWidget(vnode),
+                }).range(nodeStart, nodeEnd)
+              );
+            }
+            return SKIP;
+          }
+
+          // --- 处理其他行内元素（保持不变） ---
+          // 如果当前节点在代码块里，我们不应该应用其他装饰（如加粗、斜体等）
+          if (isInsideCodeBlock) {
+            return;
+          }
+
+          const isInline = ['strong', 'emphasis', 'inlineCode', 'link', 'heading'].includes(node.type);
+          if (isInline) {
+            const html = nodeToHtml(node);
+            if (html) {
+              decorations.push(
+                Decoration.replace({
+                  widget: new (class extends WidgetType {
+                    toDOM() {
+                      const wrap = document.createElement('span');
+                      wrap.innerHTML = html;
+                      return wrap;
+                    }
+                  })(),
+                }).range(nodeStart, nodeEnd)
+              );
+              return SKIP;
+            }
+          }
         }
-      });
+      );
       return Decoration.set(decorations, true);
     }
   },
@@ -319,9 +395,74 @@ function toggleItalic() { insertAroundSelection('*', '*'); }
 function insertLink() { insertAroundSelection('[', '](url)'); }
 function insertCodeBlock() { insertAroundSelection('\n```\n', '\n```\n'); }
 function insertQuote() { insertAroundSelection('\n> ', '\n'); }
-function triggerUpload() { fileInput.value?.click(); }
-async function upload(e: Event) { const f = (e.target as HTMLInputElement).files?.[0]; if (f) insertAroundSelection(`![${f.name}]`, `(media://fakeId)\n`); }
 
+// 导出上传函数
+async function uploadMedia(file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  return axios.post('/media/upload', form)
+    .then(res => res.data);
+}
+
+/**
+ * @description: 触发文件上传，并通过文件类型调用不同的处理逻辑
+ */
+function triggerUpload() {
+  fileInput.value?.click();
+}
+
+/**
+ * @description: 处理文件选择事件，并根据文件类型进行上传
+ */
+async function handleFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  const fileType = file.type.split('/')[0]; // "image", "video", "audio"
+
+  try {
+    // 插入一个临时的占位符，表示正在上传
+    const placeholderText = `<Uploading ${file.name}...>`;
+    insertAroundSelection(placeholderText, '');
+
+    const res = await uploadMedia(file);
+
+    if (res.code === 200 && res.data?.fileId) {
+      // 上传成功，生成并替换为最终的媒体标记
+      const mediaTag = `<type: ${fileType}, fileId: '${res.data.fileId}'>`;
+      const doc = view.state.doc.toString();
+      const newDoc = doc.replace(placeholderText, mediaTag);
+      view.dispatch({
+        changes: { from: doc.indexOf(placeholderText), to: doc.indexOf(placeholderText) + placeholderText.length, insert: mediaTag },
+        selection: EditorSelection.cursor(doc.indexOf(placeholderText) + mediaTag.length),
+      });
+      view.focus();
+    } else {
+      // 上传失败
+      alert('上传失败：' + res.msg || '未知错误');
+      // 移除占位符
+      const doc = view.state.doc.toString();
+      const newDoc = doc.replace(placeholderText, '');
+      view.dispatch({
+        changes: { from: doc.indexOf(placeholderText), to: doc.indexOf(placeholderText) + placeholderText.length, insert: '' },
+      });
+    }
+  } catch (error) {
+    alert('上传失败，请检查网络或服务器');
+    // 移除占位符
+    const doc = view.state.doc.toString();
+    const newDoc = doc.replace(`<Uploading ${file.name}...>`, '');
+    view.dispatch({
+      changes: { from: doc.indexOf(`<Uploading ${file.name}...>`), to: doc.indexOf(`<Uploading ${file.name}...>`) + `<Uploading ${file.name}...>`.length, insert: '' },
+    });
+    console.error(error);
+  } finally {
+    // 重置文件输入框，以便下次可以触发 change 事件
+    if (fileInput.value) {
+      fileInput.value.value = '';
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -460,4 +601,20 @@ async function upload(e: Event) { const f = (e.target as HTMLInputElement).files
 :deep(.cm-line) {
   line-height: normal;
 }
+
+ :deep(.cm-vue-widget) {
+   /* 确保 Vue 组件容器的显示行为与行内元素一致 */
+   display: inline-block;
+   vertical-align: top; /* 避免与行内文字基线对齐 */
+   max-width: 100%; /* 防止图片、视频超出容器 */
+ }
+
+ /* 媒体预览容器的通用样式 */
+ :deep(.media-preview) {
+   margin: 0.5em 0;
+   border: 1px solid #334155;
+   border-radius: 8px;
+   background-color: #1f2937;
+   padding: 0.5em;
+ }
 </style>
