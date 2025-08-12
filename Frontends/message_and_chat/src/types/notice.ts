@@ -11,8 +11,11 @@ export type noticeType = typeof noticeType[keyof typeof noticeType];
 
 // 通知
 export interface baseNoticeInfo {
+    id: number; // 通知id
     sender: user; // 发送者
     time: string; // 发送时间
+    isRead: boolean; // 是否已读
+    objectType: 'post' | 'comment' | 'user'; // 目标对象类型
 };
 
 export interface targetPostInfo {
@@ -21,26 +24,47 @@ export interface targetPostInfo {
     targetPostTitleImage: string; // 目标帖子简介图片
 }
 
+export interface targetCommentInfo {
+    targetCommentId: number; // 目标评论id
+    targetCommentContent: string; // 目标评论内容
+    targetCommentAuthor: string; // 目标评论作者
+}
+
+// 点赞通知
 export interface likeNoticeInfo extends baseNoticeInfo, targetPostInfo {
     type: 'like';
+    // 当 objectType 为 'comment' 时，以下字段为必需
+    targetCommentId?: number;
+    targetCommentContent?: string;
+    targetCommentAuthor?: string;
 }
 
+// 评论通知
 export interface commentNoticeInfo extends baseNoticeInfo, targetPostInfo {
     type: 'comment';
-    commentContent: string; // 评论内容
-    commentType: "post" | "comment"; // 评论类型
+    newCommentContent: string; // 新评论/回复内容
+    // 当 objectType 为 'comment' 时，以下字段为必需
+    targetCommentId?: number;
+    targetCommentContent?: string;
+    targetCommentAuthor?: string;
 }
 
+// @通知
 export interface atNoticeInfo extends baseNoticeInfo, targetPostInfo {
     type: 'at';
     atContent: string; // @内容
+    // 当 objectType 为 'comment' 时，以下字段为必需
+    targetCommentId?: number;
+    targetCommentContent?: string;
+    targetCommentAuthor?: string;
 }
 
 export interface followNoticeInfo extends baseNoticeInfo, targetPostInfo {
     type: 'follow';
+    objectType: 'user';
 }
 
-// 通知列表
+// 通知联合类型
 export type notice = likeNoticeInfo | commentNoticeInfo | atNoticeInfo | followNoticeInfo;
 
 export type noticeList = notice[];

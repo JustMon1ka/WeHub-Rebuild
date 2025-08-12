@@ -3,37 +3,128 @@
     <div :class="isSelf ? 'my-message' : 'other-message'">
       <!-- 对方消息：头像在左 -->
       <router-link v-if="!isSelf" to="/otherUserHomepage">
-        <img class="message-avatar" :src="props.message.sender.avatar" alt="对方头像" />
+        <img
+          class="message-avatar"
+          :src="props.message.sender.avatar"
+          alt="对方头像"
+        />
       </router-link>
-     
-      <div class="message-bubble">
+
+      <div class="message-bubble" @contextmenu.prevent="handleContextMenuShow">
         <template v-if="props.message.type === 'image'">
-          <img class="msg-image" :src="props.message.content" alt="图片显示失败"/>
+          <img
+            class="msg-image"
+            :src="props.message.content"
+            alt="图片显示失败"
+          />
         </template>
         <template v-else>
           <span v-html="renderContent(props.message.content)"></span>
         </template>
       </div>
-      
+
       <!-- 自己消息：头像在右 -->
       <div v-if="isSelf" class="avatar-wrapper">
         <router-link to="/personalHomepage">
-          <img class="message-avatar" :src="props.message.sender.avatar" alt="我的头像" />
+          <img
+            class="message-avatar"
+            :src="props.message.sender.avatar"
+            alt="我的头像"
+          />
         </router-link>
       </div>
-      
+
+      <!-- 右键菜单 -->
+      <ContextMenu
+        :visible="contextMenuVisible"
+        :x="contextMenuX"
+        :y="contextMenuY"
+        :menuItems="contenxtMenuItems"
+        @close="handleContextMenuHide"
+        @select="handleContextMenuItemClick"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { message } from '../types/message';
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import type { message } from "../types/message";
+import ContextMenu, { type MenuItem } from "./ContextMenu.vue";
 
 const props = defineProps<{
   message: message;
   isSelf: boolean;
   myUserId: number;
 }>();
+
+const emit = defineEmits<{
+  (e: "messageAction", action: string, message: message): void;
+}>();
+
+const contextMenuVisible = ref(false);
+const contextMenuX = ref(0);
+const contextMenuY = ref(0);
+
+const contextMenuPosition = computed(() => {
+  return {
+    x: contextMenuX.value,
+    y: contextMenuY.value,
+  };
+});
+
+const contenxtMenuItems = computed((): MenuItem[] => {
+  const items: MenuItem[] = [];
+
+  items.push({
+    key: "copy",
+    text: "复制",
+    icon: "copy",
+  });
+
+  // items.push({
+  //   key: "delete",
+  //   text: "删除",
+  //   icon: "delete",
+  // });
+
+  // items.push({
+  //   key: "reply",
+  //   text: "回复",
+  //   icon: "reply",
+  // });
+
+  // items.push({
+  //   key: "forward",
+  //   text: "转发",
+  //   icon: "forward",
+  // });
+
+  items.push({
+    key: "report",
+    text: "举报",
+    icon: "report",
+  });
+  return items;
+});
+
+// 右键显示菜单
+const handleContextMenuShow = (event: MouseEvent) => {
+  contextMenuX.value = event.clientX;
+  contextMenuY.value = event.clientY;
+  contextMenuVisible.value = true;
+};
+
+// 隐藏菜单
+const handleContextMenuHide = () => {
+  contextMenuVisible.value = false;
+};
+
+// 处理菜单项点击
+const handleContextMenuItemClick = (item: MenuItem) => {
+  handleContextMenuHide();
+  emit("messageAction", item.key, props.message);
+};
 
 // 替换表情为图片
 function renderContent(content: string) {
@@ -42,6 +133,38 @@ function renderContent(content: string) {
   });
   return html;
 }
+
+// 处理点击事件
+const handleLeftMouseClick = (event: MouseEvent) => {
+  if (contextMenuVisible.value) {
+    const target = event.target as Element;
+    if (!target.closest(".context-menu-overview")) {
+      handleContextMenuHide();
+    }
+  }
+};
+
+const handleRightMouseClickOnOtherMessage = (event: MouseEvent) => {
+  if (contextMenuVisible.value) {
+    const target = event.target as Element;
+    if (!target.closest(".chat-message-wrapper")) {
+      handleContextMenuHide();
+    }
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleLeftMouseClick);
+  document.addEventListener("contextmenu", handleRightMouseClickOnOtherMessage);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleLeftMouseClick);
+  document.removeEventListener(
+    "contextmenu",
+    handleRightMouseClickOnOtherMessage
+  );
+});
 </script>
 
 <style scoped>
@@ -72,7 +195,6 @@ function renderContent(content: string) {
   word-break: break-word;
 }
 
-
 /* 对方消息：左对齐 */
 .other-message {
   position: relative;
@@ -88,7 +210,7 @@ function renderContent(content: string) {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  padding-right: 8px; 
+  padding-right: 8px;
 }
 
 /* 对方消息的布局 */
