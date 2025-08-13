@@ -43,8 +43,14 @@ class AuthData {
 
   submitBtnStyle = ref(styles.value.submitBtnShape + ' ' + styles.value.BtnNormal);
 
+
   changeAuthType(type: AuthType) {
     this.authType.value = type;
+    this.error.value = false;
+    this.errorMsg.value = '';
+    if (this.authType.value !== AuthType.PasswordReset) {
+      this.verified.value = false; // 重置 verified 状态
+    }
 
     if (type === AuthType.PasswordLogin) {
       this.useAuthCode.value = false;

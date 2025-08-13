@@ -20,9 +20,9 @@ import styles from "@/modules/auth/scripts/Styles.ts";
       <div class="mt-6 text-center pb-12">
         <p class="text-sm text-slate-400">
           还没有账户？
-          <a href="/register" class="font-medium text-sky-400 hover:underline">
+          <router-link to="/register" class="font-medium text-sky-400 hover:underline">
             立即注册
-          </a>
+          </router-link>
         </p>
       </div>
     </div>

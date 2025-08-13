@@ -1,3 +1,33 @@
+# New: 2025年8月14日
+## router-link
+使用vue的router-link组件来创建路由链接，使用方式如下：
+```html
+<router-link to="/login">登录</router-link>
+```
+不要使用`<a>`标签，`<a>`标签会导致页面重新加载。
+
+## router懒加载
+使用vue的路由懒加载功能，可以实现按需加载路由组件，使用方式如下：
+```ts
+const LoginView = () => import('./views/LoginView.vue');
+```
+这样可以避免一次性加载所有路由组件，提高应用性能。
+
+## 新增requireLogin路由元数据
+在需要登录才能访问的页面中，添加`meta`字段，设置`requireLogin`为`true`，示例如下：
+```ts
+{
+  path: '/me',
+  name: 'Me',
+  component: MeView,
+  meta: {
+    title: '个人中心',
+    requireLogin: true
+  }
+}
+```
+此时会在路由守卫中进行判断，如果用户未登录，则会停止跳转并弹出登录悬浮窗。
+
 # 模块文件标准
 ```
 modules

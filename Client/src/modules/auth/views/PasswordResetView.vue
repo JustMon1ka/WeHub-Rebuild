@@ -20,9 +20,9 @@ import styles from '@/modules/auth/scripts/Styles.ts';
       <div class="mt-6 text-center pb-12">
         <p class="text-sm text-slate-400">
           返回
-          <a href="/login" class="font-medium text-sky-400 hover:underline">
+          <router-link to="/login" class="font-medium text-sky-400 hover:underline">
             登录界面
-          </a>
+          </router-link>
         </p>
       </div>
     </div>
