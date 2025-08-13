@@ -1,17 +1,13 @@
 enum state {
-  NotLoggedIn,
+  LoggedOut,
   NetworkError,
   PasswordError,
-  LoggedIn,
+  AuthCodeError,
+  Success,
 }
 class User {
 
   static singleton: User | undefined = undefined;
-  static errorMsg = {
-    'PasswordMismatchError': '用户名或密码错误，请重试',
-    'NetworkError': '网络错误，请检查您的网络连接',
-    'DefaultError': '发生未知错误，请稍后再试',
-  }
 
   static {
     const url = '/api/auth/login';
@@ -68,7 +64,105 @@ class User {
       const result = await response.json();
       if (result.success) {
         User.singleton = new User(result.userid, result.token);
-        return state.LoggedIn;
+        return state.Success;
+      } else {
+        return state.PasswordError;
+      }
+    }
+  }
+
+  static async logout() {
+    const url = '/api/auth/login';
+    const data = { action: 'logout' };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      return state.NetworkError;
+    } else {
+      const result = await response.json();
+      if (result.success) {
+        User.singleton = new User(result.userid, result.token);
+        return state.Success;
+      } else {
+        return state.PasswordError;
+      }
+    }
+  }
+
+  static async register(username: string, password: string, email: string) {
+    let passwordHash = await User.generateHash(password);
+    const url = '/api/auth/login';
+    const data = { username, password: passwordHash };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      return state.NetworkError;
+    } else {
+      const result = await response.json();
+      if (result.success) {
+        User.singleton = new User(result.userid, result.token);
+        return state.Success;
+      } else {
+        return state.PasswordError;
+      }
+    }
+  }
+
+  static async resetPassword(username: string, email: string, newPassword: string) {
+    let passwordHash = await User.generateHash(newPassword);
+    const url = '/api/auth/login';
+    const data = { username, password: passwordHash };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      return state.NetworkError;
+    } else {
+      const result = await response.json();
+      if (result.success) {
+        User.singleton = new User(result.userid, result.token);
+        return state.Success;
+      } else {
+        return state.PasswordError;
+      }
+    }
+  }
+
+  static async verifyAuthCode(email: string, authCode: string) {
+    const url = '/api/auth/login';
+    const data = { email, authCode };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      return state.NetworkError;
+    } else {
+      const result = await response.json();
+      if (result.success) {
+        User.singleton = new User(result.userid, result.token);
+        return state.Success;
       } else {
         return state.PasswordError;
       }

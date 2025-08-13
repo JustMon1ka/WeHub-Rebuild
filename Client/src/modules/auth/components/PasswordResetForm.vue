@@ -1,25 +1,17 @@
 <script setup lang="ts">
 import styles from '@/modules/auth/scripts/Styles.ts'
-import { AuthData, AuthType } from '@/modules/auth/scripts/AuthData.ts';
+import { AuthData, AuthType } from '@/modules/auth/scripts/AuthData.ts'
 
-const registerData: AuthData = AuthData.getInstance();
-registerData.changeAuthType(AuthType.Register);
-const username = registerData.userName;
-const email = registerData.email;
-const password = registerData.password;
-const authCode = registerData.authCode;
-
+const passwordResetData: AuthData = AuthData.getInstance();
+passwordResetData.changeAuthType(AuthType.PasswordResetVerify)
+console.log(passwordResetData.verified.value);
+const email = passwordResetData.email;
+const authCode = passwordResetData.authCode;
+const password = passwordResetData.password;
 </script>
 
 <template>
-  <form class="space-y-6">
-    <div>
-      <label for="username" v-bind:class="styles.label">用户名</label>
-      <input v-bind:class="styles.input" v-model.lazy="username.userName.value" @blur="username.checkValidity()"
-             type="text" id="username" name="username" placeholder="设置一个独特的用户名" required>
-      <label v-if="username.error" v-bind:class="styles.error"> {{ username.errorMsg }}</label>
-    </div>
-
+  <form v-if="!(passwordResetData.verified.value)" class="space-y-6" >
     <div>
       <label for="email" v-bind:class="styles.label">邮箱</label>
       <input v-bind:class="styles.input" v-model.lazy="email.email.value" @blur="email.checkValidity()"
@@ -34,11 +26,22 @@ const authCode = registerData.authCode;
                @blur="authCode.checkValidity()" type="text" id="AuthCode" name="AuthCode"
                placeholder="请输入验证码" required>
         <button type="button" v-bind:class="authCode.authBtnStyle.value"
-                @click.prevent="registerData.sendAuthCode()"> {{ authCode.btnMsg}}</button>
+                @click.prevent="passwordResetData.sendAuthCode()"> {{ authCode.btnMsg}}</button>
       </div>
       <label v-if="authCode.error" v-bind:class="styles.error"> {{ authCode.errorMsg }}</label>
     </div>
 
+    <div>
+      <button  @click.prevent="passwordResetData.submit()"
+               @keydown.enter.prevent="passwordResetData.submit()"
+               v-bind:class="passwordResetData.submitBtnStyle.value" type="submit">
+        验 证
+      </button>
+      <div v-if="passwordResetData.error" v-bind:class="styles.error"> {{ passwordResetData.errorMsg }} </div>
+    </div>
+  </form>
+
+  <form v-else class="space-y-6" >
     <div>
       <label for="password" v-bind:class="styles.label">密码</label>
       <input v-bind:class="styles.input" v-model.lazy="password.password.value" @blur="password.checkValidity()"
@@ -54,11 +57,11 @@ const authCode = registerData.authCode;
     </div>
 
     <div>
-      <button @click.prevent="registerData.submit()" @keydown.enter.prevent="registerData.submit()"
-              v-bind:class="registerData.submitBtnStyle.value" type="submit">
-        注 册
+      <button @click.prevent="passwordResetData.submit()" @keydown.enter.prevent="passwordResetData.submit()"
+              v-bind:class="passwordResetData.submitBtnStyle.value" type="submit">
+        修改密码
       </button>
-      <div v-if="registerData.error" v-bind:class="styles.error"> {{ registerData.errorMsg }} </div>
+      <div v-if="passwordResetData.error" v-bind:class="styles.error"> {{ passwordResetData.errorMsg }} </div>
     </div>
   </form>
 </template>
