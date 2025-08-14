@@ -26,7 +26,7 @@ export const authRouter = createRouter({
         path: '/privacy',
         name: 'privacy',
         component: import ('@/modules/auth/views/PrivacyView.vue'),
-        meta: { title: 'Reset Your Password', navi: false, recommend: false, requiredLogin: false }
+        meta: { title: 'Privacy', navi: false, recommend: false, requiredLogin: false }
       }
     ]
 })

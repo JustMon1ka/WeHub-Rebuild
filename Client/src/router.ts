@@ -4,6 +4,7 @@ import { User } from './modules/auth/scripts/User.ts'
 import authRouter from './modules/auth/router.ts'
 import coreRouter from './modules/core/router.ts'
 import notFound from './NotFound.vue'
+import userRouter from './modules/user/router.ts'
 // import yourRouter from './yourModule/router.ts'
 
 
@@ -12,6 +13,7 @@ const router = createRouter({
   routes: [
     ...coreRouter.getRoutes(),
     ...authRouter.getRoutes(),
+    ...userRouter.getRoutes(),
     // ...yourRouter.getRoutes(),
     // your router must be imported before NotFound route
     {
@@ -31,6 +33,12 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiredLogin) {
     if (!User.getInstance()) {
+      if (from.meta.requiredLogin) {
+        // 如果当前路由需要登录，但用户未登录且上一个路由也需要登录，则跳转回首页
+        next('/');
+        toggleLoginHover();
+        return;
+      }
       toggleLoginHover();
       return;
     }
