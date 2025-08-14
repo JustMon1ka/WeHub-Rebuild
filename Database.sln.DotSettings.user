@@ -4,8 +4,10 @@
   &lt;Or&gt;&#xD;
     &lt;ProjectFile&gt;95890EE9-7B63-40A5-8079-CDEB29BA8F04/f:LoginBy3Methods.cs&lt;/ProjectFile&gt;&#xD;
     &lt;ProjectFile&gt;15E2904F-C8BB-46B5-8E51-7AE8E1992C1F/f:UserLifecycleTests.cs&lt;/ProjectFile&gt;&#xD;
+    &lt;ProjectFile&gt;DFACE89C-2850-4AFA-B8C1-11D68BD2A6BB/f:UserTagTests.cs&lt;/ProjectFile&gt;&#xD;
   &lt;/Or&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
+	
 	
 	
 	</wpf:ResourceDictionary>
