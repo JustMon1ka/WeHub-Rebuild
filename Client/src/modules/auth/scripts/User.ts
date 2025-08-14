@@ -129,7 +129,7 @@ class User {
 
   get userAuth() {
     return {
-      userid: this.#userid.slice(), // 防止外部修改
+      userId: this.#userid.slice(), // 防止外部修改
       token: this.#token.slice(),
     }
   }

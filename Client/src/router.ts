@@ -33,15 +33,21 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiredLogin) {
     if (!User.getInstance()) {
-      if (from.meta.requiredLogin) {
+      toggleLoginHover(true);
+      if (from === undefined || from.meta.requiredLogin) {
         // 如果当前路由需要登录，但用户未登录且上一个路由也需要登录，则跳转回首页
         next('/');
-        toggleLoginHover();
         return;
       }
-      toggleLoginHover();
+      if (from.path === '/login' || from.path === '/register' || from.path === '/reset-password') {
+        toggleLoginHover(false);
+      }
       return;
     }
+  }
+
+  if (to.path === '/login' || to.path === '/register' || to.path === '/reset-password') {
+    toggleLoginHover(false);
   }
 
   if (to.meta.navi) {

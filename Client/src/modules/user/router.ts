@@ -4,25 +4,19 @@ export const userRouter = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/UserInfo',
-      name: 'UserInfo',
-      component: import('@/modules/user/views/UserInfoView.vue'),
-      meta: { title: 'User Info', navi: true, recommend: true, requiredLogin: false }
-    },
-    {
-      path: '/UserPage',
+      path: '/user_page',
       name: 'UserPage',
       component: import ('@/modules/user/views/UserPageView.vue'),
       meta: { title: 'User Page', navi: true, recommend: true, requiredLogin: false }
     },
     {
-      path: '/UserGuide',
+      path: '/user_guide',
       name: 'UserGuide',
       component: import('@/modules/user/views/UserGuideView.vue'),
       meta: { title: 'User Guide', navi: false, recommend: false, requiredLogin: false }
     },
     {
-      path: '/FollowList',
+      path: '/follow_list',
       name: 'FollowList',
       component: import ('@/modules/user/views/FollowListView.vue'),
       meta: { title: 'Follow List', navi: true, recommend: true, requiredLogin: false }

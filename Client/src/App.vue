@@ -12,8 +12,8 @@ import { ref } from 'vue'
 
 const showHoverLogin = ref(false);
 
-export function toggleLoginHover() {
-  showHoverLogin.value = !showHoverLogin.value;
+export function toggleLoginHover(value: boolean | undefined = undefined) {
+  showHoverLogin.value = value !== undefined ? value : !showHoverLogin.value;
 }
 </script>
 

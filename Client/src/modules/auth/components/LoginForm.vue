@@ -56,7 +56,7 @@ const email = loginData.email;
       <div>
         <div class="flex justify-between items-baseline">
           <label for="password" v-bind:class="styles.label">密码</label>
-          <router-link to="/passwordReset" v-bind:class="styles.RouterLink">忘记密码？</router-link>
+          <router-link to="/password_reset" v-bind:class="styles.RouterLink">忘记密码？</router-link>
         </div>
         <input v-model.lazy="password.password.value" v-bind:class="styles.input"
                @blur="password.checkEmpty()" type="password" id="password" name="password"

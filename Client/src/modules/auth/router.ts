@@ -17,8 +17,8 @@ export const authRouter = createRouter({
         meta: { title: 'Login', navi: false, recommend: false, requiredLogin: false }
       },
       {
-        path: '/passwordReset',
-        name: 'passwordReset',
+        path: '/password_reset',
+        name: 'PasswordReset',
         component: import ('@/modules/auth/views/PasswordResetView.vue'),
         meta: { title: 'Reset Your Password', navi: false, recommend: false, requiredLogin: false }
       },
