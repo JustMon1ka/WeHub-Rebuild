@@ -4,10 +4,7 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>DTO1s</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-      <Content Include="DTOs\DTOs.csproj" />
-    </ItemGroup>
 
 </Project>

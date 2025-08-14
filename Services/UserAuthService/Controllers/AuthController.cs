@@ -1,8 +1,9 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DTOs;
 using UserAuthService.DTOs;
-using UserAuthService.Services;
+using UserAuthService.Services.Interfaces;
 
 namespace UserAuthService.Controllers;
 
@@ -18,25 +19,33 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<ActionResult<BaseHttpResponse<string>>> Register([FromBody] RegisterRequest request)
     {
         var result = await _authService.RegisterAsync(request);
-        return result.Success ? Ok(result.Message) : BadRequest(result.Message);
+        if (!result.Success)
+            return BadRequest(BaseHttpResponse<string>.Fail(400, result.Message));
+
+        return Ok(BaseHttpResponse<string>.Success("OK", result.Message));
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult<BaseHttpResponse<string>>> Login([FromBody] LoginRequest request)
     {
         var token = await _authService.LoginAsync(request);
-        return token == null ? Unauthorized("Invalid credentials") : Ok(new { token });
+        if (token == null)
+            return Unauthorized(BaseHttpResponse<string>.Fail(401, "Invalid credentials"));
+
+        return Ok(BaseHttpResponse<string>.Success(token , "Login successful"));
     }
 
     [HttpGet("me")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public IActionResult Me()
+    public ActionResult<BaseHttpResponse<object>> Me()
     {
         var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var username = User.Identity?.Name;
-        return Ok(new { id, username });
+        var username = User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name;
+
+        var data = new { id, username };
+        return Ok(BaseHttpResponse<object>.Success(data, "User info retrieved"));
     }
 }

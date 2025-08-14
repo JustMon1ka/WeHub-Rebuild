@@ -160,13 +160,13 @@
 #### 4.1 接口概览
 | 接口名称     | 请求方法 | 路径                      | 用途                 |
 | ------------ | -------- | ------------------------- | -------------------- |
-| 用户注册     | POST     | /api/users/register       | 注册新用户           |
-| 用户登录     | POST     | /api/users/login          | 用户登录获取token    |
+| 用户注册     | POST     | /api/auth/register       | 注册新用户           |
+| 用户登录     | POST     | /api/auth/login          | 用户登录获取token    |
 | 获取用户信息 | GET      | /api/users/{id}           | 获取指定用户详细信息 |
 | 更新用户信息 | PUT      | /api/users/{id}           | 修改用户资料         |
 | 重置密码     | POST     | /api/users/reset-password | 重置用户密码         |
-| 获取用户标签 | GET      | /api/users/{id}/tags      | 获取用户兴趣标签     |
-| 更新用户标签 | PUT      | /api/users/{id}/tags      | 修改用户兴趣标签     |
+| 获取用户标签 | GET      | /api/usertag/{id}/tags      | 获取用户兴趣标签     |
+| 更新用户标签 | PUT      | /api/usertag/{id}/tags      | 修改用户兴趣标签     |
 #### 4.2 请求头与认证
 所有接口除注册、登录以外，均需携带身份认证令牌。
 示例：
