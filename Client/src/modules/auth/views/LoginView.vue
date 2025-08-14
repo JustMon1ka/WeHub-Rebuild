@@ -20,7 +20,7 @@ import styles from "@/modules/auth/scripts/Styles.ts";
       <div class="mt-6 text-center pb-12">
         <p class="text-sm text-slate-400">
           还没有账户？
-          <router-link to="/register" class="font-medium text-sky-400 hover:underline">
+          <router-link to="/register" v-bind:class="styles.RouterLink">
             立即注册
           </router-link>
         </p>

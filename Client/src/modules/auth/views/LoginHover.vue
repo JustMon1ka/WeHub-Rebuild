@@ -28,7 +28,7 @@ const hover = defineModel<boolean>('showHover', { default: false });
           <div class="mt-6 text-center">
             <p class="text-sm text-slate-400">
               还没有账户？
-              <router-link to="/register" class="font-medium text-sky-400 hover:underline">
+              <router-link to="/register" v-bind:class="styles.RouterLink">
                 立即注册
               </router-link>
             </p>

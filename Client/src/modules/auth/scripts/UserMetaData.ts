@@ -1,6 +1,7 @@
 import type { Ref } from 'vue'
 import { ref } from 'vue'
 import styles from '@/modules/auth/scripts/Styles.ts'
+import { User, state } from '@/modules/auth/scripts/User.ts'
 
 class UserName {
   static errorMsg = {
@@ -177,9 +178,10 @@ class AuthCode {
   static errorMsg = {
     'EmailNotSetError': '请先设置电子邮件地址',
     'CodeEmptyError': '验证码不能为空',
-    'CodeMismatchError': '验证码不正确，请重新输入',
+    'EmailNotFoundError': '未找到与该电子邮件地址关联的用户',
     'NetWorkError': '网络连接错误，请稍后再试',
     'CodeFormatError': '验证码格式不正确，请输入6位数字验证码',
+    'DefaultError': '发生未知错误，请稍后再试',
   }
 
   static BtnMsg = {
@@ -223,16 +225,35 @@ class AuthCode {
     this.authCode.value = '';
   }
 
-  async sendAuthCode() {
+  async sendAuthCode(email: string) {
     this.authBtnStyle.value = styles.value.AuthBtnShape + ' ' + styles.value.BtnLoading;
-    // TODO: 模拟发送验证码的异步操作
 
-    // if (false) {
-    //   this.error.value = true;
-    //   this.errorMsg.value = AuthCode.errorMsg.NetWorkError;
-    //   this.authBtnStyle.value = styles.value.AuthBtnShape + ' ' + styles.value.BtnNormal;
-    //   return;
-    // }
+    let cur_state = await User.sendAuthCode(email);
+
+    switch (cur_state){
+      case state.Success:
+        this.error.value = false;
+        this.errorMsg.value = '';
+        break;
+      case state.NetworkError:
+        this.error.value = true;
+        this.errorMsg.value = AuthCode.errorMsg.NetWorkError;
+        break;
+      case state.UserNotFound:
+        this.error.value = true;
+        this.errorMsg.value = AuthCode.errorMsg.EmailNotFoundError;
+        break;
+      default:
+        this.error.value = true;
+        this.errorMsg.value = AuthCode.errorMsg.DefaultError;
+        break;
+    }
+
+    if (cur_state !== state.Success) {
+      this.authBtnStyle.value = styles.value.AuthBtnShape + ' ' + styles.value.BtnNormal;
+      return;
+    }
+
     this.authBtnStyle.value = styles.value.AuthBtnShape + ' ' + styles.value.BtnDisabled;
     this.btnMsg.value = `${AuthCode.BtnMsg.AuthBtnCooldown}(${this.countdown.value}s)`;
 

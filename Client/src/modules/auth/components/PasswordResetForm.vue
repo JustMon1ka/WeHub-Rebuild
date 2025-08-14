@@ -2,7 +2,7 @@
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthData, AuthType } from '@/modules/auth/scripts/AuthData.ts'
 
-const passwordResetData: AuthData = AuthData.getInstance();
+const passwordResetData: AuthData = new AuthData();
 passwordResetData.changeAuthType(AuthType.PasswordResetVerify)
 console.log(passwordResetData.verified.value);
 const email = passwordResetData.email;

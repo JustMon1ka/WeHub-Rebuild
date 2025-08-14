@@ -30,7 +30,7 @@ router.beforeEach((to, from, next) => {
   document.title = (to.meta.title ? to.meta.title as string + ' - ' : '' )+ 'WeHub';
 
   if (to.meta.requiredLogin) {
-    if (!User.singleton) {
+    if (!User.getInstance()) {
       toggleLoginHover();
       return;
     }

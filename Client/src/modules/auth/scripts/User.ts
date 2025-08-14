@@ -1,37 +1,38 @@
+import router from '@/router.ts'
+
 enum state {
   LoggedOut,
   NetworkError,
   PasswordError,
   AuthCodeError,
+  UserNotFound,
+  EmailExistError,
   Success,
 }
+
+
 class User {
-
-  static singleton: User | undefined = undefined;
-
-  static {
-    const url = '/api/auth/login';
-    fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          User.singleton = undefined;
-          return;
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data && data.username && data.passwordHash) {
-          User.singleton = new User(data.username, data.passwordHash);
-        } else {
-          User.singleton = undefined;
-        }
-      })
-      .catch(() => {
-        User.singleton = undefined;
-      });
+  static #singleton: User | undefined = undefined;
+  // 获取当前登录用户的用户名，如果未登录则返回undefined
+  static getInstance(): User | undefined {
+    return User.#singleton;
   }
 
-
+  static {
+    document.cookie.split('; ').forEach(cookie => {
+      const [name, value] = cookie.split('=');
+      let userid : string | null = null;
+      let token : string | null = null;
+      if (name === 'userid') {
+        userid = value;
+      } else if (name === 'token') {
+        token = value;
+      }
+      if (userid && token) {
+        User.#singleton = new User(userid, token);
+      }
+    });
+  }
 
   static async generateHash(password: string) {
     // 1. 将密码转换为 Uint8Array
@@ -46,133 +47,55 @@ class User {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  static async login(username: string, password: string) {
+  static async sendData(url: string, data: object) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      return state.NetworkError;
+    } else {
+      const result = await response.json();
+      if (result.success) {
+        User.#singleton = new User(result.userid, result.token);
+        return state.Success;
+      } else {
+        return state.PasswordError;
+      }
+    }
+  }
+
+  static async login(username: string, password: string, email: string, code: string, rememberMe: boolean = false) {
     let passwordHash = await User.generateHash(password);
     const url = '/api/auth/login';
-    const data = { username, password: passwordHash };
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      return state.NetworkError;
-    } else {
-      const result = await response.json();
-      if (result.success) {
-        User.singleton = new User(result.userid, result.token);
-        return state.Success;
-      } else {
-        return state.PasswordError;
-      }
+    const data = { username, passwordHash, email, code };
+    const response = await User.sendData(url, data);
+    if (response === state.Success && rememberMe) {
+      User.#singleton?.saveToCookie(User.#singleton.#userid, User.#singleton.#token);
     }
+    return response;
   }
 
-  static async logout() {
-    const url = '/api/auth/login';
-    const data = { action: 'logout' };
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      return state.NetworkError;
-    } else {
-      const result = await response.json();
-      if (result.success) {
-        User.singleton = new User(result.userid, result.token);
-        return state.Success;
-      } else {
-        return state.PasswordError;
-      }
-    }
-  }
-
-  static async register(username: string, password: string, email: string) {
+  static async register(username: string, password: string, email: string, code: string, rememberMe: boolean = false) {
     let passwordHash = await User.generateHash(password);
-    const url = '/api/auth/login';
-    const data = { username, password: passwordHash };
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      return state.NetworkError;
-    } else {
-      const result = await response.json();
-      if (result.success) {
-        User.singleton = new User(result.userid, result.token);
-        return state.Success;
-      } else {
-        return state.PasswordError;
-      }
+    const url = '/api/auth/register';
+    const data = { username, passwordHash, email, code };
+    const response = await User.sendData(url, data);
+    if (response === state.Success && rememberMe) {
+      User.#singleton?.saveToCookie(User.#singleton.#userid, User.#singleton.#token);
     }
+    return response;
   }
 
-  static async resetPassword(username: string, email: string, newPassword: string) {
-    let passwordHash = await User.generateHash(newPassword);
+  static async sendAuthCode(email: string) {
     const url = '/api/auth/login';
-    const data = { username, password: passwordHash };
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      return state.NetworkError;
-    } else {
-      const result = await response.json();
-      if (result.success) {
-        User.singleton = new User(result.userid, result.token);
-        return state.Success;
-      } else {
-        return state.PasswordError;
-      }
-    }
+    const data = { action: 'sendAuthCode', email };
   }
 
-  static async verifyAuthCode(email: string, authCode: string) {
-    const url = '/api/auth/login';
-    const data = { email, authCode };
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      return state.NetworkError;
-    } else {
-      const result = await response.json();
-      if (result.success) {
-        User.singleton = new User(result.userid, result.token);
-        return state.Success;
-      } else {
-        return state.PasswordError;
-      }
-    }
-  }
-
-  // 获取当前登录用户的用户名，如果未登录则返回undefined
-  static getInstance(username: string, passwordHash: string): User | undefined {
-    return User.singleton;
-  }
 
   #userid: string;
   #token: string;
@@ -180,8 +103,37 @@ class User {
     this.#userid = userid;
     this.#token = token;
   }
-}
 
+  saveToCookie(userid: string, token: string) {
+    document.cookie = `userid=${this.#userid}; max-age=5184000`; // 60 days
+    document.cookie = `token=${this.#token}; max-age=5184000`; // 60 days
+  }
+
+  async logout() {
+    document.cookie.split('; ').forEach(cookie => {
+      const [name] = cookie.split('=');
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    });
+    User.#singleton = undefined;
+    // 刷新当前页面
+    await router.push('/');
+    location.reload();
+  }
+
+  async resetPassword(newPassword: string) {
+    let passwordHash = await User.generateHash(newPassword);
+    const url = '/api/auth/login';
+    const data = { password: passwordHash };
+    const response = await User.sendData(url, data);
+  }
+
+  get userAuth() {
+    return {
+      userid: this.#userid.slice(), // 防止外部修改
+      token: this.#token.slice(),
+    }
+  }
+}
 
 export default User;
 export { User, state};

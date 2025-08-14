@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthData, AuthType } from '@/modules/auth/scripts/AuthData.ts';
+import RegisterForm from '@/modules/auth/components/RegisterForm.vue'
 
-const registerData: AuthData = AuthData.getInstance();
+const registerData: AuthData = new AuthData();
 registerData.changeAuthType(AuthType.Register);
 const username = registerData.userName;
 const email = registerData.email;
@@ -60,5 +61,19 @@ const authCode = registerData.authCode;
       </button>
       <div v-if="registerData.error" v-bind:class="styles.error"> {{ registerData.errorMsg }} </div>
     </div>
+
+    <div class="space-y-3">
+      <div class="flex flex-row space-x-2">
+        <input type="checkbox" id="rememberMe" v-model="registerData.rememberMe" class="cursor-pointer">
+        <label for="rememberMe" v-bind:class="styles.label"> 自动登录 </label>
+      </div>
+
+      <div class="flex flex-row space-x-2">
+        <input type="checkbox" id="privacy" v-model="registerData.rememberMe" class="cursor-pointer">
+        <label for="privacy" v-bind:class="styles.label"> 我已阅读并同意 </label>
+        <router-link to="/privacy" for="privacy" v-bind:class="styles.RouterLink"> 隐私政策 </router-link>
+      </div>
+    </div>
+
   </form>
 </template>

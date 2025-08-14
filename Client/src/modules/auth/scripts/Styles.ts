@@ -16,6 +16,7 @@ const styles= ref({
   "BtnNormal": "text-white bg-sky-500 hover:bg-sky-600 focus:ring-offset-slate-900 focus:ring-sky-500 ",
   "BtnDisabled": "text-slate-400 bg-slate-700 cursor-not-allowed focus:ring-offset-slate-900 focus:ring-sky-500",
   "BtnLoading": "text-slate-400 bg-slate-700 cursor-wait focus:ring-offset-slate-900 focus:ring-sky-500",
+  "RouterLink": "text-sm text-sky-400 hover:underline ",
   }
 )
 
