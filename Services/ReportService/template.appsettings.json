@@ -1,0 +1,18 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=your_server;Database=ReportDb;Trusted_Connection=True;"
+  },
+  "Jwt": {
+    "Key": "your-secret-key-here-32-chars-long",
+    "Issuer": "your-issuer",
+    "Audience": "your-audience",
+    "role": "Admin"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
