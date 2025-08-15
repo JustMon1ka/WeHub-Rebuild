@@ -82,8 +82,8 @@ function onSave(){
       <keep-alive>
         <div v-if="followMode">
           <!-- 页面头部 -->
-          <FollowList @close="followMode=false" v-bind:user-id_p="userId"
-                      v-model:curTab="followTab"/>
+          <FollowList @close="followMode=false" :user-id_p="userId"
+                      v-model:curTab="followTab" :nick-name="userInfo.nickName"/>
         </div>
       </keep-alive>
     </transition>

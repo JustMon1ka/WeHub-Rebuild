@@ -99,6 +99,8 @@ class User {
 
   #userid: string;
   #token: string;
+  followList: string[] = ["Me"];
+
   constructor(userid: string, token: string) {
     this.#userid = userid;
     this.#token = token;
@@ -132,6 +134,18 @@ class User {
       userId: this.#userid.slice(), // 防止外部修改
       token: this.#token.slice(),
     }
+  }
+
+  followUser(userId: string) {
+    if (!this.followList.includes(userId)) {
+      this.followList.push(userId);
+      // TODO: 这里可以添加发送关注请求的逻辑
+    }
+  }
+
+  unfollowUser(userId: string) {
+    this.followList = this.followList.filter(id => id !== userId);
+    // TODO: 这里可以添加发送取消关注请求的逻辑
   }
 }
 

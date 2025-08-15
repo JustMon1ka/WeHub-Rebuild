@@ -4,8 +4,9 @@ import TabController, { type TabLabel } from '@/modules/user/scripts/TabControll
 import { User } from '@/modules/auth/public.ts'
 import { watch } from 'vue'
 
-const { userId_p } = defineProps<{
+const { userId_p, nickName } = defineProps<{
   userId_p: string;
+  nickName: string;
 }>();
 
 const emit = defineEmits<{
@@ -30,7 +31,6 @@ const Tabs = new TabController(tabs, tabLabels);
 Tabs.switchTab(curTab.value);
 
 watch(curTab, (newTab) => {
-  console.log('切换到 Tab:', newTab);
   Tabs.switchTab(newTab);
 });
 </script>
@@ -44,8 +44,7 @@ watch(curTab, (newTab) => {
           <img src="@/assets/close.svg" alt="Back" class="w-6 h-6">
         </button>
         <div class="flex flex-row items-center space-x-2">
-          <h1 class="text-xl font-bold">用户名</h1>
-          <p class="text-md text-slate-500">@username</p>
+          <h1 class="text-xl font-bold">{{ nickName }}</h1>
         </div>
       </div>
 
@@ -61,7 +60,7 @@ watch(curTab, (newTab) => {
 
     <!-- 内容切换 Tab -->
     <keep-alive>
-      <component :is="Tabs.currentTab"> </component>
+      <component :is="Tabs.currentTab" :follow-btn="true"> </component>
     </keep-alive>
   </main>
 </template>

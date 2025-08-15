@@ -19,6 +19,7 @@ class UserInfo {
   userId: string;
   userName: string = '';
   email: string = '';
+
   profilePictureUrl: string = '';
   userAvatarUrl: string = '';
 
@@ -29,7 +30,7 @@ class UserInfo {
   bio: string = '';
   isMale: boolean = true;
 
-  followersCount: number = 0;
+  followerCount: number = 0;
   followingCount: number = 0;
 
   isMe: boolean = false;
@@ -45,7 +46,6 @@ class UserInfo {
     this.userId = userId;
     if (copy) return;
 
-    this.isMe = true;
     if (userId === User.getInstance()?.userAuth?.userId) {
 
     }
@@ -70,7 +70,7 @@ class UserInfo {
     copyUserInfo.level = this.level;
 
     copyUserInfo.isMale = this.isMale;
-    copyUserInfo.followersCount = this.followersCount;
+    copyUserInfo.followerCount = this.followerCount;
     copyUserInfo.followingCount = this.followingCount;
     copyUserInfo.isMe = this.isMe;
 

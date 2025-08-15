@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { width, height, text } = defineProps<{
-  width: number;
-  height: number;
+  width: string;
+  height: string;
   text: string;
 }>();
 
@@ -35,7 +35,7 @@ function generateAvatarColors(text) {
 <template>
 <svg xmlns="http://www.w3.org/2000/svg" :width="width" :height="height" :viewBox="'0 0 ' + width + ' ' + height">
     <rect width="100%" height="100%" :fill="'#' + bgColor"/>
-    <text x="50%" y="50%" :fill="'#' + textColor" font-family="Arial" :font-size="Math.min(width, height) * 0.6"
+    <text x="50%" y="50%" :fill="'#' + textColor" font-family="Arial" :font-size="Math.min(Number(width), Number(height)) * 0.6"
           text-anchor="middle" dominant-baseline="central" class="font-[550]">{{ text[0] }}</text>
   </svg>
 </template>
