@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import TagGuide from '@/modules/user/components/Guide/TagGuide.vue'
+import TagGuide from '@/modules/user/components/Tag/TagGuide.vue'
 
 </script>
 

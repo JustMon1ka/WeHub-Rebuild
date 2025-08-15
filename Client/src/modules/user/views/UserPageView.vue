@@ -8,6 +8,7 @@ import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import TabController from '@/modules/user/scripts/TabController.ts'
 import type { TabLabel} from '@/modules/user/scripts/TabController.ts'
 import { ref } from 'vue'
+import FollowList from '@/modules/user/components/UserPage/FollowList.vue'
 
 const { userId_p } = defineProps<{
   userId_p: string;
@@ -18,9 +19,12 @@ if (userId === 'Me'){
   userId = User?.getInstance()?.userAuth.userId || 'unknown';
 }
 
+const editMode = ref(false);
+const followMode = ref(false);
+const followTab = ref(0);
+
 let userInfo = ref(new UserInfo(userId));
 let userInfoTemp = ref(userInfo.value.copy());
-const editMode = ref(false);
 
 const tabLabels : Array<TabLabel> = [
   { key: 'post', label: '帖子'},
@@ -68,20 +72,40 @@ function onSave(){
       </keep-alive>
     </transition>
 
+    <transition name="slide"
+                enter-active-class="transition duration-200 ease-out"
+                enter-from-class="opacity-100 translate-y-full"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition duration-200 ease-in"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-100 translate-y-full">
+      <keep-alive>
+        <div v-if="followMode">
+          <!-- 页面头部 -->
+          <FollowList @close="followMode=false" v-bind:user-id_p="userId"
+                      v-model:curTab="followTab"/>
+        </div>
+      </keep-alive>
+    </transition>
+
     <keep-alive>
-      <div v-if="!editMode">
-        <UserCardPage user-id="userId" v-model:user-info="userInfo" v-on:editProfile="editMode=true"/>
+      <div v-if="!editMode && !followMode">
+        <UserCardPage user-id="userId" v-model:user-info="userInfo"
+                      @editProfile="editMode=true"
+                      @toFollowing="() => {followMode=true; followTab=0;}"
+                      @toFollower="() => {followMode=true; followTab=1;}"/>
 
         <!-- 内容切换 Tab -->
         <div class="flex border-b border-slate-800">
           <button v-for="({ key, label }, index) in tabLabels" :key="key"
-                  @click="Tabs.switchTab($event, index)"
+                  @click="Tabs.switchTab(index)"
                   v-bind:class="Tabs.buttons[index].class.value">
             {{ label }}
           </button>
         </div>
-
-        <component :is="Tabs.currentTab" class="p-4" props=""> </component>
+        <keep-alive>
+          <component :is="Tabs.currentTab" class="p-4" props=""> </component>
+        </keep-alive>
       </div>
     </keep-alive>
   </main>

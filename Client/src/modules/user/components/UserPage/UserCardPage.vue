@@ -2,11 +2,14 @@
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import styles from '@/modules/user/scripts/Styles.ts'
 import { type Ref } from 'vue'
+import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 
 const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: true });
 
 const emit = defineEmits<{
   (e: 'editProfile'): void;
+  (e: 'toFollowing'): void;
+  (e: 'toFollower'): void;
 }>();
 
 </script>
@@ -27,8 +30,8 @@ const emit = defineEmits<{
         <div class="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800">
           <img v-if="!!userInfo.userAvatarUrl" v-bind:src="userInfo.userAvatarUrl"
                v-bind:class="styles.userPic" alt="User avatar">
-          <img v-else src="@/modules/user/assets/default_user.svg"
-               v-bind:class="styles.userPic" alt="User avatar">
+          <PlaceHolder width="150"  height="150" :text="userInfo.nickName"
+                       v-bind:class="styles.userPic"></PlaceHolder>
         </div>
         <button v-if="userInfo.isMe" @click="$emit('editProfile')"
                 v-bind:class="styles.btnShape + styles.normalBtn">
@@ -41,21 +44,20 @@ const emit = defineEmits<{
     <!-- 用户信息 -->
     <div class="p-4">
       <h2 class="text-2xl font-bold"> {{ userInfo.nickName }}</h2>
-      <p class="text-slate-500">@{{ userInfo.userName }}</p>
       <p class="mt-4">📃 {{ !!userInfo.bio ? userInfo.bio : "这个用户很神秘，什么也没写~"}}</p>
       <div class="flex items-center space-x-4 mt-4 text-slate-500 text-sm">
         <span>📍 {{ !!userInfo.address ? userInfo.address : "不告诉你哦~" }}</span>
         <span>🎂 {{ userInfo.birthday }} </span>
       </div>
       <div class="flex items-center space-x-6 mt-4">
-        <router-link to="/" class="hover:underline">
+        <button @click="$emit('toFollowing')" class="hover:underline">
           <span class="font-bold text-white">{{ userInfo.followingCount }}</span>
           <span class="text-slate-500">正在关注</span>
-        </router-link>
-        <router-link to="/" class="hover:underline">
+        </button>
+        <button @click="$emit('toFollower')" class="hover:underline">
           <span class="font-bold text-white">{{ userInfo.followersCount }}</span>
           <span class="text-slate-500">关注者</span>
-        </router-link>
+        </button>
         <!--TODO: 接入关注者被关注者-->
       </div>
     </div>

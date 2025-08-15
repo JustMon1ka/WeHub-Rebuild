@@ -16,8 +16,8 @@ const styles= ref({
     loadingBtn: "text-slate-400 bg-slate-700 cursor-wait focus:ring-offset-slate-900 focus:ring-sky-500",
     routerLink: "",
     userPic: "w-full h-full rounded-full object-cover",
-    TabFocus: "w-1/3 text-center p-4 font-semibold border-b-2 border-sky-500",
-    TabNormal: "w-1/3 text-center p-4 text-slate-400 hover:bg-slate-800 transition-colors duration-200",
+    TabFocus: "w-full text-center p-4 font-semibold border-b-2 border-sky-500",
+    TabNormal: "w-full text-center p-4 text-slate-400 hover:bg-slate-800 transition-colors duration-200",
   }
 )
 

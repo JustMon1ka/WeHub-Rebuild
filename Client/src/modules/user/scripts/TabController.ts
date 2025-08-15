@@ -33,7 +33,7 @@ class TabController{
   tablabels: Array<TabLabel>;
   buttons: Button[] = [];
   props : any;
-  currentTab: string = '';
+  currentTab: any;
 
   constructor(tabs: Array<any>, tabLabels: Array<TabLabel>, props: any = {}) {
     this.tabs = tabs;
@@ -46,10 +46,7 @@ class TabController{
     this.props = props;
   }
 
-  switchTab(event : Event, num : number) {
-    event.preventDefault();
-    let element = event.target as HTMLElement;
-
+  switchTab(num: number) {
     for (let button of this.buttons) {
       button.setBlur();
     }

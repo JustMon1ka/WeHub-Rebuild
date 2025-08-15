@@ -5,6 +5,7 @@ import styles from '@/modules/user/scripts/Styles.ts'
 import VueFlatpickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import 'flatpickr/dist/themes/dark.css'
+import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 
 const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: true });
 const emit = defineEmits<{
@@ -68,8 +69,8 @@ async function onSave(){
                type="file" accept="image/*" class="hidden" id="avatarInput">
         <img v-if="!!userInfo?.userAvatarUrl" v-bind:src="userInfo?.userAvatarUrl"
              v-bind:class="styles.userPic" alt="User avatar">
-        <img v-else src="@/modules/user/assets/default_user.svg"
-             v-bind:class="styles.userPic" alt="User avatar">
+        <PlaceHolder width="150"  height="150" :text="userInfo.nickName"
+                     v-bind:class="styles.userPic"></PlaceHolder>
         <label for="avatarInput" class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
           <label for="avatarInput" class="p-3 bg-slate-900/50 rounded-full hover:bg-slate-900/75 transition-colors">
             <img src="@/modules/user/assets/camera.svg" class="w-6 h-6 cursor-pointer" alt="BackGround">

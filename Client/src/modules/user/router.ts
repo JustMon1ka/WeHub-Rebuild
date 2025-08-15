@@ -18,7 +18,7 @@ export const userRouter = createRouter({
     {
       path: '/follow_list',
       name: 'FollowList',
-      component: () =>  import ('@/modules/user/views/FollowListView.vue'),
+      component: () =>  import ('@/modules/user/components/UserPage/FollowList.vue'),
       meta: { title: 'Follow List', navi: true, recommend: true, requiredLogin: false }
     },
   ]

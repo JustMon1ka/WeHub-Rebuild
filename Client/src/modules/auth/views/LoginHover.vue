@@ -12,11 +12,10 @@ const hover = defineModel<boolean>('showHover', { default: true });
     enter-to-class="opacity-100 scale-100"
     leave-active-class="transition duration-200 ease-in"
     leave-from-class="opacity-100 scale-100"
-    leave-to-class="opacity-0 scale-95"
-  >
-    <div v-if="hover" id="LoginHover" class="md:h-screen md:w-screen w-full h-full z-50 flex items-center justify-center
+    leave-to-class="opacity-0 scale-95">
+    <div v-if="hover" id="LoginHover" class=" md:h-screen md:w-screen w-full h-full z-50 flex items-center justify-center
          transition-all transition-discrete">
-      <div class="relative bg-slate-950/90 text-slate-200 flex h-4/5 w-4/5 rounded-3xl">
+      <div class="relative bg-slate-950/80 backdrop-blur-md text-slate-200 flex h-4/5 w-4/5 rounded-3xl">
         <button @click.prevent="hover = !hover" class="absolute top-5 right-5 w-9 h-9 p-2 hover:bg-slate-900 rounded-full p-1">
           <img src="@/assets/close.svg" alt="Close" class="w-5 h-5">
         </button>
