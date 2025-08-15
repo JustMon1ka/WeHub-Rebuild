@@ -1,6 +1,6 @@
 import { User } from '@/modules/auth/public.ts'
-import router from '@/router.ts'
 import { ref } from 'vue'
+import { toggleLoginHover } from '@/App.vue'
 
 enum state {
   LoggedOut,
@@ -33,7 +33,7 @@ class UserInfo {
   followerCount: number = 0;
   followingCount: number = 0;
 
-  isMe: boolean = false;
+  isMe: boolean = true;
 
   // UI related
   changed: boolean = false;
@@ -105,7 +105,7 @@ class UserInfo {
         this.errorMsg = UserInfo.errorMsg.NetworkError;
         break;
       case state.LoggedOut:
-        await router.push('/login');
+        toggleLoginHover(true);
         this.error = true;
         this.errorMsg = UserInfo.errorMsg.LoggedOut;
         break;

@@ -38,9 +38,9 @@ const emit = defineEmits<{
                 v-bind:class="styles.btnShape + styles.normalBtn">
           编辑个人资料
         </button>
-        <FollowButton @followed="userInfo.followerCount += 1"
-                      @unfollowed="userInfo.followerCount -= 1"
-                      :user-id="userInfo.userId"/>
+        <FollowButton v-else :user-id="userInfo.userId" class="w-24"
+                      @followed="userInfo.followerCount += 1"
+                      @unfollowed="userInfo.followerCount -= 1" />
       </div>
     </div>
 

@@ -26,7 +26,7 @@ async function onSave(){
 </script>
 
 <template>
-  <div class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md flex items-center p-4 border-b border-slate-800 space-x-4">
+  <div class="sticky top-0 z-10 bg-slate-900/75 backdrop-blur-md flex items-center p-4 border-b border-slate-800 space-x-4">
     <button @click="$emit('editCancel')" class="p-2 rounded-full hover:bg-slate-800 mr-4">
       <img src="@/assets/close.svg" alt="关闭编辑" class="w-6 h-6">
     </button>

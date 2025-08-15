@@ -3,6 +3,7 @@
 import type { Ref } from 'vue'
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
+import FollowButton from '@/modules/user/components/UserList/FollowButton.vue'
 
 const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: true });
 
@@ -35,9 +36,7 @@ const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: t
       </div>
     </div>
     <div class="border-t border-slate-700 p-3 flex justify-center">
-      <button class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200">
-        关注
-      </button>
+      <FollowButton :user-id="userInfo.userId" class="w-full"/>
     </div>
   </div>
 </template>

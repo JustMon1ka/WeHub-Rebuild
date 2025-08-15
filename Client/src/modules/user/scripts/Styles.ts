@@ -14,12 +14,12 @@ const styles= ref({
     normalBtn: "text-slate-400 bg-slate-700 border-slate-600 hover:bg-slate-800",
     disabledBtn: "text-slate-400 bg-slate-700 cursor-not-allowed focus:ring-offset-slate-900 focus:ring-sky-500",
     loadingBtn: "text-slate-400 bg-slate-700 cursor-wait focus:ring-offset-slate-900 focus:ring-sky-500",
-    followBtnShape: "w-24 font-semibold text-sm py-2 px-4 rounded-full transition-colors duration-200 ",
+    followBtnShape: "w-full font-semibold text-sm py-2 px-4 rounded-full transition-colors duration-200 ",
     followBtn: "bg-slate-200 hover:bg-white text-slate-900",
     followingBtn: "border-slate-600 border-2 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500",
     userPic: "w-full h-full rounded-full object-cover",
-    TabFocus: "w-full text-center p-4 font-semibold border-b-2 border-sky-500",
-    TabNormal: "w-full text-center p-4 text-slate-400 hover:bg-slate-800 transition-colors duration-200",
+    TabFocus: "w-full text-center pt-3 pb-3.5 font-semibold border-b-2 border-sky-500",
+    TabNormal: "w-full text-center pt-3 pb-3.5 text-slate-400 hover:bg-slate-800 transition-colors duration-200",
   }
 )
 

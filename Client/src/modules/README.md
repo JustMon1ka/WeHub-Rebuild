@@ -28,6 +28,7 @@ const LoginView = () => import('./views/LoginView.vue');
 ```
 此时会在路由守卫中进行判断，如果用户未登录，则会停止跳转并弹出登录悬浮窗。
 
+此外，该功能也可以通过APP.vue下的toggleLoginHover方法来实现，传入true即打开登录界面
 # 模块文件标准
 ```
 modules

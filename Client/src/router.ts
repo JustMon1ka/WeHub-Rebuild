@@ -39,14 +39,14 @@ router.beforeEach((to, from, next) => {
         next('/');
         return;
       }
-      if (from.path === '/login' || from.path === '/register' || from.path === '/reset-password') {
+      if (from.path === '/login' || from.path === '/register' || from.path === '/password_reset') {
         toggleLoginHover(false);
       }
       return;
     }
   }
 
-  if (to.path === '/login' || to.path === '/register' || to.path === '/reset-password') {
+  if (to.path === '/login' || to.path === '/register' || to.path === '/password_reset') {
     toggleLoginHover(false);
   }
 

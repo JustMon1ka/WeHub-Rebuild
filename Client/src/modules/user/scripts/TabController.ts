@@ -29,21 +29,17 @@ class Button {
 }
 
 class TabController{
-  tabs : Array<any>;
   tablabels: Array<TabLabel>;
   buttons: Button[] = [];
-  props : any;
-  currentTab: any;
+  currentTab: number = 0;
 
-  constructor(tabs: Array<any>, tabLabels: Array<TabLabel>, props: any = {}) {
-    this.tabs = tabs;
+  constructor(tabLabels: Array<TabLabel>) {
     this.tablabels = tabLabels;
     for (let label of tabLabels) {
       this.buttons.push(new Button(label.label));
     }
     this.buttons[0].setFocused(true);
-    this.currentTab = tabs[0];
-    this.props = props;
+    this.currentTab = 0;
   }
 
   switchTab(num: number) {
@@ -51,9 +47,9 @@ class TabController{
       button.setBlur();
     }
     this.buttons[num].setFocused(true);
-    this.currentTab = this.tabs[num];
+    this.currentTab = num;
 
-    if (num < 0 || num >= this.tabs.length) {
+    if (num < 0 || num >= this.tablabels.length) {
       throw new Error('Tab index out of bounds');
     }
   }

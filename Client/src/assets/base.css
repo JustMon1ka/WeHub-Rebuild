@@ -22,14 +22,17 @@ body {
   width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #1e293b; /* slate-800 */
+  background: #334155;  /* slate-700 */
+
 }
 ::-webkit-scrollbar-thumb {
-  background: #475569; /* slate-600 */
+  /* slate-500 */
+  background: #64748b;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b; /* slate-500 */
+  /* slate-400 */
+  background: #475569;
 }
 /* 避免在预览中出现不必要的滚动条 */
 html, body {

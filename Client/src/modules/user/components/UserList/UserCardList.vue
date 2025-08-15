@@ -104,7 +104,7 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
       </slot>
     </div>
 
-    <FollowButton v-if="followBtn" :user-id="userId"
+    <FollowButton v-if="followBtn" :user-id="userId" class="w-24"
                   @followed="userInfo.followerCount += 1"
                   @unfollowed="userInfo.followerCount -= 1" />
 
@@ -117,8 +117,7 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
           bottom: cardStyle.bottom,
           left: cardStyle.left,
         }"
-        v-if="hoverCard"
-      >
+        v-if="hoverCard">
         <UserCardHover v-model:user-info="userInfo"
           @mouseenter="moveIn($event, 'card')"
           @mouseleave="moveOut($event, 'card')"
@@ -127,3 +126,5 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
     </Teleport>
   </div>
 </template>
+
+

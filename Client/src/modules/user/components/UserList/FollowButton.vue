@@ -2,6 +2,7 @@
 import styles from '@/modules/user/scripts/Styles.ts'
 import { User } from '@/modules/auth/public.ts'
 import { ref, type Ref } from 'vue'
+import { toggleLoginHover } from '@/App.vue'
 
 const { userId } = defineProps<{
   userId: string;
@@ -12,10 +13,15 @@ const emit = defineEmits<{
   (e: 'unfollowed'): void;
 }>();
 
+const login = !!User.getInstance();
 let followed : Ref<boolean> = ref(userId in (User.getInstance()?.followList || []));
 
 function toggleFollow() {
-  followed.value = !followed.value;
+  if (!login) {
+    toggleLoginHover(true);
+    return;
+  }
+
   if (followed.value) {
     User.getInstance()?.unfollowUser(userId);
     emit('unfollowed');
@@ -23,13 +29,14 @@ function toggleFollow() {
     User.getInstance()?.followUser(userId);
     emit('followed');
   }
+  followed.value = !followed.value;
 }
 
 </script>
 
 <template>
   <div>
-    <button @click="toggleFollow" v-if="followed" :class="styles.followBtnShape + styles.followBtn">
+    <button @click="toggleFollow" v-if="!followed" :class="styles.followBtnShape + styles.followBtn">
       关 注
     </button>
     <button @click="toggleFollow" v-else :class="styles.followBtnShape + styles.followingBtn">

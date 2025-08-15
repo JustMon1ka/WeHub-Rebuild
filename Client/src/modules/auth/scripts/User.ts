@@ -139,6 +139,7 @@ class User {
   followUser(userId: string) {
     if (!this.followList.includes(userId)) {
       this.followList.push(userId);
+
       // TODO: 这里可以添加发送关注请求的逻辑
     }
   }
