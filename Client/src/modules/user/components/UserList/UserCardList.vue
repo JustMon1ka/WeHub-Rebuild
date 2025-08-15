@@ -87,7 +87,8 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
   <div class="relative flex flex-row items-start justify-between w-full">
     <!-- Avatar -->
     <!-- TODO：正确跳转 -->
-    <router-link to="user_page" @mouseenter="moveIn($event, 'avatar')"
+    <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
+                 @mouseenter="moveIn($event, 'avatar')"
                  @mouseleave="moveOut($event, 'avatar')" class="p-4">
       <img v-if="!!userInfo.userAvatarUrl" :src="userInfo.userAvatarUrl"
            class="w-12 h-12 rounded-full" alt="User Avatar">
@@ -96,10 +97,11 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
 
     <!-- User info -->
     <div class="flex flex-col justify-items-start space-x-2 w-full">
-      <router-link to="user_page" @mouseenter="moveIn($event, 'name')"
+      <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
+                   @mouseenter="moveIn($event, 'name')"
                    @mouseleave="moveOut($event, 'name')"
                    class="font-bold text-left text-xl hover:underline">{{ userInfo.nickName }}</router-link>
-      <slot name="article">
+      <slot name="content">
         <p class="mt-2 text-slate-300 text-left truncate w-70">{{ userInfo.bio || "这个用户很神秘，什么也没写~"}}</p>
       </slot>
     </div>

@@ -17,8 +17,6 @@ class UserInfo {
   }
 
   userId: string;
-  userName: string = '';
-  email: string = '';
 
   profilePictureUrl: string = '';
   userAvatarUrl: string = '';
@@ -33,7 +31,7 @@ class UserInfo {
   followerCount: number = 0;
   followingCount: number = 0;
 
-  isMe: boolean = true;
+  isMe: boolean = false;
 
   // UI related
   changed: boolean = false;
@@ -58,8 +56,6 @@ class UserInfo {
 
   copy() {
     const copyUserInfo = new UserInfo(this.userId, true);
-    copyUserInfo.userName = this.userName;
-    copyUserInfo.email = this.email;
     copyUserInfo.profilePictureUrl = this.profilePictureUrl;
     copyUserInfo.userAvatarUrl = this.userAvatarUrl;
 

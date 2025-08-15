@@ -1,4 +1,6 @@
 import router from '@/router.ts'
+import userInfo from '@/modules/user/scripts/UserInfo.ts'
+import { UserInfo } from '@/modules/user/public.ts'
 
 enum state {
   LoggedOut,
@@ -100,10 +102,12 @@ class User {
   #userid: string;
   #token: string;
   followList: string[] = ["Me"];
+  userInfo: UserInfo;
 
   constructor(userid: string, token: string) {
     this.#userid = userid;
     this.#token = token;
+    this.userInfo = new UserInfo(userid, false);
   }
 
   saveToCookie(userid: string, token: string) {

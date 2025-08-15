@@ -84,7 +84,7 @@ async function onSave(){
       <label v-if="userInfo.error" v-bind:class="styles.error">{{ userInfo.errorMsg }}</label>
       <div>
         <label for="nickname" v-bind:class="styles.label">👤 昵称</label>
-        <input @change="userInfo.changed = true" v-model.lazy="userInfo.userName"
+        <input @change="userInfo.changed = true" v-model.lazy="userInfo.nickName"
                type="text" id="nickname" v-bind:class="styles.input">
       </div>
       <div>
