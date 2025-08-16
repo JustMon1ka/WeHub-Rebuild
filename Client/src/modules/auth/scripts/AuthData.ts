@@ -130,6 +130,9 @@ class AuthData {
         }
         this.error.value = false;
         this.errorMsg.value = '';
+        if (this.authType.value === AuthType.Register) {
+          await router.push('/user_guide');
+        }
         await router.push('/');
         break;
       case state.PasswordError:

@@ -1,0 +1,85 @@
+<script setup lang="ts">
+import icons from '@/modules/user/scripts/icon.ts'
+import { onMounted, onUnmounted, ref, type Ref } from 'vue'
+import { nanoid } from 'nanoid'
+import styles from '@/modules/user/scripts/Styles.ts'
+
+const emit = defineEmits<{
+  (e: 'changed'): void;
+}>();
+
+const selectedTags: Ref<Set<string>> = defineModel<Set<string>>(
+  'selectedTags', { required: true, default: () => new Set<string>() });
+
+const editing: Ref<boolean> = defineModel<boolean>(
+  'editing', { required: true, default: false });
+
+const input = ref<string>('');
+const formId = 'tagForm' + String(nanoid(8));
+let formElement = document.getElementById(formId);
+const tagStyle = ref(styles.value.TagBasic);
+
+
+function onRemoveTag(event: MouseEvent) {
+  const target = event.target as HTMLButtonElement;
+  let tagName:string = target?.parentElement?.textContent?.trim().slice(2) || '';
+  for (let ch of tagName) {
+    if (ch === ' ') ch = '-';
+    if (ch === '×') ch = '';
+  }
+
+  if (!tagName) return;
+  selectedTags.value.delete(tagName);
+  emit('changed');
+}
+
+function addTag(event: Event) {
+  let tagName: string = input.value.trim();
+
+  // 替换空格为连字符
+  tagName = tagName.replace(/\s+/g, '-');
+  if (tagName){
+    // 添加标签到集合
+    selectedTags.value.add(tagName);
+    emit('changed');
+  }
+  input.value = '';
+}
+
+onMounted(() => {
+  // 确保 formElement 在组件挂载后被正确获取
+  formElement = document.getElementById(formId);
+  document.addEventListener('click', onfocus);
+});
+
+onUnmounted(() => {
+  // 清理事件监听器
+  document.removeEventListener('click', onfocus);
+});
+
+function onfocus(event: Event) {
+  if (!formElement) {
+    formElement = document.getElementById(formId);
+  }
+
+  const target = event.target as HTMLElement;
+  editing.value = Boolean(formElement && formElement.contains(target));
+}
+</script>
+
+<template>
+  <div>
+    <!-- 标签选择区 -->
+    <div :id="formId" @click.prevent.capture="onfocus" tabindex="0">
+      <div class="pt-2 space-y-2 space-x-2">
+        <button v-for="(tag, index) in selectedTags"
+                :key="tag" :id="tag" :class="tagStyle">
+          <label :for="tag" @click.prevent.stop="onRemoveTag" v-show="editing" :class="styles.TagDelete">×</label>
+          {{ tag }}
+        </button>
+        <input v-model.lazy="input" @blur="addTag" @keyup.enter.prevent="addTag" type="text"
+               placeholder="输入标签并回车添加" :class="'w-24' + styles.TagBasic">
+      </div>
+    </div>
+  </div>
+</template>

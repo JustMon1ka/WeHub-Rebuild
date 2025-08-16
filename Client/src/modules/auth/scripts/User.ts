@@ -1,4 +1,6 @@
 import router from '@/router.ts'
+import userInfo from '@/modules/user/scripts/UserInfo.ts'
+import { UserInfo } from '@/modules/user/public.ts'
 
 enum state {
   LoggedOut,
@@ -99,9 +101,13 @@ class User {
 
   #userid: string;
   #token: string;
+  followList: Set<string> = new Set<string>();
+  userInfo: UserInfo;
+
   constructor(userid: string, token: string) {
     this.#userid = userid;
     this.#token = token;
+    this.userInfo = new UserInfo(userid, false);
   }
 
   saveToCookie(userid: string, token: string) {
@@ -129,9 +135,19 @@ class User {
 
   get userAuth() {
     return {
-      userid: this.#userid.slice(), // 防止外部修改
+      userId: this.#userid.slice(), // 防止外部修改
       token: this.#token.slice(),
     }
+  }
+
+  followUser(userId: string) {
+    this.followList.add(userId);
+    // TODO: 这里可以添加发送关注请求的逻辑
+  }
+
+  unfollowUser(userId: string) {
+    this.followList.delete(userId);
+    // TODO: 这里可以添加发送取消关注请求的逻辑
   }
 }
 
