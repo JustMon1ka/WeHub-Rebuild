@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
-import { UserInfo, state } from '@/modules/user/scripts/UserInfo.ts'
+import { ref, type Ref, watch } from 'vue'
+import { UserInfo } from '@/modules/user/scripts/UserInfo.ts'
 import styles from '@/modules/user/scripts/Styles.ts'
 import VueFlatpickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import 'flatpickr/dist/themes/dark.css'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
+import TagSetForm from '@/modules/user/components/Tag/TagSetForm.vue'
 
 const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: true });
 const emit = defineEmits<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 }>();
 
 const submitBtn = ref(styles.value.btnShape + styles.value.submitBtn);
+const editingTags = ref(false);
 
 async function onSave(){
   submitBtn.value = styles.value.btnShape + styles.value.loadingBtn;
@@ -23,6 +25,7 @@ async function onSave(){
   }
   submitBtn.value = styles.value.btnShape + styles.value.submitBtn;
 }
+
 </script>
 
 <template>
@@ -85,22 +88,36 @@ async function onSave(){
       <div>
         <label for="nickname" v-bind:class="styles.label">👤 昵称</label>
         <input @change="userInfo.changed = true" v-model.lazy="userInfo.nickName"
-               type="text" id="nickname" v-bind:class="styles.input">
+               type="text" id="nickname" v-bind:class="styles.input" tabindex="0">
       </div>
       <div>
         <label for="bio" v-bind:class="styles.label">📃 个人简介</label>
         <textarea @change="userInfo.changed = true" v-model.lazy="userInfo.bio"
-                  id="bio" rows="3" v-bind:class="styles.input"></textarea>
+                  id="bio" rows="3" v-bind:class="styles.input" tabindex="1"></textarea>
       </div>
       <div>
         <label for="location" v-bind:class="styles.label">📍 地址</label>
         <input @change="userInfo.changed = true" v-model="userInfo.address"
-               type="text" id="location" v-bind:class="styles.input">
+               type="text" id="location" v-bind:class="styles.input" tabindex="2">
       </div>
       <div>
         <label for="birthday" v-bind:class="styles.label">🎂 出生日期</label>
-        <vue-flatpickr v-model="userInfo.birthday" @change="userInfo.changed = true"
-                       v-bind:class="styles.input" placeholder="Select date" name="date"/>
+        <vue-flatpickr id="birthday" v-model="userInfo.birthday" @change="userInfo.changed = true"
+                       v-bind:class="styles.input" placeholder="Select date" name="date" tabindex="3"/>
+      </div>
+      <div>
+        <div class="flex flex-row justify-between items-center">
+          <label for="tags" v-bind:class="styles.label">🏷️ 标签</label>
+          <button @click.prevent.stop="editingTags = !editingTags"
+                  class="rounded-full transition-colors px-2.5 py-0.5 text-sm border-slate-500 border-2
+                  duration-200 hover:bg-slate-800 hover:border-slate-400">
+            {{ editingTags ?  '停止编辑' : '编辑标签' }}
+          </button>
+        </div>
+
+        <TagSetForm v-bind:class="styles.input" tabindex="4"
+                    v-model:editing="editingTags" @changed="userInfo.changed = true"
+                    v-model:selected-tags="userInfo.userTags"/>
       </div>
     </form>
   </div>

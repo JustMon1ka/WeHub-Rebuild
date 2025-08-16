@@ -6,7 +6,7 @@ const styles= ref({
     info: "text-sky-300 text-sm mt-2",
     card: "bg-slate-800 p-8 rounded-2xl shadow-lg",
     bg: "bg-slate-900 text-slate-200 flex justify-center h-full px-4",
-    label: "block text-sm font-medium text-slate-300",
+    label: "block text-md font-medium text-slate-300",
     input: "mt-1 block w-full bg-slate-800 border border-slate-700 rounded-md shadow-sm py-2 px-3 " +
       "focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm",
     btnShape:"border-2 font-bold py-2 px-4 rounded-full transition-colors duration-200",
@@ -20,6 +20,10 @@ const styles= ref({
     userPic: "w-full h-full rounded-full object-cover",
     TabFocus: "w-full text-center pt-3 pb-3.5 font-semibold border-b-2 border-sky-500",
     TabNormal: "w-full text-center pt-3 pb-3.5 text-slate-400 hover:bg-slate-800 transition-colors duration-200",
+    TagBasic: "relative cursor-default text-center px-3 py-0.5 rounded-full text-2xs font-semibold text-slate-400 " +
+      "border border-slate-500 border-2 transition-all duration-200 ease-in-out hover:bg-slate-700 hover:border-slate-300",
+    TagDelete: "absolute -top-2 -right-2 w-4.5 h-4.5 flex items-center justify-center text-xs font-bold " +
+      "rounded-full bg-slate-400 text-slate-800 hover:bg-red-500 hover:text-slate-50",
   }
 )
 

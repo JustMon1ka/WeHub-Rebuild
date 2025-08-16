@@ -14,7 +14,7 @@ const emit = defineEmits<{
 }>();
 
 const login = !!User.getInstance();
-let followed : Ref<boolean> = ref(userId in (User.getInstance()?.followList || []));
+let followed : Ref<boolean> = ref(User.getInstance()?.followList.has(userId) || false);
 
 function toggleFollow() {
   if (!login) {

@@ -9,7 +9,7 @@ const selectedTags: Ref<Set<string>> = defineModel<Set<string>>(
   'selectedTags', { required: true, default: () => new Set<string>() });
 
 const tags : Object = new Map<string, Array<string>>([
-  ['游戏', ['角色扮演 (RPG)', '动作游戏 (ACT)', '射击游戏 (FPS)', '开放世界', '独立游戏', '任天堂', 'PlayStation', 'PC游戏']],
+  ['游戏', ['角色扮演 (RPG)', '动作游戏 (ACT)', '射击游戏 (FPS)', '开放世界', '独立游戏', '任天堂', 'PlayStation', 'PC游戏','Ciallo～ (∠・ω< )⌒★']],
   ['科技数码', ['智能手机', '笔记本电脑', '编程开发', '人工智能', '数码产品', '虚拟现实 (VR)']],
   ['影音娱乐', ['电影', '电视剧', '动漫', '音乐', '综艺']],
   ['生活趣味', ['美食', '旅行', '摄影', '宠物', '时尚穿搭', '汽车']],
@@ -52,7 +52,7 @@ function onTagClick(event: MouseEvent) {
             </h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               <button v-for="(tag, index) in tagNames" :key="tag"
-                      @click="onTagClick" class="tag-card">
+                      @click.prevent="onTagClick" class="tag-card">
                 <span class="checkmark">✓</span>
                 {{ tag }}
               </button>

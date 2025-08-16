@@ -24,6 +24,21 @@ const followMode = ref(false);
 const followTab = ref(0);
 
 let userInfo = ref(new UserInfo(userId));
+
+// TODO: 模拟数据
+const test_tags = [
+  '编程语言', '前端开发', '后端开发', '全栈开发',
+  '编程', '建筑学', '人文科学', '文学', '恐怖故事',
+  '游戏', 'ACG', '自然地理', '科技', '教育', '心理学',
+  '音乐', '电影', '摄影', '旅行', '美食',
+  '体育', '健身', '健康', '时尚', '艺术', '设计',
+  'Ciallo～ (∠・ω< )⌒★'
+];
+
+test_tags.forEach(tag => {
+  userInfo.value.userTags.add(tag);
+});
+
 let userInfoTemp = ref(userInfo.value.copy());
 
 const tabLabels : Array<TabLabel> = [
@@ -43,7 +58,6 @@ function onSave(){
   userInfo.value = userInfoTemp.value.copy();
   editMode.value = false;
 }
-
 </script>
 
 <template>

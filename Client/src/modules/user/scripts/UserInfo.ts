@@ -31,21 +31,26 @@ class UserInfo {
   followerCount: number = 0;
   followingCount: number = 0;
 
+  userTags :Set<string> = new Set(); // Loading only when isMe is true
+
   isMe: boolean = false;
 
-  // UI related
+  // Edit related
   changed: boolean = false;
   error: boolean = false;
   errorMsg: string = '';
   bgInput = ref<HTMLInputElement | null>(null);
   avatarInput = ref<HTMLInputElement | null>(null);
 
+
   constructor(userId: string, copy: boolean = false) {
     this.userId = userId;
+    this.isMe = true;  // TODO: 完成调试后删除此处
+
     if (copy) return;
 
     if (userId === User.getInstance()?.userAuth?.userId) {
-
+      this.isMe = true;
     }
 
     // fetch from API
@@ -69,6 +74,8 @@ class UserInfo {
     copyUserInfo.followerCount = this.followerCount;
     copyUserInfo.followingCount = this.followingCount;
     copyUserInfo.isMe = this.isMe;
+
+    copyUserInfo.userTags = new Set(this.userTags);
 
     return copyUserInfo;
   }

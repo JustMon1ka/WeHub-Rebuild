@@ -101,7 +101,7 @@ class User {
 
   #userid: string;
   #token: string;
-  followList: string[] = ["Me"];
+  followList: Set<string> = new Set<string>();
   userInfo: UserInfo;
 
   constructor(userid: string, token: string) {
@@ -141,15 +141,12 @@ class User {
   }
 
   followUser(userId: string) {
-    if (!this.followList.includes(userId)) {
-      this.followList.push(userId);
-
-      // TODO: 这里可以添加发送关注请求的逻辑
-    }
+    this.followList.add(userId);
+    // TODO: 这里可以添加发送关注请求的逻辑
   }
 
   unfollowUser(userId: string) {
-    this.followList = this.followList.filter(id => id !== userId);
+    this.followList.delete(userId);
     // TODO: 这里可以添加发送取消关注请求的逻辑
   }
 }
