@@ -4,7 +4,7 @@ import styles from '@/modules/auth/scripts/Styles.ts'
 import { User, state } from '@/modules/auth/scripts/User.ts'
 
 class UserName {
-  static errorMsg = {
+  static readonly errorMsg = {
     'NameFormatError': '用户名格式不正确，只能包含中文、字母和数字',
     'NameEmptyError': '用户名不能为空',
     'NameLengthError': '用户名长度需在4到20个字符之间',
@@ -48,8 +48,8 @@ class UserName {
 
 
 class Email {
-  static emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  static commonEmailDomains = [
+  static readonly emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  static readonly commonEmailDomains = [
     // 国际主流邮箱
     'gmail.com',
     'yahoo.com',
@@ -76,7 +76,7 @@ class Email {
     'edu',     // 通用教育
     'company.com' // 示例企业域名（实际使用时需替换）
   ];
-  static errorMsg = {
+  static readonly errorMsg = {
     'EmailFormatError': '电子邮件格式不正确，请输入有效的电子邮件地址',
     'EmailDomainError': '请使用常见邮箱域名，如：outlook.com, qq.com, 163.com等',
     'EmailEmptyError': '电子邮件不能为空',
@@ -113,15 +113,45 @@ class Email {
   }
 }
 
+class Phone {
+  static readonly phoneRegex = /^1[3-9]\d{9}$/; // 中国大陆手机号格式
+  static readonly errorMsg = {
+    'PhoneFormatError': '手机号格式不正确，请输入11位数字的中国大陆手机号',
+    'PhoneEmptyError': '手机号不能为空',
+  }
+
+  phone : Ref<string> = ref('');
+  error : Ref<boolean> = ref(false);
+  errorMsg : Ref<string> = ref('');
+
+  checkValidity() {
+    this.phone.value = this.phone.value.trim();
+    if (!this.phone.value) {
+      this.error.value = true;
+      this.errorMsg.value = Phone.errorMsg.PhoneEmptyError;
+      return;
+    }
+
+    if (!Phone.phoneRegex.test(this.phone.value)) {
+      this.error.value = true;
+      this.errorMsg.value = Phone.errorMsg.PhoneFormatError;
+      return;
+    }
+
+    this.error.value = false;
+    this.errorMsg.value = '';
+  }
+}
+
 class Password {
-  static errorMsg = {
+  static readonly errorMsg = {
     'PasswordFormatError': '密码必须包含至少一个大写字母、一个小写字母和一个数字',
     'PasswordEmptyError': '密码不能为空',
     'PasswordLengthError': '密码长度须在8到32个字符之间',
     'PasswordMismatch': '两次输入的密码不一致，请重新输入',
   }
 
-  static passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/;
+  static readonly passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).+$/;
 
   password : Ref<string> = ref('');
   confirmPassword : Ref<string> = ref('');
@@ -175,7 +205,7 @@ class Password {
 }
 
 class AuthCode {
-  static errorMsg = {
+  static readonly errorMsg = {
     'EmailNotSetError': '请先设置电子邮件地址',
     'CodeEmptyError': '验证码不能为空',
     'EmailNotFoundError': '未找到与该电子邮件地址关联的用户',
@@ -184,13 +214,13 @@ class AuthCode {
     'DefaultError': '发生未知错误，请稍后再试',
   }
 
-  static BtnMsg = {
+  static readonly BtnMsg = {
     'AuthBtnNormal': '获取验证码',
     'AuthBtnCooldown': '重新获取验证码',
   }
 
-  static countdownTime = 30;
-  static codeRegex = /^\d{6}$/; // 验证码格式：6位数字
+  static readonly countdownTime = 30;
+  static readonly codeRegex = /^\d{6}$/; // 验证码格式：6位数字
 
   authCode : Ref<string> = ref('');
   error : Ref<boolean> = ref(false);
@@ -228,7 +258,8 @@ class AuthCode {
   async sendAuthCode(email: string) {
     this.authBtnStyle.value = styles.value.AuthBtnShape + ' ' + styles.value.BtnLoading;
 
-    let cur_state = await User.sendAuthCode(email);
+    const result = await User.sendAuthCode(email);
+    const cur_state = result.state;
 
     switch (cur_state){
       case state.Success:
@@ -239,9 +270,9 @@ class AuthCode {
         this.error.value = true;
         this.errorMsg.value = AuthCode.errorMsg.NetWorkError;
         break;
-      case state.UserNotFound:
+      case state.DataError:
         this.error.value = true;
-        this.errorMsg.value = AuthCode.errorMsg.EmailNotFoundError;
+        this.errorMsg.value = result?.error || AuthCode.errorMsg.DefaultError;
         break;
       default:
         this.error.value = true;
@@ -271,5 +302,4 @@ class AuthCode {
   }
 }
 
-export { Email, UserName, Password, AuthCode };
-export default AuthCode;
+export { Email, Phone , UserName, Password, AuthCode };

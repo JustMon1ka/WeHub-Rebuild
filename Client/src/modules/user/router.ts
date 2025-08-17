@@ -8,13 +8,13 @@ export const userRouter = createRouter({
       name: 'UserPage',
       component: () => import('@/modules/user/views/UserPageView.vue'),
       props: true,
-      meta: { title: 'User Page', navi: true, recommend: true , requiredLogin: false }
+      meta: { title: 'User Page', navi: true, recommend: true , requiredLogin: true }
     },
     {
       path: '/user_guide',
       name: 'UserGuide',
       component: () =>  import('@/modules/user/views/UserGuideView.vue'),
-      meta: { title: 'User Guide', navi: false, recommend: false, requiredLogin: false }
+      meta: { title: 'User Guide', navi: false, recommend: false, requiredLogin: true }
     },
   ]
 })

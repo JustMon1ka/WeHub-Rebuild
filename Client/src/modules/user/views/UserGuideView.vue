@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import TagGuide from '@/modules/user/components/Tag/TagGuide.vue'
-import { ref } from 'vue'
+import { type Ref, ref } from 'vue'
+import { User } from '@/modules/auth/public.ts'
 
 const counter = ref(0);
-const selectedTags = ref<Set<string>>(new Set<string>());
+const selectedTags : Ref<Set<string>> = ref(User.getInstance()?.userInfo?.userTags || new Set<string>());
 function onSave() {
   // TODO: 这里可以添加保存逻辑，比如发送到服务器
   console.log('已选择的标签:', Array.from(selectedTags.value));

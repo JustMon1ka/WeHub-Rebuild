@@ -72,14 +72,37 @@ function onfocus(event: Event) {
     <!-- 标签选择区 -->
     <div :id="formId" @click.prevent.capture="onfocus" tabindex="0">
       <div class="pt-2 space-y-2 space-x-2">
-        <button v-for="(tag, index) in selectedTags"
-                :key="tag" :id="tag" :class="tagStyle">
-          <label :for="tag" @click.prevent.stop="onRemoveTag" v-show="editing" :class="styles.TagDelete">×</label>
-          {{ tag }}
-        </button>
-        <input v-model.lazy="input" @blur="addTag" @keyup.enter.prevent="addTag" type="text"
-               placeholder="输入标签并回车添加" :class="'w-24' + styles.TagBasic">
+        <TransitionGroup name="list">
+          <button v-for="(tag, index) in selectedTags"
+                  :key="tag" :id="tag" :class="tagStyle">
+            <label :for="tag" @click.prevent.stop="onRemoveTag" v-show="editing" :class="styles.TagDelete">×</label>
+            {{ tag }}
+          </button>
+          <input v-model.lazy="input" @blur="addTag" @keyup.enter.prevent="addTag" type="text"
+                 placeholder="输入标签并回车添加" :class="'w-24' + styles.TagBasic">
+        </TransitionGroup>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.list-move, /* 对移动中的元素应用的过渡 */
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+/* 确保将离开的元素从布局流中删除
+  以便能够正确地计算移动的动画。 */
+.list-leave-active {
+  position: absolute;
+}
+
+</style>

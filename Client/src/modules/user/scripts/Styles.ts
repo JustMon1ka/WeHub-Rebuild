@@ -20,8 +20,9 @@ const styles= ref({
     userPic: "w-full h-full rounded-full object-cover",
     TabFocus: "w-full text-center pt-3 pb-3.5 font-semibold border-b-2 border-sky-500",
     TabNormal: "w-full text-center pt-3 pb-3.5 text-slate-400 hover:bg-slate-800 transition-colors duration-200",
-    TagBasic: "relative cursor-default text-center px-3 py-0.5 rounded-full text-2xs font-semibold text-slate-400 " +
+    TagBasic: "relative cursor-default text-center px-3 py-0.5 rounded-full text-2xs font-semibold text-slate-200 " +
       "border border-slate-500 border-2 transition-all duration-200 ease-in-out hover:bg-slate-700 hover:border-slate-300",
+    TagEdit: "animate-shake",
     TagDelete: "absolute -top-2 -right-2 w-4.5 h-4.5 flex items-center justify-center text-xs font-bold " +
       "rounded-full bg-slate-400 text-slate-800 hover:bg-red-500 hover:text-slate-50",
   }

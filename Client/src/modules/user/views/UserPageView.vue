@@ -91,7 +91,7 @@ function onSave(){
       <!-- 页面头部 -->
       <div class="sticky top-0 flex flex-row p-4 border-b border-slate-800 bg-slate-900/75 backdrop-blur-md">
         <div class="p-2 rounded-full hover:bg-slate-800 mr-4">
-          <img src="@/assets/close.svg" alt="关闭" class="w-6 h-6 cursor-pointer" @click="router.back()">
+          <img src="@/assets/back.svg" alt="关闭" class="w-6 h-6 cursor-pointer" @click="router.back()">
         </div>
         <h1 class="text-xl p-1 font-bold">{{ userInfo.nickName }}</h1>
       </div>

@@ -1,15 +1,18 @@
 import router from '@/router.ts'
-import userInfo from '@/modules/user/scripts/UserInfo.ts'
 import { UserInfo } from '@/modules/user/public.ts'
+import { loginAPI, meAPI, registerAPI } from '@/modules/auth/scripts/UserAuthAPI.ts'
 
 enum state {
   LoggedOut,
   NetworkError,
-  PasswordError,
-  AuthCodeError,
-  UserNotFound,
-  EmailExistError,
+  DataError,
   Success,
+}
+
+interface resultState {
+  state: state;
+  error?: string;
+  data?: string;
 }
 
 
@@ -20,20 +23,25 @@ class User {
     return User.#singleton;
   }
 
+  static readonly MAX_COOKIE_AGE = 3600; // 1 hour
+  static readonly MIN_COOKIE_AGE = 3600; // 1 hour
+
   static {
+    let userId: string | null = null;
+    let token: string | null = null;
     document.cookie.split('; ').forEach(cookie => {
       const [name, value] = cookie.split('=');
-      let userid : string | null = null;
-      let token : string | null = null;
-      if (name === 'userid') {
-        userid = value;
+      if (name === 'userId') {
+        userId = value;
       } else if (name === 'token') {
         token = value;
       }
-      if (userid && token) {
-        User.#singleton = new User(userid, token);
-      }
     });
+    if (userId && token) {
+      User.#singleton = new User(userId, token);
+      User.#singleton?.logout(); //TODO: TEST ONLY
+      console.log(`User instance created with userId: ${userId}`);
+    }
   }
 
   static async generateHash(password: string) {
@@ -49,70 +57,123 @@ class User {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  static async sendData(url: string, data: object) {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      return state.NetworkError;
-    } else {
-      const result = await response.json();
-      if (result.success) {
-        User.#singleton = new User(result.userid, result.token);
-        return state.Success;
-      } else {
-        return state.PasswordError;
+  static errorHandler(error: any): resultState {
+    if (error.message === 'Network Error') {
+      return {
+        state: state.NetworkError,
+        error: error.message,
       }
     }
-  }
 
-  static async login(username: string, password: string, email: string, code: string, rememberMe: boolean = false) {
-    let passwordHash = await User.generateHash(password);
-    const url = '/api/auth/login';
-    const data = { username, passwordHash, email, code };
-    const response = await User.sendData(url, data);
-    if (response === state.Success && rememberMe) {
-      User.#singleton?.saveToCookie(User.#singleton.#userid, User.#singleton.#token);
+    if (error.message === 'Unauthorized') {
+      return {
+        state: state.LoggedOut,
+        error: 'Unauthorized',
+      };
     }
-    return response;
+    return {
+      state: state.DataError,
+      error: error.message || 'Unexpected error during login',
+    };
   }
 
-  static async register(username: string, password: string, email: string, code: string, rememberMe: boolean = false) {
+  static async login(username: string, password: string, rememberMe: boolean = false) : Promise<resultState> {
     let passwordHash = await User.generateHash(password);
-    const url = '/api/auth/register';
-    const data = { username, passwordHash, email, code };
-    const response = await User.sendData(url, data);
-    if (response === state.Success && rememberMe) {
-      User.#singleton?.saveToCookie(User.#singleton.#userid, User.#singleton.#token);
+    try {
+      // 发送登录请求
+      const login = await loginAPI({
+        identifier: username,
+        password: passwordHash,
+      });
+      if (login.code !== 200) {
+        return {
+          state: state.DataError,
+          error: login.data.message || 'Login failed',
+        };
+      }
+
+      // 获取用户信息
+      const me = await meAPI(login.data);
+      if (me.code !== 200) {
+        return {
+          state: state.DataError,
+          error: me.data.message || 'Failed to retrieve user information',
+        };
+      }
+
+      User.#singleton = new User(me.data.id, login.data);
+      User.#singleton?.saveToCookie(rememberMe ? User.MAX_COOKIE_AGE : User.MIN_COOKIE_AGE);
+      return {
+        state: state.Success,
+        data: "",
+      };
     }
-    return response;
+    catch (error: any) {
+      return User.errorHandler(error);
+    }
   }
 
-  static async sendAuthCode(email: string) {
-    const url = '/api/auth/login';
-    const data = { action: 'sendAuthCode', email };
+  static async register(username: string, password: string, email: string, code: string, rememberMe: boolean = false) : Promise<resultState> {
+    let passwordHash = await User.generateHash(password);
+    try {
+      // 发送注册请求
+      const register = await registerAPI({
+        username: username,
+        password: passwordHash,
+        email: email,
+        code: code,
+        phone: '', // TODO: 手机号可以留空
+      });
+      if (register.code !== 200) {
+        return {
+          state: state.DataError,
+          error: register.data.message || 'Registration failed',
+        };
+      }
+
+      return await User.login(username, password, rememberMe);
+    }
+    catch (error: any) {
+      return User.errorHandler(error);
+    }
   }
 
+  static async sendAuthCode(email: string): Promise<resultState> {
+    // TODO: 这里可以添加发送验证码请求的逻辑
+    return {
+      state: state.Success,
+      data: '',
+      error: '',
+    }
+  }
 
-  #userid: string;
-  #token: string;
+  static async verifyAuthCode(email: string, code: string, rememberMe: boolean) : Promise<resultState> {
+    // TODO: 这里可以添加发送验证码验证请求的逻辑
+    if (rememberMe){
+
+    }
+    return {
+      state: state.Success,
+      data: '',
+      error: '',
+    }
+  }
+
+  readonly #userid: string;
+  readonly #token: string;
   followList: Set<string> = new Set<string>();
-  userInfo: UserInfo;
+  userInfo: UserInfo | undefined = undefined;
 
   constructor(userid: string, token: string) {
     this.#userid = userid;
     this.#token = token;
-    this.userInfo = new UserInfo(userid, false);
+    // 延迟加载 UserInfo 实例，避免在User未初始化时就尝试获取用户信息
+    setTimeout(() => {this.userInfo = new UserInfo(userid, false)}, 0);
   }
 
-  saveToCookie(userid: string, token: string) {
-    document.cookie = `userid=${this.#userid}; max-age=5184000`; // 60 days
-    document.cookie = `token=${this.#token}; max-age=5184000`; // 60 days
+  saveToCookie(cookieAge: number = User.MIN_COOKIE_AGE) {
+    document.cookie = `userId=${this.#userid}; max-age=${cookieAge}`;
+    document.cookie = `token=${this.#token}; max-age=${cookieAge}`;
   }
 
   async logout() {
@@ -126,11 +187,13 @@ class User {
     location.reload();
   }
 
-  async resetPassword(newPassword: string) {
-    let passwordHash = await User.generateHash(newPassword);
-    const url = '/api/auth/login';
-    const data = { password: passwordHash };
-    const response = await User.sendData(url, data);
+  async resetPassword(newPassword: string): Promise<resultState> {
+    // TODO: 这里可以添加重置密码的逻辑
+    return {
+      state: state.Success,
+      data: '',
+      error: '',
+    }
   }
 
   get userAuth() {
@@ -152,4 +215,4 @@ class User {
 }
 
 export default User;
-export { User, state};
+export { User, state, type resultState };

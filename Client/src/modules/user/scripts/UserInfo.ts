@@ -45,8 +45,6 @@ class UserInfo {
 
   constructor(userId: string, copy: boolean = false) {
     this.userId = userId;
-    this.isMe = true;  // TODO: 完成调试后删除此处
-
     if (copy) return;
 
     if (userId === User.getInstance()?.userAuth?.userId) {

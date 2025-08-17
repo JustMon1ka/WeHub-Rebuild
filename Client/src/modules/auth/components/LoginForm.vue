@@ -11,7 +11,7 @@ const email = loginData.email;
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" @keydown.enter.capture.prevent.stop="loginData.submit()">
     <form class="space-y-6"  v-if="loginData.useAuthCode.value">
       <div>
         <div class="flex justify-between">
@@ -21,7 +21,7 @@ const email = loginData.email;
             {{ '使用密码登录'  }}
           </button>
         </div>
-        <input v-bind:class="styles.input" v-model.lazy="email.email.value" @blur="email.checkValidity()"
+        <input v-bind:class="styles.input" v-model="email.email.value" @blur="email.checkValidity()"
                type="email" id="email" name="email" placeholder="you@example.com" required>
         <label v-if="email.error" v-bind:class="styles.error"> {{ email.errorMsg }}</label>
       </div>
@@ -29,7 +29,7 @@ const email = loginData.email;
       <div>
         <label for="AuthCode" v-bind:class="styles.label">验证码</label>
         <div class="flex flex-row items-center justify-between space-x-3">
-          <input v-bind:class="styles.input" v-model.lazy="authCode.authCode.value"
+          <input v-bind:class="styles.input" v-model="authCode.authCode.value"
                  @blur="authCode.checkValidity()" type="text" id="AuthCode" name="AuthCode"
                  placeholder="请输入验证码" required>
           <button type="button" v-bind:class="authCode.authBtnStyle.value"
@@ -42,13 +42,13 @@ const email = loginData.email;
     <form class="space-y-6" v-else>
       <div>
         <div class="flex justify-between">
-          <label for="user" v-bind:class="styles.label">邮箱或用户名</label>
+          <label for="user" v-bind:class="styles.label">邮箱、手机号或用户名</label>
           <button class="text-sm text-sky-400 hover:underline"
                   @click.prevent="loginData.changeAuthType(AuthType.AuthCodeLogin)">
             {{ '使用验证码登录' }}
           </button>
         </div>
-        <input v-model.lazy="userName.userName.value" v-bind:class="styles.input"
+        <input v-model="userName.userName.value" v-bind:class="styles.input"
                @blur="userName.checkEmpty()" id="user" name="user" placeholder="您的邮箱 / 用户名" required>
         <label v-if="userName.error" v-bind:class="styles.error"> {{ userName.errorMsg }}</label>
       </div>
@@ -58,7 +58,7 @@ const email = loginData.email;
           <label for="password" v-bind:class="styles.label">密码</label>
           <router-link to="/password_reset" v-bind:class="styles.RouterLink">忘记密码？</router-link>
         </div>
-        <input v-model.lazy="password.password.value" v-bind:class="styles.input"
+        <input v-model="password.password.value" v-bind:class="styles.input"
                @blur="password.checkEmpty()" type="password" id="password" name="password"
                placeholder = "请输入您的密码" required>
         <label v-if="password.error" v-bind:class="styles.error"> {{ password.errorMsg }}</label>
@@ -66,7 +66,7 @@ const email = loginData.email;
     </form>
 
     <div>
-      <button @click.prevent="loginData.submit()" @keydown.enter.prevent="loginData.submit()"
+      <button @click.prevent="loginData.submit()"
               v-bind:class="loginData.submitBtnStyle.value" type="submit" >
         登 录
       </button>
