@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.CompilerServices;
 using Models;
 
-namespace PostService.Models;
+namespace Models;
 
 [Table("POST")]
 public class Post
@@ -42,10 +42,14 @@ public class Post
     [Column("CIRCLE_ID")]
     public long CircleId { get; set; }
     
+    [Column("SEARCH_TEXT")]
+    public string? SearchText { get; set; }
+    
     [NotMapped]
     public List<string> TagNames { get; set; } = new List<string>();
 
     // 可选：导航属性
-    // public virtual User? User { get; set; }
+    public virtual User? User { get; set; }
+    public virtual Circle? Circle { get; set; }
     public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
 }

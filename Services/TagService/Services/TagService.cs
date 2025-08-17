@@ -1,5 +1,5 @@
 ﻿using TagService.DTOs;
-using TagService.Models;
+using Models;
 using TagService.Repositories;
 
 namespace TagService.Services

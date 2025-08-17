@@ -1,4 +1,6 @@
-﻿namespace Models;
+﻿using Models;
+
+namespace Models;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -8,7 +10,7 @@ public class User
 {
     [Key]
     [Column("USER_ID")]
-    public int UserId { get; set; }
+    public long? UserId { get; set; }
 
     [Column("USERNAME")]
     public string? Username { get; set; }
@@ -23,10 +25,12 @@ public class User
     public string? Phone { get; set; }
 
     [Column("CREATED_AT")]
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     [Column("STATUS")]
-    public int Status { get; set; }
+    public int? Status { get; set; }
+    
+    public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 }
 
 
