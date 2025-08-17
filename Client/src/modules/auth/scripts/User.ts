@@ -1,6 +1,7 @@
 import router from '@/router.ts'
 import { UserInfo } from '@/modules/user/public.ts'
 import { loginAPI, meAPI, registerAPI } from '@/modules/auth/scripts/UserAuthAPI.ts'
+import userInfo from '@/modules/user/scripts/UserInfo.ts'
 
 enum state {
   LoggedOut,
@@ -23,7 +24,7 @@ class User {
     return User.#singleton;
   }
 
-  static readonly MAX_COOKIE_AGE = 3600; // 1 hour
+  static readonly MAX_COOKIE_AGE = 5184000; // 60 days
   static readonly MIN_COOKIE_AGE = 3600; // 1 hour
 
   static {
@@ -37,10 +38,21 @@ class User {
         token = value;
       }
     });
-    if (userId && token) {
+    if (userId && token)
       User.#singleton = new User(userId, token);
-      // User.#singleton?.logout(); //TODO: TEST ONLY
-    }
+      setTimeout(async  () => {
+        try {
+          // 认证token有效性
+          const me = await meAPI(token || '');
+          if (me.code !== 200) {
+            return;
+          }
+        } catch (error: any) {
+          if (error.message === 'Unauthorized') {
+            User.#singleton?.logout();
+          }
+        }
+      });
   }
 
   static async generateHash(password: string) {
@@ -87,7 +99,7 @@ class User {
       if (login.code !== 200) {
         return {
           state: state.DataError,
-          error: login.data.message || 'Login failed',
+          error: login.message || 'Login failed',
         };
       }
 
@@ -96,7 +108,7 @@ class User {
       if (me.code !== 200) {
         return {
           state: state.DataError,
-          error: me.data.message || 'Failed to retrieve user information',
+          error: me.message || 'Failed to retrieve user information',
         };
       }
 
@@ -112,7 +124,7 @@ class User {
     }
   }
 
-  static async register(username: string, password: string, email: string, code: string, rememberMe: boolean = false) : Promise<resultState> {
+  static async register(username: string, password: string, email: string, code: string, phone: string, rememberMe: boolean = false) : Promise<resultState> {
     let passwordHash = await User.generateHash(password);
     try {
       // 发送注册请求
@@ -121,12 +133,12 @@ class User {
         password: passwordHash,
         email: email,
         code: code,
-        phone: '', // TODO: 手机号可以留空
+        phone: phone,
       });
       if (register.code !== 200) {
         return {
           state: state.DataError,
-          error: register.data.message || 'Registration failed',
+          error: register.message || 'Registration failed',
         };
       }
 

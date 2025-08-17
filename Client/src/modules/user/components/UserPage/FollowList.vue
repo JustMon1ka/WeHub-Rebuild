@@ -32,17 +32,19 @@ watch(curTab, (newTab) => {
   Tabs.switchTab(newTab);
 });
 
+// TODO: 将此处替换为实际的FOLLOW和FOLLOWER生成器函数
 const generator: () => AsyncGenerator<Array<string>, string, number> = async function* () {
+  const userId = User.getInstance()?.userAuth.userId || 'unknown';
   let num: number = yield [];
   for(let j =0; j< 3; j++){
     let users: Array<string> = [];
     for (let i = 0; i < num; i++) {
-      users.push('Me');
+      users.push(userId);
     }
     let result = await new Promise((resolve) => {
       setTimeout(() => {
         resolve(users);
-      }, 1000);
+      }, 1); // 模拟网络请求延迟，此处可以替换为实际的API调用
     })
     if (j > 2) {
       return "网络错误，请稍后再试";

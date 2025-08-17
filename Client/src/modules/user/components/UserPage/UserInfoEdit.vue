@@ -5,6 +5,7 @@ import styles from '@/modules/user/scripts/Styles.ts'
 import VueFlatpickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import 'flatpickr/dist/themes/dark.css'
+import 'flatpickr/dist/l10n/zh.js'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 import TagSetForm from '@/modules/user/components/Tag/TagSetForm.vue'
 
@@ -22,10 +23,17 @@ async function onSave(){
   const result = await userInfo.value.updateProfile();
   if (result){
     emit('editSave');
+    userInfo.value.changed = false;
   }
   submitBtn.value = styles.value.btnShape + styles.value.submitBtn;
 }
 
+// Read more at https://flatpickr.js.org/options/
+const dateConfig = ref({
+  maxDate: new Date().toISOString(),
+  minDate: '1900-01-01',
+  locale: 'zh',
+});
 </script>
 
 <template>
@@ -72,7 +80,7 @@ async function onSave(){
                type="file" accept="image/*" class="hidden" id="avatarInput">
         <img v-if="!!userInfo?.avatarURL" v-bind:src="userInfo?.avatarURL"
              v-bind:class="styles.userPic" alt="User avatar">
-        <PlaceHolder width="150"  height="150" :text="userInfo.nickName"
+        <PlaceHolder width="150"  height="150" :text="userInfo.nickname"
                      v-bind:class="styles.userPic"></PlaceHolder>
         <label for="avatarInput" class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
           <label for="avatarInput" class="p-3 bg-slate-900/50 rounded-full hover:bg-slate-900/75 transition-colors">
@@ -87,7 +95,7 @@ async function onSave(){
       <label v-if="userInfo.error" v-bind:class="styles.error">{{ userInfo.errorMsg }}</label>
       <div>
         <label for="nickname" v-bind:class="styles.label">👤 昵称</label>
-        <input @change="userInfo.changed = true" v-model.lazy="userInfo.nickName"
+        <input @change="userInfo.changed = true" v-model.lazy="userInfo.nickname"
                type="text" id="nickname" v-bind:class="styles.input" tabindex="0">
       </div>
       <div>
@@ -102,7 +110,7 @@ async function onSave(){
       </div>
       <div>
         <label for="birthday" v-bind:class="styles.label">🎂 出生日期</label>
-        <vue-flatpickr id="birthday" v-model="userInfo.birthday" @change="userInfo.changed = true"
+        <vue-flatpickr :config="dateConfig" id="birthday" v-model="userInfo.birthday" @change="userInfo.changed = true"
                        v-bind:class="styles.input" placeholder="Select date" name="date" tabindex="3"/>
       </div>
       <div>

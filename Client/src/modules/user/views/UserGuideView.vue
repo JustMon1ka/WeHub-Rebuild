@@ -2,12 +2,13 @@
 import TagGuide from '@/modules/user/components/Tag/TagGuide.vue'
 import { type Ref, ref } from 'vue'
 import { User } from '@/modules/auth/public.ts'
+import router from '@/router.ts'
 
 const counter = ref(0);
 const selectedTags : Ref<Map<string, string>> = ref(User.getInstance()?.userInfo?.userTags || new Map<string, string>());
 function onSave() {
-  // TODO: 这里可以添加保存逻辑，比如发送到服务器
-  console.log('已选择的标签:', Array.from(selectedTags.value));
+  User.getInstance()?.userInfo?.updateTags();
+  router.push('/');
 }
 </script>
 

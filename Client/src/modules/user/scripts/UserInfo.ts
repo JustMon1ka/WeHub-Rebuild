@@ -7,13 +7,8 @@ import {
   type UserData,
   type userProfileData
 } from '@/modules/user/scripts/UserDataAPI.ts'
-import { getTagsAPI } from '@/modules/user/scripts/UserTagAPI.ts'
-
-enum state {
-  LoggedOut,
-  NetworkError,
-  Success,
-}
+import { getTagsAPI, setTagsAPI } from '@/modules/user/scripts/UserTagAPI.ts'
+import tags from '@/modules/user/scripts/tags.json'
 
 class UserInfo implements UserData{
   static errorMsg = {
@@ -21,18 +16,39 @@ class UserInfo implements UserData{
     LoggedOut: '您已登出，请重新登录。',
     PictureFormatError: '图片格式有误，请上传有效的图片文件。',
     PictureSizeError: '图片大小超过限制，请上传小于3MB的图片。',
+    NicknameLengthError: '昵称长度必须在1到20个字符之间。',
+    BioLengthError: '个人简介长度不能超过100个字符。',
     DefaultError: '发生未知错误，请稍后再试。',
   }
   static TagMap: Map<string, string> = new Map([]);
 
-  static getTagName(tag: string): string {
-    // TODO: Get tag name by tag id, if not exist, create a new tag.
-    if (UserInfo.TagMap.has(tag)) {
-      return UserInfo.TagMap.get(tag) || "";
+  static {
+    for (const [tagGroup, tagNames] of Object.entries(tags)) {
+      for (const [tagId, tagName] of Object.entries(tagNames)) {
+        // 使用 tagGroup 作为前缀，保证 tagId 的唯一性
+        UserInfo.TagMap.set(tagId, tagName);
+      }
+    }
+  }
+
+  static async getTagName(tagId: string): Promise<string> {
+    // Get tag name by tag id, if not exist in TagMap, fetch from server
+    if (UserInfo.TagMap.has(tagId)) {
+      return UserInfo.TagMap.get(tagId) || "";
     } else {
-      // Fetch tag name from server or create a new tag
+      // TODO: 从服务器获取标签名
       return "";
     }
+  }
+
+  static async getTagId(tagName: string) {
+    for (const [id, name] of UserInfo.TagMap.entries()) {
+      if (name === tagName) {
+        return id;
+      }
+    }
+    return '';
+    // TODO: 如果 TagMap 中没有该标签名，向服务器请求获取或者创建新标签
   }
 
   userId: string;
@@ -50,7 +66,7 @@ class UserInfo implements UserData{
   profileURL: string = '';
   avatarURL: string = '';
   status: string = '';
-  nickName: string = '';
+  nickname: string = '';
   birthday: string = '';
   location: string = '';
   bio: string = '';
@@ -80,8 +96,8 @@ class UserInfo implements UserData{
     }
 
     // fetch from API
-    if (this.nickName === '') {
-      this.nickName = 'Anonymous';
+    if (this.nickname === '') {
+      this.nickname = 'Anonymous';
     }
 
     nextTick(async () => {await this.loadUserData();});
@@ -105,7 +121,7 @@ class UserInfo implements UserData{
     this.avatarURL = userProfile.avatarURL || '';
     this.status = userProfile.status || '';
     this.experience = userProfile.experience || 0;
-    this.nickName = userProfile.nickName || this.username;
+    this.nickname = userProfile.nickname || this.username;
     this.birthday = userProfile.birthday.split('T')[0] || this.createdAt;
     if (this.birthday === '0001-01-01'){
       this.birthday = '2000-01-01'; // 默认生日
@@ -128,7 +144,7 @@ class UserInfo implements UserData{
       throw new Error(result.message || UserInfo.errorMsg.DefaultError);
     }
     for (const tag of result.data.tags) {
-      const tagName = UserInfo.getTagName(tag);
+      const tagName = await UserInfo.getTagName(tag.toString());
       if (tagName) {
         this.userTags.set(tag, tagName);
       }
@@ -151,10 +167,14 @@ class UserInfo implements UserData{
   copy(copyUserInfo: UserInfo = new UserInfo(this.userId, true)): UserInfo {
     // 只需要复制可编辑的字段，
     // 假如传入了一个 UserInfo 实例，则复制到该实例中，防止放弃编辑时错误修改原主页内容
+    copyUserInfo.userId = this.userId;
+    copyUserInfo.isMe = this.isMe;
+    copyUserInfo.username = this.username;
+
     copyUserInfo.profileURL = this.profileURL;
     copyUserInfo.avatarURL = this.avatarURL;
 
-    copyUserInfo.nickName = this.nickName;
+    copyUserInfo.nickname = this.nickname;
     copyUserInfo.birthday = this.birthday;
     copyUserInfo.location = this.location;
     copyUserInfo.bio = this.bio;
@@ -164,28 +184,48 @@ class UserInfo implements UserData{
   }
 
   async updateProfile() {
-    if (!this.isMe || !this.changed || !this.profileLoaded) {
+    if (!this.isMe || !this.changed) {
       this.error = true;
       this.errorMsg = UserInfo.errorMsg.DefaultError;
       return false;
     }
+
+    if (this.nickname.length < 1 || this.nickname.length > 20) {
+      this.error = true;
+      this.errorMsg = UserInfo.errorMsg.NicknameLengthError;
+      return false;
+    }
+
+    if (this.bio.length > 100) {
+      this.error = true;
+      this.errorMsg = UserInfo.errorMsg.BioLengthError;
+      return false;
+    }
+
     try {
-      const result = await setUserProfileAPI(this.userId, <userProfileData>{
+      const resultP = await setUserProfileAPI(this.userId, <userProfileData>{
         profileURL: this.profileURL,
         avatarURL: this.avatarURL,
         experience: this.experience,
         gender: this.gender,
         level: this.level,
-        nickName: this.nickName,
+        nickname: this.nickname,
         birthday: this.birthday,
         location: this.location,
         bio: this.bio
       })
-      if (result.code != 200) {
-        this.error = true;
-        this.errorMsg = result.message || UserInfo.errorMsg.DefaultError;
-        return false;
+      if (resultP.code != 200) {
+        throw new Error(resultP.message || UserInfo.errorMsg.DefaultError);
       }
+
+      const resultT = await setTagsAPI(this.userId, {
+        tags: [...this.userTags.keys()].map((tagId) => Number(tagId)),
+      });
+      if (resultT.code != 200) {
+        throw new Error(resultT.message || UserInfo.errorMsg.DefaultError);
+      }
+      this.error = false;
+      this.errorMsg = '';
       return true;
     } catch (error) {
       this.errorHandler(error);
@@ -208,6 +248,19 @@ class UserInfo implements UserData{
     // TODO: Upload picture to server
   }
 
+  async updateTags() {
+    try {
+      const result = await setTagsAPI(this.userId, {
+        tags: [...this.userTags.keys()].map((tagId) => Number(tagId)),
+      });
+      if (result.code != 200) {
+        throw new Error(result.message || UserInfo.errorMsg.DefaultError);
+      }
+    } catch (error) {
+      this.errorHandler(error);
+    }
+  }
+
   errorHandler(error: any) {
     if (error.message === 'Network Error') {
       this.error = true;
@@ -228,4 +281,4 @@ class UserInfo implements UserData{
 }
 
 export default  UserInfo;
-export { state, UserInfo };
+export { UserInfo };

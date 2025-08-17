@@ -1,13 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const { width, height, text } = defineProps<{
   width: string;
   height: string;
   text: string;
 }>();
 
-const { bgColor, textColor } = generateAvatarColors(text);
+function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash += str.charCodeAt(i) * (i + 1); // 使用字符的ASCII码和位置来计算哈希值
+  }
+  return hash; // 返回正数
+}
 
-function generateAvatarColors(text) {
+function generateAvatarColors(text: string): { bgColor: string; textColor: string } {
   // 预定义的色板（从参考HTML中提取的颜色组合）
   const colorPalette = [
     { bgColor: '7dd3fc', textColor: '0f172a' }, // 蓝-深蓝
@@ -25,17 +33,18 @@ function generateAvatarColors(text) {
     return { bgColor: '7dd3fc', textColor: '0f172a' };
   }
 
-  // 基于文本字符的哈希值选择颜色
-  const charCode = text.charCodeAt(0) + (text.length > 1 ? text.charCodeAt(1) : 0);
+  const charCode = simpleHash(text);
   const colorIndex = charCode % colorPalette.length;
   return colorPalette[colorIndex];
 }
+
+const color = computed(() => generateAvatarColors(text) );
 </script>
 
 <template>
 <svg xmlns="http://www.w3.org/2000/svg" :width="width" :height="height" :viewBox="'0 0 ' + width + ' ' + height">
-    <rect width="100%" height="100%" :fill="'#' + bgColor"/>
-    <text x="50%" y="50%" :fill="'#' + textColor" font-family="Arial" :font-size="Math.min(Number(width), Number(height)) * 0.6"
+    <rect width="100%" height="100%" :fill="'#' + color.bgColor"/>
+    <text x="50%" y="50%" :fill="'#' + color.textColor" font-family="Arial" :font-size="Math.min(Number(width), Number(height)) * 0.6"
           text-anchor="middle" dominant-baseline="central" class="font-[550]">{{ text[0] }}</text>
   </svg>
 </template>

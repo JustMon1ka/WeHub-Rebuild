@@ -31,7 +31,7 @@ const emit = defineEmits<{
         <div class="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800">
           <img v-if="!!userInfo.avatarURL" v-bind:src="userInfo.avatarURL"
                v-bind:class="styles.userPic" alt="User avatar">
-          <PlaceHolder width="150"  height="150" :text="userInfo.nickName"
+          <PlaceHolder width="150"  height="150" :text="userInfo.nickname"
                        v-bind:class="styles.userPic"></PlaceHolder>
         </div>
         <button v-if="userInfo.isMe" @click="$emit('editProfile')"
@@ -46,13 +46,13 @@ const emit = defineEmits<{
 
     <!-- 用户信息 -->
     <div class="p-4">
-      <h2 class="text-2xl font-bold"> {{ userInfo.nickName }}</h2>
+      <h2 class="text-2xl font-bold"> {{ userInfo.nickname }}</h2>
       <p class="text-slate-500">@{{ userInfo.username }}</p>
       <p class="mt-4">📃 {{ !!userInfo.bio ? userInfo.bio : "这个用户很神秘，什么也没写~"}}</p>
       <div class="flex items-center space-x-4 mt-4 text-slate-500 text-sm">
         <span>📍 {{ !!userInfo.location ? userInfo.location : "不告诉你哦~" }}</span>
         <span>🎂 {{ userInfo.birthday }} </span>
-        <span>📅 joined {{ userInfo.createdAt }}  </span>
+        <span>📅 创建于 {{ userInfo.createdAt }}  </span>
       </div>
       <div class="flex items-center space-x-4 mt-4 text-slate-500 text-sm">
 

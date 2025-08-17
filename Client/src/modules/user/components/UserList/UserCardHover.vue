@@ -17,9 +17,8 @@ const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: t
       <div class="flex justify-between items-start">
         <img v-if="!!userInfo.avatarURL" :src="userInfo.avatarURL"
              class="w-12 h-12 rounded-full" alt="User Avatar">
-        <PlaceHolder v-else width="100" :text="userInfo.nickName" height="100"
+        <PlaceHolder v-else width="100" :text="userInfo.nickname" height="100"
                      class="w-12 h-12 rounded-full"/>
-        <!-- TODO：正确跳转 -->
         <router-link :to="{ name: 'UserPage', params: { userId_p: userInfo.userId } }"
                      class="border-2 text-white border-slate-600 hover:bg-slate-700
                      font-bold py-1 px-4 rounded-full transition-colors duration-200 text-sm">
@@ -27,14 +26,11 @@ const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: t
         </router-link>
       </div>
       <div class="mt-4">
-        <h3 class="font-bold text-lg text-white">{{ userInfo.nickName }}</h3>
+        <h3 class="font-bold text-lg text-white">{{ userInfo.nickname }}</h3>
+        <p class="text-slate-500">@{{ userInfo.username }}</p>
         <p class="mt-2 text-slate-300 overflow-hidden">
           📃 {{ !!userInfo.bio ? userInfo.bio : "这个用户很神秘，什么也没写~"}}
         </p>
-        <div class="flex items-center space-x-4 mt-3 text-sm text-slate-400">
-          <span>📍 {{ !!userInfo.location ? userInfo.location : "不告诉你哦~" }}</span>
-          <span>🎂 {{ userInfo.birthday }} </span>
-        </div>
         <div class="flex items-center space-x-6 mt-4">
           <p>
             <span class="font-bold text-white">{{ userInfo.followingCount }}</span>

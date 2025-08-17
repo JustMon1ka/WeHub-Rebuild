@@ -28,8 +28,9 @@ const editMode = ref(false);
 const followMode = ref(false);
 const followTab = ref(0);
 
-let userInfo = ref(new UserInfo(userId));
-let userInfoTemp = ref(userInfo.value.copy());
+let userInfo = ref(User.getInstance()?.userInfo || new UserInfo(userId));
+let userInfoTemp = ref();
+const tempCopied = ref(false);
 
 const tabLabels : Array<TabLabel> = [
   { key: 'post', label: '帖子'},
@@ -39,15 +40,19 @@ const tabLabels : Array<TabLabel> = [
 
 const Tabs = new TabController(tabLabels);
 
-watch(() => userInfo.value.profileLoaded, (newValue) => {
-  if (newValue){
-    userInfoTemp.value = userInfo.value.copy();
-  }
-}, { immediate: true });
+watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
+  (newValue, oldValue) => {
+    if (newValue && !oldValue) {
+      userInfoTemp.value = userInfo.value.copy();
+      tempCopied.value = true;
+    }
+  }, { immediate: true });
 
 function onCancel(){
-  userInfoTemp.value = userInfo.value.copy();
-  editMode.value = false;
+  if (userInfoTemp.value.changed){
+    userInfoTemp.value = userInfo.value.copy()
+  }
+  editMode.value = false
 }
 
 function onSave(){
@@ -67,7 +72,7 @@ function onSave(){
                 leave-from-class="opacity-100 translate-y-0"
                 leave-to-class="opacity-100 translate-y-full">
       <div v-show="userInfo.isMe && editMode">
-        <UserInfoEdit v-if="userInfo.profileLoaded" v-on:editCancel="onCancel" v-on:editSave="onSave"
+        <UserInfoEdit v-if="tempCopied" v-on:editCancel="onCancel" v-on:editSave="onSave"
                       v-model:user-info="userInfoTemp"/>
       </div>
     </transition>
@@ -80,7 +85,7 @@ function onSave(){
                 leave-from-class="opacity-100 translate-y-0"
                 leave-to-class="opacity-100 translate-y-full">
       <FollowList v-show="followMode" @close="followMode=false" :user-id_p="userId"
-                  v-model:curTab="followTab" :nick-name="userInfo.nickName"/>
+                  v-model:curTab="followTab" :nick-name="userInfo.nickname"/>
     </transition>
 
     <div v-show="!editMode && !followMode">
@@ -89,7 +94,7 @@ function onSave(){
         <div class="p-2 rounded-full hover:bg-slate-800 mr-4">
           <img src="@/assets/back.svg" alt="关闭" class="w-6 h-6 cursor-pointer" @click="router.back()">
         </div>
-        <h1 v-if="userInfo.profileLoaded" class="text-xl p-1 font-bold">{{ userInfo.nickName }}</h1>
+        <h1 v-if="userInfo.profileLoaded" class="text-xl p-1 font-bold">{{ userInfo.nickname }}</h1>
       </div>
       <UserCardPage v-if="userInfo.profileLoaded" v-model:user-info="userInfo"
                     @editProfile="editMode=true"

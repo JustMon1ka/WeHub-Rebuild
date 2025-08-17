@@ -75,10 +75,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="w-full y-auto relative divide-y divide-slate-800">
+  <div class="w-full y-auto relative">
     <!-- 用户列表 -->
     <div v-for="(user, index) in users" :key="user"
-         class="p-4 flex items-start space-x-4 hover:bg-slate-800/50 transition-colors duration-200">
+         class="flex items-start space-x-4 hover:bg-slate-800/50 transition-colors duration-200">
       <UserCardList :user-id="user" :follow-btn="followBtn"/>
     </div>
 

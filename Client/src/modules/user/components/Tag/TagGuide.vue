@@ -29,9 +29,9 @@ function onTagClick(event: MouseEvent) {
   }
 
   const tagId = target.id;
-  if (!tagName) return;
-  if (selectedTags.value.has(tagName)) {
-    selectedTags.value.delete(tagName);
+  if (!tagId || !tagName) return;
+  if (selectedTags.value.has(tagId)) {
+    selectedTags.value.delete(tagId);
     target.classList.remove('selected');
     counter.value--;
   } else {
@@ -48,7 +48,7 @@ function onTagClick(event: MouseEvent) {
     <div class="space-y-8">
 
       <!-- 标签选择区 -->
-      <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-lg">
+      <div class="bg-slate-800 p-6 sm:p-8 rounded-2xl">
         <div class="space-y-8">
           <div v-for="([tagGroup, tagNames], index) of tagMap" :key="tagGroup">
             <h2 class="flex items-center text-xl font-semibold border-b-2 border-slate-700 pb-2 mb-4">
@@ -56,7 +56,7 @@ function onTagClick(event: MouseEvent) {
               {{ tagGroup }}
             </h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              <button v-for="([id, tag], index) in tagNames" :key="id"
+              <button v-for="([id, tag], index) in tagNames" :key="id" :id="id"
                       @click.prevent="onTagClick" class="tag-card">
                 <span class="checkmark">✓</span>
                 {{ tag }}

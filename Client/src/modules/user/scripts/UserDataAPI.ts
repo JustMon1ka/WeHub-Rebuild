@@ -16,7 +16,7 @@ interface userAuthData {
 interface userProfileData{
   profileURL: string,
   avatarURL: string,
-  nickName: string,
+  nickname: string,
   bio: string,
   gender: string,
   birthday: string,

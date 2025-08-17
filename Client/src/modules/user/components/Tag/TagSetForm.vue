@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref, type Ref } from 'vue'
 import { nanoid } from 'nanoid'
 import styles from '@/modules/user/scripts/Styles.ts'
+import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 
 const emit = defineEmits<{
   (e: 'changed'): void;
@@ -34,8 +35,8 @@ async function addTag(event: Event) {
   // 替换空格为连字符
   tagName = tagName.replace(/\s+/g, '-');
 
-  const tagId = await nanoid(8); // TODO: 从API获取唯一ID
-  if (tagName){
+  const tagId = await UserInfo.getTagId(tagName);
+  if (tagName && tagId) {
     // 添加标签到集合
     selectedTags.value.set(tagId, tagName);
     emit('changed');

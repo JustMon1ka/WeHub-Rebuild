@@ -1,7 +1,7 @@
 import User from '@/modules/auth/scripts/User.ts'
 
 interface TagData{
-  "tags": string[],
+  "tags": number[],
 }
 
 
@@ -42,4 +42,26 @@ async function setTagsAPI(userId: string, tags: TagData) {
   return await response.json();
 }
 
-export { getTagsAPI, setTagsAPI, type TagData };
+async function changTagsAPI(userId: string, tagId: string) {
+  const response = await connect(`${BASE_URL}/api/users/${userId}/tags/${tagId}`, 'POST');
+  if (response.status === 401) {
+    return "Unauthorized";
+  }
+  if (!response.ok) {
+    return "Network Error";
+  }
+  return await response.json();
+}
+
+async function deleteTagsAPI(userId: string, tagId: string) {
+  const response = await connect(`${BASE_URL}/api/users/${userId}/tags/${tagId}`, 'DELETE');
+  if (response.status === 401) {
+    return "Unauthorized";
+  }
+  if (!response.ok) {
+    return "Network Error";
+  }
+  return await response.json();
+}
+
+export { getTagsAPI, setTagsAPI, changTagsAPI, deleteTagsAPI , type TagData };

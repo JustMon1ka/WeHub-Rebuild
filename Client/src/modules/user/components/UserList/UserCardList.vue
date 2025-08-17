@@ -84,31 +84,38 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
 </script>
 
 <template>
-  <div class="relative flex flex-row items-start justify-between w-full">
+  <div v-if="userInfo.profileLoaded" class="w-full p-6 border border-slate-800
+    relative flex flex-row items-start justify-between w-full">
     <!-- Avatar -->
-    <!-- TODO：正确跳转 -->
     <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
                  @mouseenter="moveIn($event, 'avatar')"
-                 @mouseleave="moveOut($event, 'avatar')" class="p-4">
+                 @mouseleave="moveOut($event, 'avatar')" class="pr-4 py-2">
       <img v-if="!!userInfo.avatarURL" :src="userInfo.avatarURL"
            class="w-12 h-12 rounded-full" alt="User Avatar">
-      <PlaceHolder v-else width="100" :text="userInfo.nickName" height="100" class="w-12 h-12 rounded-full"/>
+      <PlaceHolder v-else width="100" :text="userInfo.nickname" height="100" class="w-12 h-12 rounded-full"/>
     </router-link>
 
-    <!-- User info -->
+
     <div class="flex flex-col justify-items-start space-x-2 w-full">
-      <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
-                   @mouseenter="moveIn($event, 'name')"
-                   @mouseleave="moveOut($event, 'name')"
-                   class="font-bold text-left text-xl hover:underline">{{ userInfo.nickName }}</router-link>
+      <div class="flex flex-row items-center justify-between w-full">
+        <!-- User info -->
+        <div class="flex flex-col space-x-4 text-left">
+          <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
+                       @mouseenter="moveIn($event, 'name')"
+                       @mouseleave="moveOut($event, 'name')"
+                       class="font-bold text-left text-xl hover:underline">{{ userInfo.nickname }}</router-link>
+          <p class="text-slate-500">@{{ userInfo.username }}</p>
+        </div>
+
+        <FollowButton v-if="followBtn" :user-id="userId" class="w-24 mr-2"
+                      @followed="userInfo.followerCount += 1"
+                      @unfollowed="userInfo.followerCount -= 1" />
+      </div>
       <slot name="content">
-        <p class="mt-2 text-slate-300 text-left truncate w-70">{{ userInfo.bio || "这个用户很神秘，什么也没写~"}}</p>
+        <p class="mt-2 text-slate-300 text-left">{{ userInfo.bio || "这个用户很神秘，什么也没写~"}}</p>
       </slot>
     </div>
 
-    <FollowButton v-if="followBtn" :user-id="userId" class="w-24"
-                  @followed="userInfo.followerCount += 1"
-                  @unfollowed="userInfo.followerCount -= 1" />
 
     <Teleport to="main">
       <div
@@ -121,8 +128,8 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
         }"
         v-if="hoverCard">
         <UserCardHover v-model:user-info="userInfo"
-          @mouseenter="moveIn($event, 'card')"
-          @mouseleave="moveOut($event, 'card')"
+                       @mouseenter="moveIn($event, 'card')"
+                       @mouseleave="moveOut($event, 'card')"
         />
       </div>
     </Teleport>

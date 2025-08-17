@@ -171,6 +171,7 @@ class AuthData {
     const password = this.password.password.value;
     const email = this.email.email.value;
     const authCode = this.authCode.authCode.value;
+    const phone = this.phone.phone.value;
     const rememberMe = this.rememberMe.value;
 
     let result : resultState;
@@ -183,7 +184,7 @@ class AuthData {
         result = await User.verifyAuthCode(email, authCode, rememberMe);
         break;
       case AuthType.Register:
-        result = await User.register(userName, password, email, authCode, rememberMe);
+        result = await User.register(userName, password, email, authCode, phone, rememberMe);
         break;
       case AuthType.PasswordReset:
         result = await User.getInstance()?.resetPassword(password) || {
