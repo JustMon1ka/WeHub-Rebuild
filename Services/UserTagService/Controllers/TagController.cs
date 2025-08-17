@@ -43,4 +43,29 @@ public class UserTagsController : ControllerBase
 
         return Ok(BaseHttpResponse<string>.Success("OK", result.Message));
     }
+    
+    // 添加标签
+    [HttpPost("{tagId}")]
+    public async Task<ActionResult<BaseHttpResponse<string>>> AddTag(int id, int tagId)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdStr, out var userId) || userId != id)
+            return Unauthorized(BaseHttpResponse<string>.Fail(401, "Unauthorized"));
+
+        var result = await _tagService.AddUserTagAsync(id, tagId);
+        return Ok(BaseHttpResponse<string>.Success("OK", result.Message));
+    }
+
+    // 删除标签
+    [HttpDelete("{tagId}")]
+    public async Task<ActionResult<BaseHttpResponse<string>>> DeleteTag(int id, int tagId)
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdStr, out var userId) || userId != id)
+            return Unauthorized(BaseHttpResponse<string>.Fail(401, "Unauthorized"));
+
+        var result = await _tagService.DeleteUserTagAsync(id, tagId);
+        return Ok(BaseHttpResponse<string>.Success("OK", result.Message));
+    }
+
 }

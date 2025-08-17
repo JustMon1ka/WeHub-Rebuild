@@ -44,7 +44,8 @@ namespace UserDataService.Services
                 Birthday = profile?.Birthday ?? default,
                 Location = profile?.Location,
                 Experience = profile?.Experience ?? 0,
-                Level = profile?.Level ?? 0
+                Level = profile?.Level ?? 0,
+                Nickname = profile?.Nickname,
             };
         }
 
@@ -64,7 +65,7 @@ namespace UserDataService.Services
             if (!string.IsNullOrEmpty(request.Bio)) profile.Bio = request.Bio;
             if (!string.IsNullOrEmpty(request.Gender)) profile.Gender = request.Gender;
             if (!string.IsNullOrEmpty(request.Location)) profile.Location = request.Location;
-
+            if (!string.IsNullOrEmpty(request.Nickname)) profile.Nickname = request.Nickname;
             profile.Birthday = request.Birthday;
             profile.Experience = request.Experience;
             profile.Level = request.Level;
