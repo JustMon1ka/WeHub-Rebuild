@@ -1,5 +1,6 @@
 <template>
-  <div class="flex flex-col h-full">
+  <div class="fixed left-0 top-0 bottom-0 w-64 flex flex-col h-full z-30 bg-slate-900 p-4 border-r border-slate-800">
+<!--    flex-none sr-only md:not-sr-only md:h-screen border-x border-slate-800 p-4-->
     <!-- Logo -->
     <div class="h-16 flex items-center mb-4">
       <img src="@/assets/logo.svg" alt="Logo" class="w-9 h-9">
@@ -36,6 +37,22 @@
       </ul>
     </nav>
 
+    <!-- 发布新帖子按钮 -->
+    <div class="my-4 px-2">
+      <button
+        ref="postButton"
+        @click="openPostCreate"
+        data-post-btn
+        class="w-full flex items-center justify-center p-3 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-semibold transition-colors duration-200"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 4v16m8-8H4"/>
+        </svg>
+        发布新帖子
+      </button>
+    </div>
+
     <div class="mt-auto">
       <a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
         <img class="w-10 h-10 rounded-full" src="https://placehold.co/100x100/7dd3fc/0f172a?text=头像" alt="User Avatar">
@@ -51,4 +68,31 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+
+const postButton = ref<HTMLButtonElement | null>(null)
+
+const openPostCreate = () => {
+  if (route.name === 'post-create') {
+    window.dispatchEvent(new Event('close-post-create'))
+    return
+  }
+
+  if (postButton.value) {
+    const rect = postButton.value.getBoundingClientRect()
+    router.push({
+      name: 'post-create',
+      query: {
+        x: rect.right.toString(),
+        y: (rect.top + rect.height / 2).toString()
+      }
+    })
+  } else {
+    router.push({ name: 'post-create' })
+  }
+}
 </script>

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Models;
-using TagService.Models;
+using Models;
 
 namespace TagService.Data;
 

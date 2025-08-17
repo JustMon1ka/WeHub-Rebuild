@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Models;
-using PostService.Models;
 
-namespace TagService.Models;
+namespace Models;
 
 [Table("TAG")]
 public class Tag
@@ -13,7 +12,7 @@ public class Tag
     public long TagId { get; set; }
 
     [Column("TAG_NAME")] 
-    public string TagName { get; set; } = string.Empty;
+    public string? TagName { get; set; } = string.Empty;
     
     [Column("COUNT")]
     public long Count { get; set; }

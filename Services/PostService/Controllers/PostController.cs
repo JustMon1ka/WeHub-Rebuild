@@ -180,4 +180,46 @@ public class PostController : ControllerBase
             return BaseHttpResponse<PostPublishResponse>.Fail(500, "发帖失败: " + ex.Message);
         }
     }
+
+    [HttpGet("search")]
+    public async Task<BaseHttpResponse<List<SearchResponse>>> SearchPosts([FromQuery] int? limits,
+        [FromQuery] string? query)
+    {
+        try
+        {
+            var results = await _postService.SearchPostsAsync(query, limits);
+            return BaseHttpResponse<List<SearchResponse>>.Success(results);
+        }
+        catch (Exception ex)
+        {
+            // 记日志
+            return BaseHttpResponse<List<SearchResponse>>.Fail(500, "Search failed: " + ex.Message);
+        }
+    }
+
+    [HttpGet("search/suggest")]
+    public async Task<BaseHttpResponse<List<SearchSuggestResponse>>> SearchSuggest([FromQuery] int? limits,
+        [FromQuery] string? keyword)
+    {
+        // 设置默认值
+        int effectiveLimits = limits ?? 10;
+        
+        // 简单参数验证
+        if (effectiveLimits <= 0)
+        {
+            return BaseHttpResponse<List<SearchSuggestResponse>>.Fail(400, "limits must be a positive number.");
+        }
+
+        try
+        {
+            var suggestions = await _postService.GetSearchSuggestionsAsync(keyword, effectiveLimits);
+            return BaseHttpResponse<List<SearchSuggestResponse>>.Success(suggestions);
+        }
+        catch (Exception ex)
+        {
+            // 记录异常日志
+            // ...
+            return BaseHttpResponse<List<SearchSuggestResponse>>.Fail(500, "An error occurred while retrieving search suggestions.");
+        }
+    }
 }

@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using PostService.Config;
 using PostService.Data;
 using PostService.Repositories;
 using PostService.Services;
+using StackExchange.Redis;
 
 namespace PostService
 {
@@ -14,9 +16,27 @@ namespace PostService
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            // ------------------ Redis ------------------
+            var redisConfig = builder.Configuration.GetSection("Redis").Get<RedisConfig>();
+
+            if (redisConfig == null || string.IsNullOrWhiteSpace(redisConfig.ConnectionString))
+            {
+                // 如果配置不存在或为空，可以抛出异常或记录警告
+                Console.WriteLine("Redis ConnectionString is not configured.");
+                // 或者直接返回，避免应用启动失败
+                return; 
+            }
+
+            // 将 Redis 连接配置为单例服务
+            builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+                ConnectionMultiplexer.Connect(redisConfig.ConnectionString));
 
             // ------------------ DB ------------------
-            builder.Services.AddDbContext<AppDbContext>(options =>
+            // builder.Services.AddDbContext<AppDbContext>(options =>
+            //     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
+            
+            // 注册 DbContext 工厂，使它能够被多次创建
+            builder.Services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // ------------------ JWT ------------------
@@ -43,7 +63,8 @@ namespace PostService
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // 前端地址
+                    policy.WithOrigins("http://localhost:5173",// 前端地址
+                            "http://localhost:5000") 
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -80,6 +101,7 @@ namespace PostService
             // ------------------ Controllers & Services ------------------
             builder.Services.AddControllers();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
+            builder.Services.AddScoped<IPostRedisRepository, PostRedisRepository>();
             builder.Services.AddScoped<IPostService, PostService.Services.PostService>();
 
             var app = builder.Build();
