@@ -15,7 +15,7 @@ const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: t
     <!-- 悬浮窗 -->
     <div class="p-4">
       <div class="flex justify-between items-start">
-        <img v-if="!!userInfo.userAvatarUrl" :src="userInfo.userAvatarUrl"
+        <img v-if="!!userInfo.avatarURL" :src="userInfo.avatarURL"
              class="w-12 h-12 rounded-full" alt="User Avatar">
         <PlaceHolder v-else width="100" :text="userInfo.nickName" height="100"
                      class="w-12 h-12 rounded-full"/>
@@ -32,7 +32,7 @@ const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: t
           📃 {{ !!userInfo.bio ? userInfo.bio : "这个用户很神秘，什么也没写~"}}
         </p>
         <div class="flex items-center space-x-4 mt-3 text-sm text-slate-400">
-          <span>📍 {{ !!userInfo.address ? userInfo.address : "不告诉你哦~" }}</span>
+          <span>📍 {{ !!userInfo.location ? userInfo.location : "不告诉你哦~" }}</span>
           <span>🎂 {{ userInfo.birthday }} </span>
         </div>
         <div class="flex items-center space-x-6 mt-4">

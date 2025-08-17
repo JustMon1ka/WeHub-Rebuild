@@ -27,8 +27,8 @@ class User {
   static readonly MIN_COOKIE_AGE = 3600; // 1 hour
 
   static {
-    let userId: string | null = null;
-    let token: string | null = null;
+    let userId: string | undefined = undefined;
+    let token: string | undefined = undefined;
     document.cookie.split('; ').forEach(cookie => {
       const [name, value] = cookie.split('=');
       if (name === 'userId') {
@@ -39,8 +39,7 @@ class User {
     });
     if (userId && token) {
       User.#singleton = new User(userId, token);
-      User.#singleton?.logout(); //TODO: TEST ONLY
-      console.log(`User instance created with userId: ${userId}`);
+      // User.#singleton?.logout(); //TODO: TEST ONLY
     }
   }
 

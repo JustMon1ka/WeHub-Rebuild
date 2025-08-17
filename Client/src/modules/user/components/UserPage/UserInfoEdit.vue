@@ -52,15 +52,15 @@ async function onSave(){
   <div>
     <!-- 背景横幅 -->
     <div class="h-48 bg-slate-700 relative">
-      <input v-bind:value="userInfo.bgInput" @change="userInfo.uploadPicture()"
-             type="file" accept="image/*" class="hidden" id="bgInput">
-      <img v-if="!!userInfo?.profilePictureUrl" v-bind:src="userInfo?.profilePictureUrl"
+      <input @change="userInfo.uploadPicture($event, 'profile')"
+             type="file" accept="image/jpeg, image/png, image/jpg" class="hidden" id="bgInput">
+      <img v-if="!!userInfo?.profileURL" v-bind:src="userInfo?.profileURL"
            class="w-full h-full object-cover" alt="Profile banner">
       <img v-else src="@/modules/user/assets/default_background.svg"
            class="w-full h-full object-cover" alt="Profile banner">
       <label for="bgInput" class="bg-black/50 absolute inset-0 flex items-center justify-center">
         <label for="bgInput" class="p-3 bg-slate-900/50 rounded-full hover:bg-slate-900/75 transition-colors">
-          <img src="@/modules/user/assets/camera.svg" class="w-6 h-6 cursor-pointer" alt="BackGround">
+          <img src="@/modules/user/assets/camera.svg" class="w-6 h-6 cursor-pointer" alt="profile">
         </label>
       </label>
     </div>
@@ -68,15 +68,15 @@ async function onSave(){
     <!-- 头像 -->
     <div class="px-4 -mt-16">
       <div class="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800 relative">
-        <input v-bind:value="userInfo.avatarInput" @change="userInfo.uploadPicture()"
+        <input @change="userInfo.uploadPicture($event, 'avatar')"
                type="file" accept="image/*" class="hidden" id="avatarInput">
-        <img v-if="!!userInfo?.userAvatarUrl" v-bind:src="userInfo?.userAvatarUrl"
+        <img v-if="!!userInfo?.avatarURL" v-bind:src="userInfo?.avatarURL"
              v-bind:class="styles.userPic" alt="User avatar">
         <PlaceHolder width="150"  height="150" :text="userInfo.nickName"
                      v-bind:class="styles.userPic"></PlaceHolder>
         <label for="avatarInput" class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
           <label for="avatarInput" class="p-3 bg-slate-900/50 rounded-full hover:bg-slate-900/75 transition-colors">
-            <img src="@/modules/user/assets/camera.svg" class="w-6 h-6 cursor-pointer" alt="BackGround">
+            <img src="@/modules/user/assets/camera.svg" class="w-6 h-6 cursor-pointer" alt="profile">
           </label>
         </label>
       </div>
@@ -97,7 +97,7 @@ async function onSave(){
       </div>
       <div>
         <label for="location" v-bind:class="styles.label">📍 地址</label>
-        <input @change="userInfo.changed = true" v-model="userInfo.address"
+        <input @change="userInfo.changed = true" v-model="userInfo.location"
                type="text" id="location" v-bind:class="styles.input" tabindex="2">
       </div>
       <div>

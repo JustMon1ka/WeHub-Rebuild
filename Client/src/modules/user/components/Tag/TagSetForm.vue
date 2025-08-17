@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import icons from '@/modules/user/scripts/icon.ts'
 import { onMounted, onUnmounted, ref, type Ref } from 'vue'
 import { nanoid } from 'nanoid'
 import styles from '@/modules/user/scripts/Styles.ts'
@@ -8,8 +7,8 @@ const emit = defineEmits<{
   (e: 'changed'): void;
 }>();
 
-const selectedTags: Ref<Set<string>> = defineModel<Set<string>>(
-  'selectedTags', { required: true, default: () => new Set<string>() });
+const selectedTags: Ref<Map<string, string>> = defineModel<Map<string, string>>(
+  'selectedTags', { required: true, default: () => new Map<string, string>() });
 
 const editing: Ref<boolean> = defineModel<boolean>(
   'editing', { required: true, default: false });
@@ -22,25 +21,23 @@ const tagStyle = ref(styles.value.TagBasic);
 
 function onRemoveTag(event: MouseEvent) {
   const target = event.target as HTMLButtonElement;
-  let tagName:string = target?.parentElement?.textContent?.trim().slice(2) || '';
-  for (let ch of tagName) {
-    if (ch === ' ') ch = '-';
-    if (ch === '×') ch = '';
-  }
+  let tagId: string = target.id;
 
-  if (!tagName) return;
-  selectedTags.value.delete(tagName);
+  if (!tagId) return;
+  selectedTags.value.delete(tagId);
   emit('changed');
 }
 
-function addTag(event: Event) {
+async function addTag(event: Event) {
   let tagName: string = input.value.trim();
 
   // 替换空格为连字符
   tagName = tagName.replace(/\s+/g, '-');
+
+  const tagId = await nanoid(8); // TODO: 从API获取唯一ID
   if (tagName){
     // 添加标签到集合
-    selectedTags.value.add(tagName);
+    selectedTags.value.set(tagId, tagName);
     emit('changed');
   }
   input.value = '';
@@ -73,12 +70,12 @@ function onfocus(event: Event) {
     <div :id="formId" @click.prevent.capture="onfocus" tabindex="0">
       <div class="pt-2 space-y-2 space-x-2">
         <TransitionGroup name="list">
-          <button v-for="(tag, index) in selectedTags"
-                  :key="tag" :id="tag" :class="tagStyle">
-            <label :for="tag" @click.prevent.stop="onRemoveTag" v-show="editing" :class="styles.TagDelete">×</label>
+          <button v-for="([id ,tag], index) in selectedTags"
+                  :key="'btn' + tag" :id="'btn' + id" :class="tagStyle">
+            <label :for="tag" :id="id" @click.prevent.stop="onRemoveTag" v-show="editing" :class="styles.TagDelete">×</label>
             {{ tag }}
           </button>
-          <input v-model.lazy="input" @blur="addTag" @keyup.enter.prevent="addTag" type="text"
+          <input :key="input" v-model.lazy="input" @blur="addTag" @keyup.enter.prevent="addTag" type="text"
                  placeholder="输入标签并回车添加" :class="'w-24' + styles.TagBasic">
         </TransitionGroup>
       </div>

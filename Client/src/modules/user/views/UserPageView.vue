@@ -5,10 +5,11 @@ import { User } from '@/modules/auth/public.ts'
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import TabController from '@/modules/user/scripts/TabController.ts'
 import type { TabLabel} from '@/modules/user/scripts/TabController.ts'
-import { ref } from 'vue'
+import { computed, type Ref, ref, watch } from 'vue'
 import FollowList from '@/modules/user/components/UserPage/FollowList.vue'
 import router from '@/router.ts'
 import PrivacyView from '@/modules/auth/views/PrivacyView.vue'
+import { toggleLoginHover } from '@/App.vue'
 
 const { userId_p } = defineProps<{
   userId_p: string;
@@ -16,7 +17,11 @@ const { userId_p } = defineProps<{
 
 let userId = userId_p || 'Me';
 if (userId === 'Me'){
-  userId = User?.getInstance()?.userAuth.userId || 'unknown';
+  userId = User?.getInstance()?.userAuth.userId || '';
+  if (!userId){
+    toggleLoginHover(true);
+    router.push({ name: '/'});
+  }
 }
 
 const editMode = ref(false);
@@ -24,21 +29,6 @@ const followMode = ref(false);
 const followTab = ref(0);
 
 let userInfo = ref(new UserInfo(userId));
-
-// TODO: 模拟数据
-const test_tags = [
-  '编程语言', '前端开发', '后端开发', '全栈开发',
-  '编程', '建筑学', '人文科学', '文学', '恐怖故事',
-  '游戏', 'ACG', '自然地理', '科技', '教育', '心理学',
-  '音乐', '电影', '摄影', '旅行', '美食',
-  '体育', '健身', '健康', '时尚', '艺术', '设计',
-  'Ciallo～ (∠・ω< )⌒★'
-];
-
-test_tags.forEach(tag => {
-  userInfo.value.userTags.add(tag);
-});
-
 let userInfoTemp = ref(userInfo.value.copy());
 
 const tabLabels : Array<TabLabel> = [
@@ -49,13 +39,19 @@ const tabLabels : Array<TabLabel> = [
 
 const Tabs = new TabController(tabLabels);
 
+watch(() => userInfo.value.profileLoaded, (newValue) => {
+  if (newValue){
+    userInfoTemp.value = userInfo.value.copy();
+  }
+}, { immediate: true });
+
 function onCancel(){
   userInfoTemp.value = userInfo.value.copy();
   editMode.value = false;
 }
 
 function onSave(){
-  userInfo.value = userInfoTemp.value.copy();
+  userInfo.value = userInfoTemp.value.copy(userInfo.value);
   editMode.value = false;
 }
 </script>
@@ -71,7 +67,7 @@ function onSave(){
                 leave-from-class="opacity-100 translate-y-0"
                 leave-to-class="opacity-100 translate-y-full">
       <div v-show="userInfo.isMe && editMode">
-        <UserInfoEdit v-on:editCancel="onCancel" v-on:editSave="onSave"
+        <UserInfoEdit v-if="userInfo.profileLoaded" v-on:editCancel="onCancel" v-on:editSave="onSave"
                       v-model:user-info="userInfoTemp"/>
       </div>
     </transition>
@@ -93,9 +89,9 @@ function onSave(){
         <div class="p-2 rounded-full hover:bg-slate-800 mr-4">
           <img src="@/assets/back.svg" alt="关闭" class="w-6 h-6 cursor-pointer" @click="router.back()">
         </div>
-        <h1 class="text-xl p-1 font-bold">{{ userInfo.nickName }}</h1>
+        <h1 v-if="userInfo.profileLoaded" class="text-xl p-1 font-bold">{{ userInfo.nickName }}</h1>
       </div>
-      <UserCardPage user-id="userId" v-model:user-info="userInfo"
+      <UserCardPage v-if="userInfo.profileLoaded" v-model:user-info="userInfo"
                     @editProfile="editMode=true"
                     @toFollowing="() => {followMode=true; followTab=0;}"
                     @toFollower="() => {followMode=true; followTab=1;}"/>

@@ -1,3 +1,4 @@
+import User from '@/modules/auth/scripts/User.ts'
 
 interface registerData {
   "username": string,
@@ -19,7 +20,7 @@ interface codeVerifyData {
 
 const BASE_URL = 'http://localhost:5001';
 
-async function connect(url: string, method: string, data: string | null, token: string | null = null) {
+async function connect(url: string, method: string, data: string | null = null, token: string|null = null) {
   return await fetch(url, {
     method: method,
     headers: {
@@ -34,7 +35,6 @@ async function connect(url: string, method: string, data: string | null, token: 
 async function registerAPI(userData: registerData) {
   const response = await connect(`${BASE_URL}/api/auth/register`, 'POST', JSON.stringify(userData));
   if (response.status !== 401 &&!response.ok) {
-    console.log(response.status, response.statusText);
     throw new Error("Network Error");
   }
   return await response.json();
@@ -49,12 +49,12 @@ async function loginAPI(userData: loginData) {
 }
 
 async function meAPI(token: string) {
-  const response = await connect(`${BASE_URL}/api/auth/me`, 'GET', null, token);
-  if (!response.ok) {
-    return "Network Error";
-  }
+  const response = await connect(`${BASE_URL}/api/auth/me`, 'GET', undefined, token);
   if (response.status === 401) {
     return "Unauthorized";
+  }
+  if (!response.ok) {
+    return "Network Error";
   }
   return await response.json();
 }

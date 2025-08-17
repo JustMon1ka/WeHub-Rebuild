@@ -20,7 +20,7 @@ const emit = defineEmits<{
   <div>
     <!-- 背景横幅 -->
     <div class="h-72 bg-slate-700">
-      <img v-if="!!userInfo.profilePictureUrl" v-bind:src="userInfo.profilePictureUrl"
+      <img v-if="!!userInfo.profileURL" v-bind:src="userInfo.profileURL"
            class="w-full h-full object-cover" alt="Profile banner">
       <img v-else src="@/modules/user/assets/default_background.svg"
            class="w-full h-full object-cover" alt="Profile banner">
@@ -29,7 +29,7 @@ const emit = defineEmits<{
     <div class="px-4 -mt-16">
       <div class="flex justify-between items-end">
         <div class="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800">
-          <img v-if="!!userInfo.userAvatarUrl" v-bind:src="userInfo.userAvatarUrl"
+          <img v-if="!!userInfo.avatarURL" v-bind:src="userInfo.avatarURL"
                v-bind:class="styles.userPic" alt="User avatar">
           <PlaceHolder width="150"  height="150" :text="userInfo.nickName"
                        v-bind:class="styles.userPic"></PlaceHolder>
@@ -47,10 +47,15 @@ const emit = defineEmits<{
     <!-- 用户信息 -->
     <div class="p-4">
       <h2 class="text-2xl font-bold"> {{ userInfo.nickName }}</h2>
+      <p class="text-slate-500">@{{ userInfo.username }}</p>
       <p class="mt-4">📃 {{ !!userInfo.bio ? userInfo.bio : "这个用户很神秘，什么也没写~"}}</p>
       <div class="flex items-center space-x-4 mt-4 text-slate-500 text-sm">
-        <span>📍 {{ !!userInfo.address ? userInfo.address : "不告诉你哦~" }}</span>
+        <span>📍 {{ !!userInfo.location ? userInfo.location : "不告诉你哦~" }}</span>
         <span>🎂 {{ userInfo.birthday }} </span>
+        <span>📅 joined {{ userInfo.createdAt }}  </span>
+      </div>
+      <div class="flex items-center space-x-4 mt-4 text-slate-500 text-sm">
+
       </div>
       <div class="flex items-center space-x-6 mt-4">
         <button @click="$emit('toFollowing')" class="hover:underline">
