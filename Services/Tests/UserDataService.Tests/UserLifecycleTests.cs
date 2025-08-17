@@ -88,6 +88,8 @@ namespace UserDataService.Tests
                 Experience = 1,
 
                 Level = 2,
+                
+                Nickname = "zuolingxu"
             };
         
             _dataClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);

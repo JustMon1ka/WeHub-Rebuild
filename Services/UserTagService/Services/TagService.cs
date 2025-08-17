@@ -7,6 +7,9 @@ public interface IUserTagService
 {
     Task<List<int>> GetUserTagsAsync(int userId);
     Task<(bool Success, string Message)> UpdateUserTagsAsync(int userId, List<int> tags);
+    Task<(bool Success, string Message)> AddUserTagAsync(int userId, int tagId);
+    Task<(bool Success, string Message)> DeleteUserTagAsync(int userId, int tagId);
+
 }
 
 public class TagService : IUserTagService
@@ -29,4 +32,19 @@ public class TagService : IUserTagService
         await _repo.SaveChangesAsync();
         return (true, "Tags updated successfully");
     }
+    
+    public async Task<(bool Success, string Message)> AddUserTagAsync(int userId, int tagId)
+    {
+        await _repo.AddUserTagAsync(userId, tagId);
+        await _repo.SaveChangesAsync();
+        return (true, "Tag added successfully");
+    }
+
+    public async Task<(bool Success, string Message)> DeleteUserTagAsync(int userId, int tagId)
+    {
+        await _repo.DeleteUserTagAsync(userId, tagId);
+        await _repo.SaveChangesAsync();
+        return (true, "Tag deleted successfully");
+    }
+
 }

@@ -25,4 +25,6 @@ public class UserInfoResponse
     public int Experience { get; set; }
     
     public int Level { get; set; }
+    
+    public string? Nickname { get; set; }
 }
