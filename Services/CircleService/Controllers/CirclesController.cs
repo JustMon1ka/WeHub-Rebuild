@@ -30,13 +30,14 @@ public class CirclesController : ControllerBase
     // --- Circle Management Endpoints ---
 
     /// <summary>
-    /// 获取所有圈子，支持按名称搜索
+    /// 获取所有圈子，支持按名称搜索，或查询某个用户加入的圈子
     /// </summary>
     /// <param name="name">可选的搜索名称</param>
+    /// <param name="joinedBy">可选的用户ID，用于查询该用户已加入的圈子</param>
     [HttpGet]
-    public async Task<IActionResult> GetAllCircles([FromQuery] string? name = null)
+    public async Task<IActionResult> GetAllCircles([FromQuery] string? name = null, [FromQuery] int? joinedBy = null)
     {
-        var circles = await _circleService.GetAllCirclesAsync(name);
+        var circles = await _circleService.GetAllCirclesAsync(name, joinedBy);
         return Ok(BaseHttpResponse<object>.Success(circles));
     }
 
