@@ -2,7 +2,7 @@
 
 public class UpdateUserInfoRequest
 {
-    public string? Username { get; set; }
+    public string? AvatarUrl { get; set; }
     
     public string? Bio { get; set; }
     
@@ -17,4 +17,6 @@ public class UpdateUserInfoRequest
     public int Level { get; set; }
     
     public string? Nickname { get; set; }
+    
+    public string? ProfileUrl { get; set; }
 }

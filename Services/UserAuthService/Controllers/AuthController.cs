@@ -48,4 +48,23 @@ public class AuthController : ControllerBase
         var data = new { id, username };
         return Ok(BaseHttpResponse<object>.Success(data, "User info retrieved"));
     }
+    
+    [HttpPost("send-code-email")]
+    public async Task<IActionResult> SendEmailCode([FromBody] SendEmailCodeRequest request)
+    {
+        var result = await _authService.SendEmailCodeAsync(request.Email);
+        return result.Success
+            ? Ok(BaseHttpResponse<string>.Success("OK", result.Message))
+            : BadRequest(BaseHttpResponse<string>.Fail(400, result.Message));
+    }
+
+    [HttpPost("login-email-code")]
+    public async Task<IActionResult> LoginByEmailCode([FromBody] LoginByEmailCodeRequest request)
+    {
+        var token = await _authService.LoginByEmailCodeAsync(request.Email, request.Code);
+        return token == null
+            ? Unauthorized(BaseHttpResponse<string>.Fail(401, "验证码错误"))
+            : Ok(BaseHttpResponse<string>.Success(token));
+    }
+
 }

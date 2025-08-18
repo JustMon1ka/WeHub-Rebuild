@@ -39,6 +39,7 @@ namespace UserDataService.Services
                 Phone = user.Phone,
                 CreatedAt = user.CreatedAt,
                 Status = user.Status,
+                AvatarUrl = profile?.AvatarUrl,
                 Bio = profile?.Bio,
                 Gender = profile?.Gender,
                 Birthday = profile?.Birthday ?? default,
@@ -46,6 +47,7 @@ namespace UserDataService.Services
                 Experience = profile?.Experience ?? 0,
                 Level = profile?.Level ?? 0,
                 Nickname = profile?.Nickname,
+                ProfileUrl = profile?.ProfileUrl
             };
         }
 
@@ -56,21 +58,17 @@ namespace UserDataService.Services
 
             if (user == null) return (false, "User not found");
             if (profile == null) return (false, "User profile not found");
-            if (await _repo.ExistsByUsernameAsync(request.Username, userId))
-            {
-                return (false, "Username already exists.");
-            }
 
-            if (!string.IsNullOrEmpty(request.Username)) user.Username = request.Username;
+            if (!string.IsNullOrEmpty(request.AvatarUrl)) profile.AvatarUrl = request.AvatarUrl;
             if (!string.IsNullOrEmpty(request.Bio)) profile.Bio = request.Bio;
             if (!string.IsNullOrEmpty(request.Gender)) profile.Gender = request.Gender;
             if (!string.IsNullOrEmpty(request.Location)) profile.Location = request.Location;
             if (!string.IsNullOrEmpty(request.Nickname)) profile.Nickname = request.Nickname;
+            if (!string.IsNullOrEmpty(request.AvatarUrl)) profile.ProfileUrl = request.ProfileUrl;
             profile.Birthday = request.Birthday;
             profile.Experience = request.Experience;
             profile.Level = request.Level;
-
-            await _repo.UpdateUserAsync(user);
+            
             await _repo.UpdateUserProfileAsync(profile);
             await _repo.SaveChangesAsync();
 
