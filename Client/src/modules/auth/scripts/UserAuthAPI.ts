@@ -1,5 +1,3 @@
-import User from '@/modules/auth/scripts/User.ts'
-
 interface registerData {
   "username": string,
   "password": string,
@@ -20,8 +18,8 @@ interface codeVerifyData {
 
 const BASE_URL = 'http://localhost:5001';
 
-async function connect(url: string, method: string, data: string | null = null, token: string|null = null) {
-  return await fetch(url, {
+async function fetchFromAPI(url: string, method: string, data: string | null = null, token: string | null = null) {
+  const result =  await fetch(url, {
     method: method,
     headers: {
       'accept': 'application/json',
@@ -30,33 +28,23 @@ async function connect(url: string, method: string, data: string | null = null, 
     },
     body: data ? data : undefined,
   });
+  const resultData = await result.json();
+  if (!result.ok) {
+    throw new Error(resultData.msg);
+  }
+  return resultData;
 }
 
 async function registerAPI(userData: registerData) {
-  const response = await connect(`${BASE_URL}/api/auth/register`, 'POST', JSON.stringify(userData));
-  if (response.status !== 401 &&!response.ok) {
-    throw new Error("Network Error");
-  }
-  return await response.json();
+  return await fetchFromAPI(`${BASE_URL}/api/auth/register`, 'POST', JSON.stringify(userData));
 }
 
 async function loginAPI(userData: loginData) {
-  const response = await connect(`${BASE_URL}/api/auth/login`, 'POST', JSON.stringify(userData));
-  if (response.status !== 401 && !response.ok) {
-    return "Network Error";
-  }
-  return await response.json();
+  return await fetchFromAPI(`${BASE_URL}/api/auth/login`, 'POST', JSON.stringify(userData));
 }
 
 async function meAPI(token: string) {
-  const response = await connect(`${BASE_URL}/api/auth/me`, 'GET', undefined, token);
-  if (response.status === 401) {
-    return "Unauthorized";
-  }
-  if (!response.ok) {
-    return "Network Error";
-  }
-  return await response.json();
+  return await fetchFromAPI(`${BASE_URL}/api/auth/me`, 'GET', undefined, token);
 }
 
 export { registerAPI, loginAPI, meAPI, type registerData, type loginData };

@@ -5,7 +5,7 @@ import { User } from '@/modules/auth/public.ts'
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import TabController from '@/modules/user/scripts/TabController.ts'
 import type { TabLabel} from '@/modules/user/scripts/TabController.ts'
-import { computed, type Ref, ref, watch } from 'vue'
+import { type Ref, ref, watch } from 'vue'
 import FollowList from '@/modules/user/components/UserPage/FollowList.vue'
 import router from '@/router.ts'
 import PrivacyView from '@/modules/auth/views/PrivacyView.vue'
@@ -16,19 +16,23 @@ const { userId_p } = defineProps<{
 }>();
 
 let userId = userId_p || 'Me';
+let userInfo : Ref<UserInfo, UserInfo>;
 if (userId === 'Me'){
   userId = User?.getInstance()?.userAuth.userId || '';
   if (!userId){
     toggleLoginHover(true);
     router.push({ name: '/'});
   }
+  userInfo = ref<UserInfo>(User.getInstance()?.userInfo || new UserInfo(userId));
+} else {
+  userInfo = ref<UserInfo>(new UserInfo(userId));
 }
+userInfo.value.loadUserData(); // 加载用户数据，必须在Ref包裹后调用，否则会丧失profileLoaded的响应性。
 
 const editMode = ref(false);
 const followMode = ref(false);
 const followTab = ref(0);
 
-let userInfo = ref(User.getInstance()?.userInfo || new UserInfo(userId));
 let userInfoTemp = ref();
 const tempCopied = ref(false);
 
@@ -39,7 +43,6 @@ const tabLabels : Array<TabLabel> = [
 ];
 
 const Tabs = new TabController(tabLabels);
-
 watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
   (newValue, oldValue) => {
     if (newValue && !oldValue) {
@@ -94,9 +97,9 @@ function onSave(){
         <div class="p-2 rounded-full hover:bg-slate-800 mr-4">
           <img src="@/assets/back.svg" alt="关闭" class="w-6 h-6 cursor-pointer" @click="router.back()">
         </div>
-        <h1 v-if="userInfo.profileLoaded" class="text-xl p-1 font-bold">{{ userInfo.nickname }}</h1>
+        <h1 class="text-xl p-1 font-bold">{{ userInfo.nickname }}</h1>
       </div>
-      <UserCardPage v-if="userInfo.profileLoaded" v-model:user-info="userInfo"
+      <UserCardPage :user-info="userInfo"
                     @editProfile="editMode=true"
                     @toFollowing="() => {followMode=true; followTab=0;}"
                     @toFollower="() => {followMode=true; followTab=1;}"/>

@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import { ref } from 'vue'
 import styles from '@/modules/auth/scripts/Styles.ts'
-import { User, state } from '@/modules/auth/scripts/User.ts'
+import { User } from '@/modules/auth/scripts/User.ts'
 
 class UserName {
   static readonly errorMsg = {
@@ -208,8 +208,6 @@ class AuthCode {
   static readonly errorMsg = {
     'EmailNotSetError': '请先设置电子邮件地址',
     'CodeEmptyError': '验证码不能为空',
-    'EmailNotFoundError': '未找到与该电子邮件地址关联的用户',
-    'NetWorkError': '网络连接错误，请稍后再试',
     'CodeFormatError': '验证码格式不正确，请输入6位数字验证码',
     'DefaultError': '发生未知错误，请稍后再试',
   }
@@ -259,28 +257,12 @@ class AuthCode {
     this.authBtnStyle.value = styles.value.AuthBtnShape + ' ' + styles.value.BtnLoading;
 
     const result = await User.sendAuthCode(email);
-    const cur_state = result.state;
-
-    switch (cur_state){
-      case state.Success:
-        this.error.value = false;
-        this.errorMsg.value = '';
-        break;
-      case state.NetworkError:
-        this.error.value = true;
-        this.errorMsg.value = AuthCode.errorMsg.NetWorkError;
-        break;
-      case state.DataError:
-        this.error.value = true;
-        this.errorMsg.value = result?.error || AuthCode.errorMsg.DefaultError;
-        break;
-      default:
-        this.error.value = true;
-        this.errorMsg.value = AuthCode.errorMsg.DefaultError;
-        break;
-    }
-
-    if (cur_state !== state.Success) {
+    if (result.success){
+      this.error.value = false;
+      this.errorMsg.value = '';
+    } else {
+      this.error.value = true;
+      this.errorMsg.value = result.error || AuthCode.errorMsg.DefaultError;
       this.authBtnStyle.value = styles.value.AuthBtnShape + ' ' + styles.value.BtnNormal;
       return;
     }

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import styles from '@/modules/user/scripts/Styles.ts'
-import { type Ref } from 'vue'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 import FollowButton from '@/modules/user/components/UserList/FollowButton.vue'
 
-const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: true });
+const { userInfo } = defineProps<{
+  userInfo: UserInfo;
+}>();
 
 const emit = defineEmits<{
   (e: 'editProfile'): void;

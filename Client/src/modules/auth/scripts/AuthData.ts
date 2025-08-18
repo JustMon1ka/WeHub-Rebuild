@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import { ref } from 'vue'
-import { type resultState, state, User } from '@/modules/auth/scripts/User.ts'
+import { type resultState,User } from '@/modules/auth/scripts/User.ts'
 import router from '@/router.ts'
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthCode, Email, Password, Phone, UserName } from '@/modules/auth/scripts/UserMetaData.ts'
@@ -15,7 +15,7 @@ enum AuthType {
 }
 
 class AuthData {
-  static errorMsg = {
+  static readonly errorMsg = {
     "CheckError": "请检查输入的内容是否正确",
     "PrivacyError": "请先阅读并同意隐私政策",
     "NetworkError": "网络连接错误，请稍后再试",
@@ -57,13 +57,13 @@ class AuthData {
     }
   }
 
-  sendAuthCode() {
+  async sendAuthCode() {
     this.email.checkValidity();
     if (this.email.error.value) {
       this.authCode.emailNotSet();
       return;
     }
-    this.authCode.sendAuthCode(this.email.email.value);
+    await this.authCode.sendAuthCode(this.email.email.value);
   }
 
   async submit() {
@@ -129,40 +129,24 @@ class AuthData {
   }
 
   async checkResponse(result: resultState) {
-    const cur_state : state = result.state;
-    switch(cur_state) {
-      case state.Success:
-        if (this.authType.value === AuthType.PasswordResetVerify) {
-          this.changeAuthType(AuthType.PasswordReset);
-          this.verified.value = true;
-          this.error.value = false;
-          this.errorMsg.value = '';
-          break;
-        }
+    if (result.success){
+      if (this.authType.value === AuthType.PasswordResetVerify) {
+        this.changeAuthType(AuthType.PasswordReset);
+        this.verified.value = true;
         this.error.value = false;
         this.errorMsg.value = '';
-        if (this.authType.value === AuthType.Register) {
-          await router.push('/user_guide');
-        }
-        await router.push('/');
-        toggleLoginHover(false);
-        break;
-      case state.NetworkError:
-        this.error.value = true;
-        this.errorMsg.value = AuthData.errorMsg.NetworkError;
-        break;
-      case state.DataError:
-        this.error.value = true;
-        this.errorMsg.value = result?.error || AuthData.errorMsg.DefaultError;
-        break;
-      case state.LoggedOut:
-        this.error.value = true;
-        this.errorMsg.value = '登录信息已失效，请先登录';
-        break;
-      default:
-        this.error.value = true;
-        this.errorMsg.value = AuthData.errorMsg.DefaultError;
-        break;
+        return;
+      }
+      this.error.value = false;
+      this.errorMsg.value = '';
+      if (this.authType.value === AuthType.Register) {
+        await router.push('/user_guide');
+      }
+      await router.push('/');
+      toggleLoginHover(false);
+    } else {
+      this.error.value = true;
+      this.errorMsg.value = result.error || AuthData.errorMsg.DefaultError;
     }
   }
 
@@ -174,7 +158,7 @@ class AuthData {
     const phone = this.phone.phone.value;
     const rememberMe = this.rememberMe.value;
 
-    let result : resultState;
+    let result : resultState | undefined = undefined;
     switch (this.authType.value) {
       case AuthType.PasswordLogin:
         result = await User.login(userName, password, rememberMe);
@@ -187,11 +171,11 @@ class AuthData {
         result = await User.register(userName, password, email, authCode, phone, rememberMe);
         break;
       case AuthType.PasswordReset:
-        result = await User.getInstance()?.resetPassword(password) || {
-          state: state.LoggedOut,
-          data: '',
-          error: '',
-        };
+        result = await User.getInstance()?.resetPassword(password);
+        if (result === undefined){
+          await router.push('/password_reset');
+          return;
+        }
         break;
       default:
         this.error.value = true;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 import UserCardHover from '@/modules/user/components/UserList/UserCardHover.vue'
-import { ref } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import FollowButton from '@/modules/user/components/UserList/FollowButton.vue'
 
@@ -10,7 +10,18 @@ const { userId, followBtn } = defineProps<{
   followBtn?: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: 'error'): void;
+}>();
+
 const userInfo = ref(new UserInfo(userId));
+userInfo.value.loadUserData().then(() => {
+  if (userInfo.value.error) {
+    emit('error');
+  }
+}).catch((error) => {
+  emit('error');
+});
 const hoverCard = ref(false);
 
 const cardStyle = ref({
@@ -84,7 +95,7 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
 </script>
 
 <template>
-  <div v-if="userInfo.profileLoaded" class="w-full p-6 border border-slate-800
+  <div class="w-full p-6 border border-slate-800
     relative flex flex-row items-start justify-between w-full">
     <!-- Avatar -->
     <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"

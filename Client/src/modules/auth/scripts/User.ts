@@ -1,19 +1,11 @@
 import router from '@/router.ts'
 import { UserInfo } from '@/modules/user/public.ts'
 import { loginAPI, meAPI, registerAPI } from '@/modules/auth/scripts/UserAuthAPI.ts'
-import userInfo from '@/modules/user/scripts/UserInfo.ts'
-
-enum state {
-  LoggedOut,
-  NetworkError,
-  DataError,
-  Success,
-}
+import { setUserAuthDataAPI } from '@/modules/user/scripts/UserDataAPI.ts'
 
 interface resultState {
-  state: state;
+  success: boolean;
   error?: string;
-  data?: string;
 }
 
 
@@ -68,24 +60,33 @@ class User {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  static errorHandler(error: any): resultState {
-    if (error.message === 'Network Error') {
-      return {
-        state: state.NetworkError,
-        error: error.message,
-      }
-    }
+  static readonly msgTranslation = new Map<string, string>([
+    ["Username or Email or Phone already exists.", "用户名或邮箱或手机号已存在"],
+    ["User not found", "用户未找到"],
+    ["User profile not found", "用户资料未找到"],
+    ["Username already exists.", "用户名已存在"],
+    ["User info updated successfully", "用户信息更新成功"],
+    ["Registration successful.", "注册成功"],
+    ["Email or phone already exists.", "邮箱或手机号已存在"],
+    ["User updated successfully", "用户信息更新成功"],
+    ["User deleted successfully", "用户已删除"],
+    ["Failed to fetch", "获取数据失败，请检查网络连接"],
+    ["Invalid credentials", "用户名或密码错误"],
+    ["You are not authorized to modify this user", "您无权修改此用户"],
+    ["Unauthorized", "未授权访问"],
+  ]);
 
-    if (error.message === 'Unauthorized') {
-      return {
-        state: state.LoggedOut,
-        error: 'Unauthorized',
-      };
+  static handleError(error: any): resultState {
+    let errorMsg = '未知错误';
+    if (error.message && User.msgTranslation.has(error.message)) {
+      errorMsg = User.msgTranslation.get(error.message) || errorMsg;
+    } else {
+      errorMsg = error.message || errorMsg;
     }
     return {
-      state: state.DataError,
-      error: error.message || 'Unexpected error during login',
-    };
+      success: false,
+      error: errorMsg,
+    }
   }
 
   static async login(username: string, password: string, rememberMe: boolean = false) : Promise<resultState> {
@@ -96,31 +97,18 @@ class User {
         identifier: username,
         password: passwordHash,
       });
-      if (login.code !== 200) {
-        return {
-          state: state.DataError,
-          error: login.message || 'Login failed',
-        };
-      }
 
       // 获取用户信息
       const me = await meAPI(login.data);
-      if (me.code !== 200) {
-        return {
-          state: state.DataError,
-          error: me.message || 'Failed to retrieve user information',
-        };
-      }
 
       User.#singleton = new User(me.data.id, login.data);
       User.#singleton?.saveToCookie(rememberMe ? User.MAX_COOKIE_AGE : User.MIN_COOKIE_AGE);
       return {
-        state: state.Success,
-        data: "",
+        success: true,
       };
     }
     catch (error: any) {
-      return User.errorHandler(error);
+      return User.handleError(error);
     }
   }
 
@@ -135,26 +123,18 @@ class User {
         code: code,
         phone: phone,
       });
-      if (register.code !== 200) {
-        return {
-          state: state.DataError,
-          error: register.message || 'Registration failed',
-        };
-      }
 
       return await User.login(username, password, rememberMe);
     }
     catch (error: any) {
-      return User.errorHandler(error);
+      return User.handleError(error);
     }
   }
 
   static async sendAuthCode(email: string): Promise<resultState> {
     // TODO: 这里可以添加发送验证码请求的逻辑
     return {
-      state: state.Success,
-      data: '',
-      error: '',
+      success: true,
     }
   }
 
@@ -163,10 +143,9 @@ class User {
     if (rememberMe){
 
     }
+
     return {
-      state: state.Success,
-      data: '',
-      error: '',
+      success: true,
     }
   }
 
@@ -199,11 +178,20 @@ class User {
   }
 
   async resetPassword(newPassword: string): Promise<resultState> {
-    // TODO: 这里可以添加重置密码的逻辑
-    return {
-      state: state.Success,
-      data: '',
-      error: '',
+    try {
+      const passwordHash = await User.generateHash(newPassword);
+      const result = await setUserAuthDataAPI(this.#userid , {
+        username: this.userInfo?.username || '',
+        password: passwordHash,
+        email: this.userInfo?.email || '',
+        phone: this.userInfo?.phone || '',
+      });
+
+      return {
+        success: true,
+      }
+    } catch (error: any) {
+      return User.handleError(error);
     }
   }
 
@@ -226,4 +214,4 @@ class User {
 }
 
 export default User;
-export { User, state, type resultState };
+export { User, type resultState };

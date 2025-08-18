@@ -1,6 +1,4 @@
 import { User } from '@/modules/auth/public.ts'
-import { nextTick, type Ref, ref } from 'vue'
-import { toggleLoginHover } from '@/App.vue'
 import {
   getUserDataAPI,
   setUserProfileAPI,
@@ -11,15 +9,34 @@ import { getTagsAPI, setTagsAPI } from '@/modules/user/scripts/UserTagAPI.ts'
 import tags from '@/modules/user/scripts/tags.json'
 
 class UserInfo implements UserData{
-  static errorMsg = {
-    NetworkError: '网络错误，请稍后再试。',
-    LoggedOut: '您已登出，请重新登录。',
+  static readonly errorMsg = {
     PictureFormatError: '图片格式有误，请上传有效的图片文件。',
     PictureSizeError: '图片大小超过限制，请上传小于3MB的图片。',
     NicknameLengthError: '昵称长度必须在1到20个字符之间。',
     BioLengthError: '个人简介长度不能超过100个字符。',
     DefaultError: '发生未知错误，请稍后再试。',
   }
+
+  static readonly msgTranslation = new Map<string, string>([
+    ["Username or Email or Phone already exists.", "用户名或邮箱或手机号已存在"],
+    ["User not found", "用户未找到"],
+    ["User profile not found", "用户资料未找到"],
+    ["Username already exists.", "用户名已存在"],
+    ["User info updated successfully", "用户信息更新成功"],
+    ["Email or phone already exists.", "邮箱或手机号已存在"],
+    ["User updated successfully", "用户信息更新成功"],
+    ["User deleted successfully", "用户已删除"],
+    ["User info updated successfully", "用户信息更新成功"],
+    ["User deleted successfully", "用户已删除"],
+    ["Failed to fetch", "获取数据失败，请检查网络连接"],
+    ["Tags updated successfully", "标签更新成功"],
+    ["Tag added successfully", "标签添加成功"],
+    ["Tag deleted successfully", "标签删除成功"],
+    ["You are not authorized to modify this user", "您无权修改此用户"],
+    ["Unauthorized", "未授权访问"],
+    ["Failed to update tags", "更新标签失败"],
+  ]);
+
   static TagMap: Map<string, string> = new Map([]);
 
   static {
@@ -52,9 +69,9 @@ class UserInfo implements UserData{
   }
 
   userId: string;
-  profileLoaded: Ref<boolean> = ref(false);
-  followLoaded: Ref<boolean> = ref(false);
-  tagsLoaded: Ref<boolean> = ref(false);
+  profileLoaded: boolean = false;
+  followLoaded: boolean = false;
+  tagsLoaded: boolean = false;
 
 
   username: string = '';
@@ -99,8 +116,9 @@ class UserInfo implements UserData{
     if (this.nickname === '') {
       this.nickname = 'Anonymous';
     }
-
-    nextTick(async () => {await this.loadUserData();});
+    if (this.username === '') {
+      this.username = 'Anonymous';
+    }
   }
 
   async loadProfile() {
@@ -131,7 +149,7 @@ class UserInfo implements UserData{
     this.bio = userProfile?.bio || '';
     this.gender = userProfile.gender || '未知';
     this.level = userProfile.level || 0;
-    this.profileLoaded.value = true;
+    this.profileLoaded = true;
   }
 
   async loadFollow() {
@@ -149,7 +167,7 @@ class UserInfo implements UserData{
         this.userTags.set(tag, tagName);
       }
     }
-    this.tagsLoaded.value = true;
+    this.tagsLoaded = true;
   }
 
   async loadUserData() {
@@ -157,10 +175,8 @@ class UserInfo implements UserData{
       await this.loadProfile();
       await this.loadFollow();
       if (this.isMe) await this.loadTags();
-    } catch (error) {
-      this.errorHandler(error);
-      this.error = true;
-      this.errorMsg = UserInfo.errorMsg.NetworkError;
+    } catch (error:any) {
+      this.handleError(error);
     }
   }
 
@@ -203,7 +219,7 @@ class UserInfo implements UserData{
     }
 
     try {
-      const resultP = await setUserProfileAPI(this.userId, <userProfileData>{
+      await setUserProfileAPI(this.userId, <userProfileData>{
         profileURL: this.profileURL,
         avatarURL: this.avatarURL,
         experience: this.experience,
@@ -214,21 +230,15 @@ class UserInfo implements UserData{
         location: this.location,
         bio: this.bio
       })
-      if (resultP.code != 200) {
-        throw new Error(resultP.message || UserInfo.errorMsg.DefaultError);
-      }
 
-      const resultT = await setTagsAPI(this.userId, {
+      await setTagsAPI(this.userId, {
         tags: [...this.userTags.keys()].map((tagId) => Number(tagId)),
       });
-      if (resultT.code != 200) {
-        throw new Error(resultT.message || UserInfo.errorMsg.DefaultError);
-      }
       this.error = false;
       this.errorMsg = '';
       return true;
-    } catch (error) {
-      this.errorHandler(error);
+    } catch (error:any) {
+      this.handleError(error);
       return false;
     }
   }
@@ -253,28 +263,16 @@ class UserInfo implements UserData{
       const result = await setTagsAPI(this.userId, {
         tags: [...this.userTags.keys()].map((tagId) => Number(tagId)),
       });
-      if (result.code != 200) {
-        throw new Error(result.message || UserInfo.errorMsg.DefaultError);
-      }
-    } catch (error) {
-      this.errorHandler(error);
+    } catch (error : any) {
+      this.handleError(error);
     }
   }
 
-  errorHandler(error: any) {
-    if (error.message === 'Network Error') {
-      this.error = true;
-      this.errorMsg = UserInfo.errorMsg.NetworkError;
-    }
-
-    if (error.message === 'Unauthorized') {
-      this.error = true;
-      this.errorMsg = UserInfo.errorMsg.LoggedOut;
-      toggleLoginHover();
-    }
-
-    else {
-      this.error = true;
+  handleError(error: any) {
+    this.error = true;
+    if (error.message && UserInfo.msgTranslation.has(error.message)) {
+      this.errorMsg = UserInfo.msgTranslation.get(error.message) || UserInfo.errorMsg.DefaultError;
+    } else {
       this.errorMsg = error.message || UserInfo.errorMsg.DefaultError;
     }
   }

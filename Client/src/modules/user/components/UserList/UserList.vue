@@ -23,6 +23,7 @@ const state = ref({
 
 const users : Ref<Array<string>> = ref([]);
 generator.next(); // 初始化生成器，第一次调用next()以便开始生成用户数据
+const error = ref<number>(0); // 错误计数器，记录错误次数
 
 // 加载数据
 const loadMore = async () => {
@@ -46,6 +47,7 @@ const loadMore = async () => {
     state.value.errorMsg = `加载失败: ${error instanceof Error ? error.message : '未知错误'}`;
   } finally {
     state.value.loading = false;
+    error.value = 0; // 重置错误计数器
   }
 };
 
@@ -72,6 +74,16 @@ onMounted(() => {
 onUnmounted(() => {
   if (observer) observer.disconnect();
 });
+
+function errorCounter() {
+  error.value++;
+  if (error.value > PAGE_SIZE * 0.33) {
+    state.value.error = true;
+    state.value.errorMsg = '网络错误，请稍后再试';
+    state.value.end = true;
+    users.value = []; // 清空用户列表
+  }
+}
 </script>
 
 <template>
@@ -79,7 +91,7 @@ onUnmounted(() => {
     <!-- 用户列表 -->
     <div v-for="(user, index) in users" :key="user"
          class="flex items-start space-x-4 hover:bg-slate-800/50 transition-colors duration-200">
-      <UserCardList :user-id="user" :follow-btn="followBtn"/>
+      <UserCardList @error="errorCounter" :user-id="user" :follow-btn="followBtn"/>
     </div>
 
     <!-- 加载组件 -->

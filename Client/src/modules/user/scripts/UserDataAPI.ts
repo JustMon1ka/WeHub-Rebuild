@@ -1,4 +1,4 @@
-import User from '@/modules/auth/scripts/User.ts'
+import fetchFromAPI from '@/modules/user/scripts/FetchFromAPI.ts'
 
 interface userReadOnlyData {
   userId: string,
@@ -29,60 +29,22 @@ interface UserData extends userAuthData, userProfileData, userReadOnlyData {}
 
 const BASE_URL = 'http://localhost:5002';
 
-async function connect(url: string, method: string, data: string | null = null) {
-  const token = User.getInstance()?.userAuth?.token || null;
-  return await fetch(url, {
-    method: method,
-    headers: {
-      'accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-    },
-    body: data ? data : undefined,
-  });
-}
-
 async function getUserDataAPI(userId: string){
-  const response = await connect(`${BASE_URL}/api/users/${userId}`, 'GET');
-  if (response.status !== 401 &&!response.ok) {
-    throw new Error("Network Error");
-  }
-  return await response.json();
+  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}`, 'GET');
 }
 
-async function setUserDataAPI(userId: string, userData: userAuthData) {
-  const response = await connect(`${BASE_URL}/api/users/${userId}/user`, 'PUT', JSON.stringify(userData));
-  if (response.status === 401) {
-    return "Unauthorized";
-  }
-  if (!response.ok) {
-    return "Network Error";
-  }
-  return await response.json();
+async function setUserAuthDataAPI(userId: string, userData: userAuthData) {
+  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}/user`, 'PUT', JSON.stringify(userData));
 }
 
 async function setUserProfileAPI(userId: string, userProfileData: userProfileData) {
-  const response = await connect(`${BASE_URL}/api/users/${userId}/profile`, 'PUT', JSON.stringify(userProfileData));
-  if (response.status === 401) {
-    return "Unauthorized";
-  }
-  if (!response.ok) {
-    return "Network Error";
-  }
-  return await response.json();
+  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}/profile`, 'PUT', JSON.stringify(userProfileData));
 }
 
 async function deleteUserAPI(userId: string) {
-  const response = await connect(`${BASE_URL}/api/users/${userId}/delete`, 'DELETE');
-  if (response.status === 401) {
-    return "Unauthorized";
-  }
-  if (!response.ok) {
-    return "Network Error";
-  }
-  return await response.json();
+  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}/delete`, 'DELETE');
 }
 
 
-export { getUserDataAPI, setUserDataAPI, setUserProfileAPI, deleteUserAPI,
+export { getUserDataAPI, setUserAuthDataAPI, setUserProfileAPI, deleteUserAPI,
   type userAuthData, type userProfileData, type userReadOnlyData, type UserData };
