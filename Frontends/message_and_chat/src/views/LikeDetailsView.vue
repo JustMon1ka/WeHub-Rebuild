@@ -1,160 +1,164 @@
 <template>
-  <div class = "container">
-    <div class = "left">
-      <SideNavigationBar />
+  <div class="page-container">
+    <div class="page-content-wrapper">
+      <div class="left">
+        <SideNavigationBar />
+      </div>
+      <div class="divider-vertical"></div>
+      <div class="center">
+        <div class="divider-horizontal"></div>
+        <div class="notice-heading">
+          <span class="separator">通知 > </span>
+          <span @click="$router.go(-1)" class="back-link">收到的赞</span>
+          <span class="separator"> > 点赞详情</span>
+        </div>
+        <div class="divider-horizontal"></div>
+        <div class="post-info">
+          <span class="post-title">帖子：{{ postTitle }}</span>
+        </div>
+        <div class="divider-horizontal"></div>
 
-    </div>
-    <div class="divider-vertical"></div>
-    <div class = "center">
-      <div class = "notice-heading">
-        <span class="separator">通知 > </span>
-        <span @click="$router.go(-1)" class="back-link">收到的赞</span>
-        <span class="separator"> > 点赞详情</span>
-      </div>
-      <div class="divider-horizontal"></div>  
-      <div class = "post-info">
-        <span class="post-title">帖子：{{ postTitle }}</span>
-      </div>
-      <div class="divider-horizontal"></div>
-      
-      <div class="like-users-list">
-        <div v-for="user in likeUsers" :key="user.id" class="like-user-item">
-          <div class="item-left">
-            <div class="user-avater">
-              <img :src="user.avatar" :alt="user.username" />
+        <div class="like-users-list">
+          <div v-for="user in likeUsers" :key="user.id" class="like-user-item">
+            <div class="item-left">
+              <div class="user-avater">
+                <img :src="user.avatar" :alt="user.username" />
+              </div>
             </div>
-          </div>
-          <div class="item-right">
-            <div class="item-content">
-              <span class="username">{{ user.username }}</span>
-              <span class="action">赞了我</span>
+            <div class="item-right">
+              <div class="item-content">
+                <span class="username">{{ user.username }}</span>
+                <span class="action">赞了我</span>
+              </div>
+              <span class="time">{{ user.time }}</span>
             </div>
-            <span class="time">{{ user.time }}</span>
           </div>
         </div>
+        <div class="divider-horizontal"></div>
       </div>
-    </div>
-    <div class="divider-vertical"></div>
-    <div class = "right">
-        <!--todo 搜索框-->
-      <input
-          type = "text"
-          placeholder="搜索..."
-        />
+      <div class="divider-vertical"></div>
+      <div class="right">
+        <SearchInput v-model="searchText" placeholder="搜索..." />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import SideNavigationBar from '../components/SideNavigationBar.vue'
-import { getLikeUsersByPostId, getPostTitleById } from '../data/noticeData';
-import { useRoute } from 'vue-router';
+import { ref, computed } from "vue";
+import SideNavigationBar from "../components/SideNavigationBar.vue";
+import SearchInput from "../components/SearchInput.vue";
+import { getLikeUsersByPostId, getPostTitleById } from "../data/noticeData";
+import { useRoute } from "vue-router";
 
 const route = useRoute();
 const postId = ref(Number(route.params.postId));
 const postTitle = ref(getPostTitleById(postId.value));
+const searchText = ref("");
 
 // 获取点赞用户列表
 const likeUsers = computed(() => {
-  return getLikeUsersByPostId(postId.value);
+  const users = getLikeUsersByPostId(postId.value);
+
+  if (searchText.value.trim()) {
+    const searchLower = searchText.value.toLowerCase();
+    return users.filter((user) =>
+      user.username.toLowerCase().includes(searchLower)
+    );
+  }
+
+  return users;
 });
 </script>
 
 
 
 <style scoped>
-.container {
-  display: flex;
-  height: 100vh;
-  width: 1200px; 
-  max-width: 100%;
-  margin:0 auto;
-  box-sizing: border-box;
-}
+.left {
+  width: 25%;
 
-.left{
-  width:20%;
-  display:flex;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.center{
-  width:60%;
+.center {
+  width: 50%;
+
   display: flex;
   flex-direction: column;
   overflow-wrap: break-word;
-  word-break: break-all;
+  word-break: break-word;
 }
 
-.notice-heading{
-  flex:1;
+.notice-heading {
+  flex: 1;
   display: flex;
-  padding-left:32px;
+  padding-left: 32px;
   align-items: center;
   gap: 8px;
 }
 
-.back-link{
+.back-link {
   cursor: pointer;
 }
 
-.back-link:hover{
+.back-link:hover {
   color: #3b82f6;
 }
 
-.separator{
+.separator {
   color: #666;
 }
 
-.post-info{
-  flex:1;
+.post-info {
+  flex: 1;
   display: flex;
-  padding-left:32px;
+  padding: 0px 32px;
   align-items: center;
 }
 
-.post-title{
+.post-title {
   font-weight: bold;
   color: #333;
+  align-items: center;
 }
 
-.like-users-list{
-  flex:10;
-  padding: 0px 32px;
+.like-users-list {
+  flex: 10;
+  overflow-y: auto;
 }
 
-.like-user-item{
+.like-user-item {
   display: flex;
-  padding: 12px 0;
+  padding: 12px 32px;
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s;
 }
 
-.like-user-item:hover{
+.like-user-item:hover {
   background-color: #f8f9fa;
 }
 
-.item-left{
+.item-left {
   display: flex;
   align-items: center;
   margin-right: 24px;
 }
 
-.user-avater{
+.user-avater {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.user-avater img{
+.user-avater img {
   width: 36px;
   height: 36px;
   border-radius: 50%;
 }
 
-.item-right{
+.item-right {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -162,18 +166,14 @@ const likeUsers = computed(() => {
   align-items: flex-start;
 }
 
-.user-avatar{
-  flex-shrink: 0;
-}
-
-.user-avatar img{
+.user-avatar img {
   width: 36px;
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.user-details{
+.user-details {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -187,22 +187,22 @@ const likeUsers = computed(() => {
   margin-bottom: 4px;
 }
 
-.username{
+.username {
   font-weight: bold;
   font-size: 16px;
 }
 
-.action{
+.action {
   font-size: 14px;
   color: #61666d;
 }
 
-.time{
+.time {
   color: #9499a0;
   font-size: 12px;
 }
 
-.empty-state{
+.empty-state {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -211,20 +211,18 @@ const likeUsers = computed(() => {
   font-size: 16px;
 }
 
-.right{
-  width:20%;
+.right {
+  width: 25%;
 }
 
 .divider-horizontal {
-  width: 100%;                  
-  border-bottom: 1px solid #444c5c;              
+  width: 100%;
+  border-bottom: 1px solid #444c5c;
 }
 
 .divider-vertical {
-  width: 1px;               
-  background-color: #444c5c; 
-  margin: 0 0px;           
+  width: 1px;
+  background-color: #444c5c;
+  margin: 0 0px;
 }
-
-
 </style>

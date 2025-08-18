@@ -37,7 +37,7 @@ public class CircleServiceTests
         var expectedCircles = allCircles.Where(c => c.Name.Contains(filterName)).ToList();
 
         // 设置模拟仓储：当调用 GetAllAsync 并传入 filterName 时，返回我们预设的筛选结果
-        _mockCircleRepo.Setup(repo => repo.GetAllAsync(filterName))
+        _mockCircleRepo.Setup(repo => repo.GetAllAsync(filterName, It.IsAny<int?>()))
                        .ReturnsAsync(expectedCircles);
 
         // 设置模拟成员仓储：因为我们不测试成员数量，所以返回一个空字典即可
@@ -54,6 +54,6 @@ public class CircleServiceTests
         Assert.IsTrue(resultList.All(c => c.Name.Contains(filterName)), "所有返回的圈子名称都应包含筛选关键字");
         
         // 验证 CircleRepository 的 GetAllAsync 方法确实被带着正确的参数调用了1次
-        _mockCircleRepo.Verify(repo => repo.GetAllAsync(filterName), Times.Once);
+        _mockCircleRepo.Verify(repo => repo.GetAllAsync(filterName, It.IsAny<int?>()), Times.Once);
     }
 }

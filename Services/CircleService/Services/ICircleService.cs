@@ -21,8 +21,9 @@ public interface ICircleService
     /// 异步获取所有圈子的DTO列表，支持按名称模糊搜索
     /// </summary>
     /// <param name="name">可选的圈子名称，用于模糊搜索</param>
+    /// <param name="userId">可选的用户ID，用于查询该用户加入的圈子</param>
     /// <returns>返回所有圈子的DTO列表</returns>
-    Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null);
+    Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null, int? userId = null);
 
     /// <summary>
     /// 异步创建一个新圈子

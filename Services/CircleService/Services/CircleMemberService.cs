@@ -28,10 +28,16 @@ public class CircleMemberService : ICircleMemberService
 
     public async Task<ServiceResponse> ApplyToJoinCircleAsync(int circleId, int userId)
     {
+        var circle = await _circleRepository.GetByIdAsync(circleId);
+        if (circle == null)
+        {
+            return ServiceResponse.Fail("圈子不存在。");
+        }
+
         var existingMember = await _memberRepository.GetByIdAsync(circleId, userId);
         if (existingMember != null)
         {
-            return ServiceResponse.Fail("您已经申请过或已是该圈子成员。");
+            return ServiceResponse.Fail("您已是该圈子成员或已提交申请。");
         }
 
         var newMember = new CircleMember

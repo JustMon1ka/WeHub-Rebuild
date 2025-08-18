@@ -1,49 +1,52 @@
 <template>
-  <div class="container">
-    <div class="left">
-      <SideNavigationBar />
-    </div>
-    <div class="divider-vertical"></div>
-    <div class="center">
-      <div class="notice-heading">
-        <span>通知 > {{ noticeTypeTexts[selectedNoticeType] }}</span>
+  <div class="page-container">
+    <div class="page-content-wrapper">
+      <div class="left">
+        <SideNavigationBar />
       </div>
-      <div class="divider-horizontal"></div>
-      <div class="notice-type">
-        <button
-          v-for="(text, index) in noticeTypeTexts"
-          :key="index"
-          :class="{ active: selectedNoticeType === index }"
-          @click="selectedNoticeType = index"
-        >
-          {{ text }}
-        </button>
-      </div>
+      <div class="divider-vertical"></div>
+      <div class="center">
+        <div class="divider-horizontal"></div>
+        <div class="notice-heading">
+          <span>通知 > {{ noticeTypeTexts[selectedNoticeType] }}</span>
+        </div>
+        <div class="divider-horizontal"></div>
+        <div class="notice-type">
+          <button
+            v-for="(text, index) in noticeTypeTexts"
+            :key="index"
+            :class="{ active: selectedNoticeType === index }"
+            @click="selectedNoticeType = index"
+          >
+            {{ text }}
+          </button>
+        </div>
 
-      <div class="notice-information">
-        <div v-if="selectedNotices.length === 0" class="empty-state">
-          <p>暂无通知</p>
+        <div class="notice-information">
+          <div v-if="selectedNotices.length === 0" class="empty-state">
+            <p>暂无通知</p>
+          </div>
+          <div v-else class="notice-list">
+            <NoticeItem
+              v-for="notice in selectedNotices"
+              :key="`${notice.sender.id}-${notice.time}-${notice.type}`"
+              :notice="notice"
+              :like-count="
+                notice.type === 'like'
+                  ? likeCountMap[notice.targetPostId]
+                  : undefined
+              "
+              :like-notices="getLikeNoticesForPost(notice.targetPostId)"
+              @show-like-details="handleShowLikeDetailsClick"
+            />
+          </div>
         </div>
-        <div v-else class="notice-list">
-          <NoticeItem
-            v-for="notice in selectedNotices"
-            :key="`${notice.sender.id}-${notice.time}-${notice.type}`"
-            :notice="notice"
-            :like-count="
-              notice.type === 'like'
-                ? likeCountMap[notice.targetPostId]
-                : undefined
-            "
-            :like-notices="getLikeNoticesForPost(notice.targetPostId)"
-            @show-like-details="handleShowLikeDetails"
-          />
-        </div>
+        <div class="divider-horizontal"></div>
       </div>
-    </div>
-    <div class="divider-vertical"></div>
-    <div class="right">
-      <!--todo 搜索框-->
-      <input v-model="searchText" type="text" placeholder="搜索..." />
+      <div class="divider-vertical"></div>
+      <div class="right">
+        <SearchInput v-model="searchText" placeholder="搜索..." />
+      </div>
     </div>
   </div>
 </template>
@@ -54,6 +57,7 @@ import { useRouter } from "vue-router";
 import { type notice } from "../types/notice";
 import SideNavigationBar from "../components/SideNavigationBar.vue";
 import NoticeItem from "../components/NoticeItem.vue";
+import SearchInput from "../components/SearchInput.vue";
 import { noticeList as noticeData } from "../data/noticeData";
 
 const selectedNoticeType = ref(0);
@@ -114,8 +118,14 @@ const selectedNotices = computed(() => {
     // 再处理点赞通知
     likeNoticesByPost.forEach((likes, postId) => {
       if (likes.length > 1) {
-        // 如果这个帖子有多个点赞，只添加最新的一个，并修改消息内容
-        const lastLiker = likes[0]; // 最新的点赞者
+        // 如果这个帖子有多个点赞，先按时间排序，找到最新的点赞
+        const sortedLikes = likes.sort((a, b) => {
+          const timeA = new Date(a.time).getTime();
+          const timeB = new Date(b.time).getTime();
+          return timeB - timeA; // 降序排列，最新的在前
+        });
+
+        const lastLiker = sortedLikes[0]; // 最新的点赞者
 
         // 创建合并后的通知
         const mergedNotice: notice = {
@@ -133,10 +143,20 @@ const selectedNotices = computed(() => {
       }
     });
 
-    return processedNotices;
+    // 对处理后的通知按时间排序
+    return processedNotices.sort((a, b) => {
+      const timeA = new Date(a.time).getTime();
+      const timeB = new Date(b.time).getTime();
+      return timeB - timeA; // 降序排列，新通知在前
+    });
   }
 
-  return selectedNoticeList;
+  // 对非点赞通知也按时间排序
+  return selectedNoticeList.sort((a, b) => {
+    const timeA = new Date(a.time).getTime();
+    const timeB = new Date(b.time).getTime();
+    return timeB - timeA; // 降序排列，新通知在前
+  });
 });
 
 // 获取点赞数
@@ -158,30 +178,24 @@ const getLikeNoticesForPost = (postId: number) => {
 };
 
 // 显示点赞详情
-const handleShowLikeDetails = (postId: number) => {
+const handleShowLikeDetailsClick = (postId: number) => {
   router.push(`/notice/likeDetails/${postId}`);
 };
 </script>
 
 <style scoped>
-.container {
-  display: flex;
-  height: 100vh;
-  width: 1200px;
-  max-width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
 .left {
   width: 20%;
+
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-left: 16px;
 }
 
 .center {
   width: 60%;
+
   display: flex;
   flex-direction: column;
   overflow-wrap: break-word;
@@ -191,6 +205,7 @@ const handleShowLikeDetails = (postId: number) => {
 .notice-heading {
   flex: 1;
   display: flex;
+  align-items: center;
   padding-left: 32px;
 }
 
@@ -214,6 +229,7 @@ const handleShowLikeDetails = (postId: number) => {
   flex: 14;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .notice-list {

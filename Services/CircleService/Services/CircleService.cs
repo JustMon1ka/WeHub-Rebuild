@@ -35,9 +35,9 @@ public class CircleService : ICircleService
         return MapToCircleDto(circle, memberCount);
     }
 
-    public async Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null)
+    public async Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null, int? userId = null)
     {
-        var circles = await _circleRepository.GetAllAsync(name);
+        var circles = await _circleRepository.GetAllAsync(name, userId);
         if (!circles.Any())
         {
             return Enumerable.Empty<CircleDto>();
