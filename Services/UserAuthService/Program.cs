@@ -23,6 +23,8 @@ namespace UserAuthService
             // ------------------ JWT ------------------
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddSingleton<JwtService>();
+            builder.Services.AddSingleton<IEmailService, EmailService>();
+
 
             builder.Services.AddAuthentication("Bearer")
                 .AddJwtBearer("Bearer", options =>

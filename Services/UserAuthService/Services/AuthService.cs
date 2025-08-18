@@ -10,11 +10,13 @@ public class AuthService : IAuthService
 {
     private readonly JwtService _jwtService;
     private readonly IUserAuthRepository _userAuthRepo;
+    private readonly IEmailService _emailService;
 
-    public AuthService(IUserAuthRepository userAuthRepo, JwtService jwtService)
+    public AuthService(IUserAuthRepository userAuthRepo, JwtService jwtService,IEmailService emailService)
     {
         _userAuthRepo = userAuthRepo;
         _jwtService = jwtService;
+        _emailService = emailService;
     }
 
     public async Task<(bool Success, string Message)> RegisterAsync(RegisterRequest request)
@@ -22,6 +24,10 @@ public class AuthService : IAuthService
         if (await _userAuthRepo.ExistsByUsernameOrEmailOrPhoneAsync(request.Username, request.Email, request.Phone))
             return (false, "Username or Email or Phone already exists.");
 
+        if (!_emailService.ValidateCode(request.Email, request.Code))
+        {
+            return (false, "Invalid code.");
+        }
         var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
         var user = new User
@@ -47,5 +53,25 @@ public class AuthService : IAuthService
             return null;
 
         return _jwtService.GenerateToken(user);
+    }
+    
+    public async Task<(bool Success, string Message)> SendEmailCodeAsync(string email)
+    {
+        var user = await _userAuthRepo.GetByIdentifierAsync(email);
+        if (user == null)
+            return (false, "Email not registered");
+
+        var code = new Random().Next(100000, 999999).ToString();
+        _emailService.SaveCode(email, code);
+        await _emailService.SendEmailAsync(email, "验证码登录", $"你的验证码是：{code}");
+
+        return (true, "The verification code has been sent.");
+    }
+    
+    public async Task<string?> LoginByEmailCodeAsync(string email, string code)
+    {
+        if (!_emailService.ValidateCode(email, code)) return null;
+        var user = await _userAuthRepo.GetByIdentifierAsync(email);
+        return user == null ? null : _jwtService.GenerateToken(user);
     }
 }

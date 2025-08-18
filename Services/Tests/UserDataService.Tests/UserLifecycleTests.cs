@@ -75,7 +75,9 @@ namespace UserDataService.Tests
             
             var updateUserInfoRequest = new UpdateUserInfoRequest {
 
-                Username = "123456",
+                AvatarUrl = "32189",
+                
+                ProfileUrl = "213848",
 
                 Bio = "123456",
 

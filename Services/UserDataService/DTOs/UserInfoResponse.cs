@@ -14,6 +14,8 @@ public class UserInfoResponse
     
     public int Status { get; set; }
     
+    public string? AvatarUrl { get; set; }
+    
     public string? Bio { get; set; }
     
     public string? Gender { get; set; }
@@ -27,4 +29,7 @@ public class UserInfoResponse
     public int Level { get; set; }
     
     public string? Nickname { get; set; }
+    
+    
+    public string? ProfileUrl { get; set; }
 }

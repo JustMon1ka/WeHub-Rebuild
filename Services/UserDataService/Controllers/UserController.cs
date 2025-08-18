@@ -10,7 +10,6 @@ namespace UserDataService.Controllers
 {
     [ApiController]
     [Route("api/users")]
-    [Authorize(AuthenticationSchemes = "Bearer")] // 要求用户认证
     public class UserController : ControllerBase
     {
         private readonly IUserDataService _userService;
@@ -33,6 +32,7 @@ namespace UserDataService.Controllers
         }
         
         [HttpPut("{id}/user")]
+        [Authorize(AuthenticationSchemes = "Bearer")] 
         public async Task<ActionResult<BaseHttpResponse<string>>> UpdateUser(int id, [FromBody] UpdateUserRequest request)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -47,6 +47,7 @@ namespace UserDataService.Controllers
         }
         
         [HttpPut("{id}/profile")]
+        [Authorize(AuthenticationSchemes = "Bearer")] 
         public async Task<ActionResult<BaseHttpResponse<string>>> UpdateUserProfile(int id, [FromBody] UpdateUserInfoRequest request)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -61,6 +62,7 @@ namespace UserDataService.Controllers
         }
 
         [HttpDelete("{id}/delete")]
+        [Authorize(AuthenticationSchemes = "Bearer")] 
         public async Task<IActionResult> DeleteUser(int id)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
