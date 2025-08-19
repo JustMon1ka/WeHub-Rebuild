@@ -9,7 +9,7 @@ export type ToggleLikeRequest = {
 export type BaseResp<T = unknown> = {
   code: number;
   msg: string | null;
-  data: T | null;
+  data: T;
 };
 
 // （可选）我的收藏列表响应
@@ -25,3 +25,25 @@ export type PostViewModel = {
   isLiked: boolean;
   isFavorited: boolean;
 };
+
+export enum KeywordType
+{
+  Title,
+  Tag,
+  Content,
+  User,
+  Circle,
+  Other
+}
+
+export type SearchSuggestions = BaseResp<{
+  keyword: string,
+  type: KeywordType
+}[]>;
+
+export type SearchResponse = BaseResp<{
+  postId: number,
+  title: string,
+  tags: Array<string>,
+  content: string
+}[]>;

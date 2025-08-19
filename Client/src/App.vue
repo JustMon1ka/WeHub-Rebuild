@@ -13,7 +13,7 @@ const route = useRoute()
 <template>
 <body class="bg-slate-900 text-slate-200 w-screen h-screen md:overflow-hidden overflow-y-auto">
 <!-- 侧边栏固定 -->
-  <NavigationBar id="navigation-pc"/>
+  <NavigationBar id="navigation-pc" class="z-100"/>
 
   <!-- 主内容 + 推荐栏 的容器，整体往右错开 4rem -->
   <div class="flex flex-col-reverse md:flex-row w-full h-full pl-64 overflow-hidden">
@@ -26,11 +26,11 @@ const route = useRoute()
     <!-- 推荐栏 -->
     <RecommendBar
       id="recommend"
-      class="flex-none h-24 md:h-full p-10"
+      class="flex-none h-24 md:h-full p-10 z-100"
     />
   </div>
 
-  <!-- 全局悬浮层：通过 Teleport 挂在 body 外层 -->
+<!--   全局悬浮层：通过 Teleport 挂在 body 外层-->
   <teleport to="body">
     <!-- 只有在路由 name 为 post-create 时渲染 -->
     <PostCreate v-if="route.name === 'post-create'" />

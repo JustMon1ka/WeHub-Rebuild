@@ -12,8 +12,7 @@ const router = createRouter({
   routes: [
     ...coreRouter.getRoutes(),       // 核心模块路由
     ...authRouter.getRoutes(),       // auth 模块路由
-    ...postCreateRouter,             // postCreate 模块路由数组
-    ...postRouter,                   // post 模块路由数组
+    ...postCreateRouter.getRoutes(),             // postCreate 模块路由数组
     // ...yourRouter.getRoutes(),     // 如果有其他模块路由
     {
       path: '/:pathMatch(.*)*',      // 404 路由
