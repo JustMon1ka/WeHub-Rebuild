@@ -3,6 +3,7 @@ import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import styles from '@/modules/user/scripts/Styles.ts'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 import FollowButton from '@/modules/user/components/UserList/FollowButton.vue'
+import { computed } from 'vue'
 
 const { userInfo } = defineProps<{
   userInfo: UserInfo;
@@ -14,6 +15,17 @@ const emit = defineEmits<{
   (e: 'toFollower'): void;
 }>();
 
+function numberFormat(num: number): string {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+}
+
+const formattedFollowerCount = computed(() => numberFormat(userInfo.followerCount));
+const formattedFollowingCount = computed(() => numberFormat(userInfo.followingCount));
 </script>
 
 <template>
@@ -60,11 +72,11 @@ const emit = defineEmits<{
       </div>
       <div class="flex items-center space-x-6 mt-4">
         <button @click="$emit('toFollowing')" class="hover:underline">
-          <span class="font-bold text-white">{{ userInfo.followingCount }}</span>
+          <span class="font-bold text-white">{{ formattedFollowingCount }}</span>
           <span class="text-slate-500">正在关注</span>
         </button>
         <button @click="$emit('toFollower')" class="hover:underline">
-          <span class="font-bold text-white">{{ userInfo.followerCount }}</span>
+          <span class="font-bold text-white">{{ formattedFollowerCount }}</span>
           <span class="text-slate-500">关注者</span>
         </button>
       </div>

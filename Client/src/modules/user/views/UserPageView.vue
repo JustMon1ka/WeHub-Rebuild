@@ -21,7 +21,7 @@ if (userId === 'Me'){
   userId = User?.getInstance()?.userAuth.userId || '';
   if (!userId){
     toggleLoginHover(true);
-    router.push({ name: '/'});
+    setTimeout(async () => await router.push('/'), 0);
   }
   userInfo = ref<UserInfo>(User.getInstance()?.userInfo || new UserInfo(userId));
 } else {
@@ -43,7 +43,31 @@ const tabLabels : Array<TabLabel> = [
 ];
 
 const Tabs = new TabController(tabLabels);
-watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
+
+watch( () => userId_p, (newId, oldId) => {
+  if (newId !== oldId) {
+    userId = newId || 'Me';
+    if (userId === 'Me'){
+      userId = User?.getInstance()?.userAuth.userId || '';
+      if (!userId){
+        toggleLoginHover(true);
+        setTimeout(async () => await router.push('/'), 0);
+      }
+      userInfo = ref<UserInfo>(User.getInstance()?.userInfo || new UserInfo(userId));
+    } else {
+      userInfo = ref<UserInfo>(new UserInfo(userId));
+    }
+    userInfo.value.loadUserData();
+  }
+  editMode.value = false;
+  followMode.value = false;
+  followTab.value = 0;
+  userInfoTemp.value = undefined;
+  tempCopied.value = false;
+  Tabs.switchTab(0);
+}, { immediate: true });
+
+watch(() => userInfo.value.isMe && userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
   (newValue, oldValue) => {
     if (newValue && !oldValue) {
       userInfoTemp.value = userInfo.value.copy();
@@ -76,7 +100,7 @@ function onSave(){
                 leave-to-class="opacity-100 translate-y-full">
       <div v-show="userInfo.isMe && editMode">
         <UserInfoEdit v-if="tempCopied" v-on:editCancel="onCancel" v-on:editSave="onSave"
-                      v-model:user-info="userInfoTemp"/>
+                      v-model:user-info="userInfoTemp" :key="'Edit'+userId"/>
       </div>
     </transition>
 
@@ -88,7 +112,7 @@ function onSave(){
                 leave-from-class="opacity-100 translate-y-0"
                 leave-to-class="opacity-100 translate-y-full">
       <FollowList v-show="followMode" @close="followMode=false" :user-id_p="userId"
-                  v-model:curTab="followTab" :nick-name="userInfo.nickname"/>
+                  v-model:curTab="followTab" :nick-name="userInfo.nickname" :key="'follow'+userId"/>
     </transition>
 
     <div v-show="!editMode && !followMode">
@@ -115,7 +139,7 @@ function onSave(){
       <div v-for="( tab , index) in Tabs.tablabels" :key="index">
         <div v-show="Tabs.currentTab === index">
           <!-- 内容切换 Tab -->
-          <privacy-view/>
+          <privacy-view :key="'post'+index+userId"/>
         </div>
       </div>
     </div>

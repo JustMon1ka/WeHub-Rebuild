@@ -132,20 +132,28 @@ class User {
   }
 
   static async sendAuthCode(email: string): Promise<resultState> {
-    // TODO: 这里可以添加发送验证码请求的逻辑
-    return {
-      success: true,
+    try {
+      // TODO: 这里可以添加发送验证码请求的逻辑
+      return {
+        success: true,
+      }
+    } catch (error: any) {
+      return User.handleError(error);
     }
   }
 
   static async verifyAuthCode(email: string, code: string, rememberMe: boolean) : Promise<resultState> {
-    // TODO: 这里可以添加发送验证码验证请求的逻辑
-    if (rememberMe){
+    try {
+      // TODO: 这里可以添加发送验证码验证请求的逻辑
+      if (rememberMe){
 
-    }
+      }
 
-    return {
-      success: true,
+      return {
+        success: true,
+      }
+    } catch (error: any) {
+      return User.handleError(error);
     }
   }
 

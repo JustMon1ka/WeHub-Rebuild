@@ -74,7 +74,7 @@ class UserInfo implements UserData{
   tagsLoaded: boolean = false;
 
 
-  username: string = '';
+  username: string = 'Loading...';
   phone: string = '';
   email: string = '';
   createdAt: string = '';
@@ -83,7 +83,7 @@ class UserInfo implements UserData{
   profileURL: string = '';
   avatarURL: string = '';
   status: string = '';
-  nickname: string = '';
+  nickname: string = 'Loading...';
   birthday: string = '';
   location: string = '';
   bio: string = '';
@@ -91,8 +91,8 @@ class UserInfo implements UserData{
   gender: string = '';
   level: number = 0;
 
-  followerCount: number = 0;
-  followingCount: number = 0;
+  followingCount: number = 0;  // 用户的关注人数
+  followerCount: number = 0;  // 用户的粉丝人数
 
   userTags :Map<string, string> = new Map(); // Loading only when isMe is true
 
@@ -110,14 +110,6 @@ class UserInfo implements UserData{
 
     if (userId === User.getInstance()?.userAuth?.userId) {
       this.isMe = true;
-    }
-
-    // fetch from API
-    if (this.nickname === '') {
-      this.nickname = 'Anonymous';
-    }
-    if (this.username === '') {
-      this.username = 'Anonymous';
     }
   }
 

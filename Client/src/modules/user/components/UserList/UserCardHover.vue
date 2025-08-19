@@ -1,12 +1,23 @@
 <script setup lang="ts">
 
-import type { Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 import FollowButton from '@/modules/user/components/UserList/FollowButton.vue'
 
 const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: true });
 
+function numberFormat(num: number): string {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+}
+
+const formattedFollowerCount = computed(() => numberFormat(userInfo.value.followerCount));
+const formattedFollowingCount = computed(() => numberFormat(userInfo.value.followingCount));
 </script>
 
 <template>
@@ -33,11 +44,11 @@ const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: t
         </p>
         <div class="flex items-center space-x-6 mt-4">
           <p>
-            <span class="font-bold text-white">{{ userInfo.followingCount }}</span>
+            <span class="font-bold text-white">{{ formattedFollowingCount }}</span>
             <span class="text-slate-500">正在关注</span>
           </p>
           <p>
-            <span class="font-bold text-white">{{ userInfo.followerCount }}</span>
+            <span class="font-bold text-white">{{ formattedFollowerCount }}</span>
             <span class="text-slate-500">关注者</span>
           </p>
         </div>

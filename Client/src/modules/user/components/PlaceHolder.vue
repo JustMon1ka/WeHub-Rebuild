@@ -10,7 +10,8 @@ const { width, height, text } = defineProps<{
 function simpleHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash += str.charCodeAt(i) * (i + 1); // 使用字符的ASCII码和位置来计算哈希值
+    hash += str.charCodeAt(i) * 7;
+    // 使用字符的ASCII码和位置来计算哈希值，使用7作为乘数，为了让未加载用户名为浅色配色
   }
   return hash; // 返回正数
 }

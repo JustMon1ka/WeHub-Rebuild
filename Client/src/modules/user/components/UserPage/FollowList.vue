@@ -39,7 +39,7 @@ const generator: () => AsyncGenerator<Array<string>, string, number> = async fun
   for(let j =0; j< 3; j++){
     let users: Array<string> = [];
     for (let i = 0; i < num; i++) {
-      users.push(userId);
+      users.push('100248');
     }
     let result = await new Promise((resolve) => {
       setTimeout(() => {
