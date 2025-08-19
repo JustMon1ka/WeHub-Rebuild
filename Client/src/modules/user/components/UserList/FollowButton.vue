@@ -14,7 +14,8 @@ const emit = defineEmits<{
 }>();
 
 const login = !!User.getInstance();
-let followed : Ref<boolean> = ref(User.getInstance()?.followList.has(userId) || false);
+let following : Ref<boolean> = ref(User.getInstance()?.followingList.has(userId) || false); // 是否关注对方
+let followed: Ref<boolean> = ref(User.getInstance()?.followerList.has(userId) || false); // 是否被对方关注
 
 function toggleFollow() {
   if (!login) {
@@ -36,11 +37,19 @@ function toggleFollow() {
 
 <template>
   <div>
-    <button @click="toggleFollow" v-if="!followed" :class="styles.followBtnShape + styles.followBtn">
+<!--    *  followed following-->
+<!--    *  false    false       未关注      => 显示“关注”按钮-->
+<!--    *  false    true        关注对方     => 显示“正在关注”按钮-->
+<!--    *  true     false       被对方关注   => 显示“回关”按钮-->
+<!--    *  true     true        双向关注     => 显示“已回关”按钮-->
+    <button @click="toggleFollow" v-if="!followed && !following" :class="styles.followBtnShape + styles.followBtn">
       关 注
     </button>
+    <button @click="toggleFollow" v-else-if="followed && !following" :class="styles.followBtnShape + styles.followBtn">
+      回 关
+    </button>
     <button @click="toggleFollow" v-else :class="styles.followBtnShape + styles.followingBtn">
-      <span class="text-following">正在关注</span>
+      <span class="text-following">{{ followed ? '已回关' : '正在关注' }}</span>
       <span class="text-unfollow">取消关注</span>
     </button>
   </div>

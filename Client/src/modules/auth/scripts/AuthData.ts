@@ -23,7 +23,6 @@ class AuthData {
   }
 
   authType : Ref<AuthType> = ref(AuthType.PasswordLogin); // 'password' or 'email'
-  useAuthCode : Ref<boolean> = ref(false); // 'password' or 'email'
 
   userName : UserName = new UserName();
   password : Password = new Password();
@@ -47,13 +46,6 @@ class AuthData {
     this.errorMsg.value = '';
     if (type !== AuthType.PasswordReset) {
       this.verified.value = false; // 重置 verified 状态
-    }
-
-    if (type === AuthType.PasswordLogin || type === AuthType.PasswordResetVerify) {
-      this.useAuthCode.value = false;
-    } else if (type === AuthType.AuthCodeLogin || type === AuthType.Register
-      || type === AuthType.PasswordReset) {
-      this.useAuthCode.value = true;
     }
   }
 
@@ -141,8 +133,9 @@ class AuthData {
       this.errorMsg.value = '';
       if (this.authType.value === AuthType.Register) {
         await router.push('/user_guide');
+      } else {
+        await router.push('/');
       }
-      await router.push('/');
       toggleLoginHover(false);
     } else {
       this.error.value = true;

@@ -1,6 +1,12 @@
 import router from '@/router.ts'
 import { UserInfo } from '@/modules/user/public.ts'
-import { loginAPI, meAPI, registerAPI } from '@/modules/auth/scripts/UserAuthAPI.ts'
+import {
+  loginAPI,
+  meAPI,
+  registerAPI,
+  sendCodeAPI,
+  verifyCodeAPI
+} from '@/modules/auth/scripts/UserAuthAPI.ts'
 import { setUserAuthDataAPI } from '@/modules/user/scripts/UserDataAPI.ts'
 
 interface resultState {
@@ -74,6 +80,7 @@ class User {
     ["Invalid credentials", "用户名或密码错误"],
     ["You are not authorized to modify this user", "您无权修改此用户"],
     ["Unauthorized", "未授权访问"],
+    ["Email not registered", "邮箱未注册"],
   ]);
 
   static handleError(error: any): resultState {
@@ -133,7 +140,7 @@ class User {
 
   static async sendAuthCode(email: string): Promise<resultState> {
     try {
-      // TODO: 这里可以添加发送验证码请求的逻辑
+      const result = await sendCodeAPI(email);
       return {
         success: true,
       }
@@ -144,10 +151,15 @@ class User {
 
   static async verifyAuthCode(email: string, code: string, rememberMe: boolean) : Promise<resultState> {
     try {
-      // TODO: 这里可以添加发送验证码验证请求的逻辑
-      if (rememberMe){
+      const login = await verifyCodeAPI({
+        email: email,
+        code: code,
+      });
+      // 获取用户信息
+      const me = await meAPI(login.data);
 
-      }
+      User.#singleton = new User(me.data.id, login.data);
+      User.#singleton?.saveToCookie(rememberMe ? User.MAX_COOKIE_AGE : User.MIN_COOKIE_AGE);
 
       return {
         success: true,
@@ -159,17 +171,22 @@ class User {
 
   readonly #userid: string;
   readonly #token: string;
-  followList: Set<string> = new Set<string>();
+  followingList: Set<string> = new Set<string>();
+  followerList: Set<string> = new Set<string>();
   userInfo: UserInfo | undefined = undefined;
 
   constructor(userid: string, token: string) {
     this.#userid = userid;
     this.#token = token;
     // 延迟加载 UserInfo 实例，避免在User未初始化时就尝试获取用户信息
-    setTimeout(() => {this.userInfo = new UserInfo(userid, false)}, 0);
+    setTimeout(async () => {
+      this.userInfo = new UserInfo(userid, false);
+      await this.userInfo.loadProfile();
+    }, 0);
   }
 
   saveToCookie(cookieAge: number = User.MIN_COOKIE_AGE) {
+    console.log(cookieAge)
     document.cookie = `userId=${this.#userid}; max-age=${cookieAge}`;
     document.cookie = `token=${this.#token}; max-age=${cookieAge}`;
   }
@@ -211,12 +228,12 @@ class User {
   }
 
   followUser(userId: string) {
-    this.followList.add(userId);
+    this.followingList.add(userId);
     // TODO: 这里可以添加发送关注请求的逻辑
   }
 
   unfollowUser(userId: string) {
-    this.followList.delete(userId);
+    this.followingList.delete(userId);
     // TODO: 这里可以添加发送取消关注请求的逻辑
   }
 }

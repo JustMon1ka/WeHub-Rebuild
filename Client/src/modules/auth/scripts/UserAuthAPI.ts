@@ -47,4 +47,12 @@ async function meAPI(token: string) {
   return await fetchFromAPI(`${BASE_URL}/api/auth/me`, 'GET', undefined, token);
 }
 
-export { registerAPI, loginAPI, meAPI, type registerData, type loginData };
+async function sendCodeAPI(email: string) {
+  return await fetchFromAPI(`${BASE_URL}/api/auth/send-code-email`, 'POST', JSON.stringify({ email: email }));
+}
+
+async function verifyCodeAPI(data: codeVerifyData) {
+  return await fetchFromAPI(`${BASE_URL}/api/auth/login-email-code`, 'POST', JSON.stringify(data));
+}
+
+export { registerAPI, loginAPI, meAPI, sendCodeAPI, verifyCodeAPI , type registerData, type loginData };

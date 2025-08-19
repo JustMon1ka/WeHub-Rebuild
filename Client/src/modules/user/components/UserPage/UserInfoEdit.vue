@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, type Ref, watch } from 'vue'
+import { ref, type Ref } from 'vue'
 import { UserInfo } from '@/modules/user/scripts/UserInfo.ts'
 import styles from '@/modules/user/scripts/Styles.ts'
 import VueFlatpickr from 'vue-flatpickr-component'

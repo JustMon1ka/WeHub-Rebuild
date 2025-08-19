@@ -5,12 +5,12 @@ import { User } from '@/modules/auth/scripts/User.ts'
 
 class UserName {
   static readonly errorMsg = {
-    'NameFormatError': '用户名格式不正确，只能包含字母和数字和连字符、下划线',
+    'NameFormatError': '用户名格式不正确，只能包含字母、数字、连字符和下划线',
     'NameEmptyError': '用户名不能为空',
     'NameLengthError': '用户名长度需在4到20个字符之间',
   }
 
-  static usernameRegex = /^[a-z0-9-_]+$/;
+  static usernameRegex = /^[a-zA-Z0-9-_]+$/;
 
   userName : Ref<string> = ref('');
   error : Ref<boolean> = ref(false);

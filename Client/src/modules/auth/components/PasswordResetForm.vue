@@ -43,7 +43,7 @@ const password = passwordResetData.password;
   <form v-else class="space-y-6"
         @keydown.enter.capture.prevent.stop="passwordResetData.submit()">
     <div>
-      <label for="password" v-bind:class="styles.label">密码</label>
+      <label for="password" v-bind:class="styles.label">新密码</label>
       <input v-bind:class="styles.input" v-model="password.password.value" @blur="password.checkValidity()"
              type="password" id="password" name="password" placeholder="请输入您的密码" required>
       <label v-if="password.error" v-bind:class="styles.error"> {{ password.errorMsg }}</label>

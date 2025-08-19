@@ -72,7 +72,7 @@ const phone = registerData.phone;
 
     <div class="space-y-3">
       <div class="flex flex-row space-x-2">
-        <input type="checkbox" id="rememberMe" v-model="registerData.rememberMe" class="cursor-pointer">
+        <input type="checkbox" id="rememberMe" v-model="registerData.rememberMe.value" class="cursor-pointer">
         <label for="rememberMe" v-bind:class="styles.label"> 自动登录 </label>
       </div>
 

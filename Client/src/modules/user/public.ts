@@ -25,7 +25,8 @@ export { default as UserList } from './components/UserList/UserList.vue';
  *        followBtn :boolean - 是否显示关注按钮，可以缺省，默认不显示
  * slot:  有一个名为content的插槽，可以用来放置自定义内容，比如帖子文章等。
  *        默认内容是用户简介。
- * events: loaded - 当用户信息加载完成时触发，事件参数为用户信息对象
+ * events: error 当加载用户信息失败时触发
+ *         loaded 当加载用户信息成功时触发
  */
 export { default as UserCard} from './components/UserList/UserCardList.vue';
 

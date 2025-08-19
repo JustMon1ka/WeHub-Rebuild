@@ -12,12 +12,15 @@ const { userId, followBtn } = defineProps<{
 
 const emit = defineEmits<{
   (e: 'error'): void;
+  (e: 'success'): void;
 }>();
 
 const userInfo = ref(new UserInfo(userId));
 userInfo.value.loadUserData().then(() => {
   if (userInfo.value.error) {
     emit('error');
+  } else if (userInfo.value.profileLoaded) {
+    emit('success');
   }
 }).catch((error) => {
   emit('error');

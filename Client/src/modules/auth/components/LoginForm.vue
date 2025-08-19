@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthData, AuthType } from '@/modules/auth/scripts/AuthData.ts'
+import { ref } from 'vue'
 
 const loginData: AuthData = new AuthData();
 loginData.changeAuthType(AuthType.PasswordLogin);
@@ -8,16 +9,18 @@ const userName = loginData.userName;
 const password = loginData.password;
 const authCode = loginData.authCode;
 const email = loginData.email;
+
+const useAuthCode = ref(false);
 </script>
 
 <template>
   <div class="space-y-6" @keydown.enter.capture.prevent.stop="loginData.submit()">
-    <form class="space-y-6"  v-if="loginData.useAuthCode.value">
+    <form class="space-y-6"  v-if="useAuthCode">
       <div>
         <div class="flex justify-between">
           <label for="email" v-bind:class="styles.label">邮箱</label>
           <button class="text-sm text-sky-400 hover:underline"
-                  @click.prevent="loginData.changeAuthType(AuthType.PasswordLogin)">
+                  @click.prevent="useAuthCode=false; loginData.changeAuthType(AuthType.PasswordLogin)">
             {{ '使用密码登录'  }}
           </button>
         </div>
@@ -44,7 +47,7 @@ const email = loginData.email;
         <div class="flex justify-between">
           <label for="user" v-bind:class="styles.label">邮箱、手机号或用户名</label>
           <button class="text-sm text-sky-400 hover:underline"
-                  @click.prevent="loginData.changeAuthType(AuthType.AuthCodeLogin)">
+                  @click.prevent="useAuthCode=true; loginData.changeAuthType(AuthType.AuthCodeLogin)">
             {{ '使用验证码登录' }}
           </button>
         </div>
@@ -76,7 +79,7 @@ const email = loginData.email;
     </div>
 
     <div class="flex flex-row space-x-2">
-      <input type="checkbox" id="rememberMe" v-model="loginData.rememberMe" class="cursor-pointer">
+      <input type="checkbox" id="rememberMe" v-model="loginData.rememberMe.value" class="cursor-pointer">
       <label for="rememberMe" v-bind:class="styles.label"> 自动登录 </label>
     </div>
   </div>

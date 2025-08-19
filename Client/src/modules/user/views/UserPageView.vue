@@ -23,10 +23,8 @@ if (userId === 'Me'){
     toggleLoginHover(true);
     setTimeout(async () => await router.push('/'), 0);
   }
-  userInfo = ref<UserInfo>(User.getInstance()?.userInfo || new UserInfo(userId));
-} else {
-  userInfo = ref<UserInfo>(new UserInfo(userId));
 }
+userInfo = ref<UserInfo>(new UserInfo(userId));
 userInfo.value.loadUserData(); // 加载用户数据，必须在Ref包裹后调用，否则会丧失profileLoaded的响应性。
 
 const editMode = ref(false);
@@ -53,11 +51,9 @@ watch( () => userId_p, (newId, oldId) => {
         toggleLoginHover(true);
         setTimeout(async () => await router.push('/'), 0);
       }
-      userInfo = ref<UserInfo>(User.getInstance()?.userInfo || new UserInfo(userId));
-    } else {
-      userInfo = ref<UserInfo>(new UserInfo(userId));
     }
-    userInfo.value.loadUserData();
+    userInfo = ref<UserInfo>(new UserInfo(userId));
+    userInfo.value.loadUserData(); // 加载用户数据，必须在Ref包裹后调用，否则会丧失profileLoaded的响应性。
   }
   editMode.value = false;
   followMode.value = false;
@@ -67,9 +63,10 @@ watch( () => userId_p, (newId, oldId) => {
   Tabs.switchTab(0);
 }, { immediate: true });
 
-watch(() => userInfo.value.isMe && userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
+watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
   (newValue, oldValue) => {
-    if (newValue && !oldValue) {
+    if (newValue && !oldValue && userInfo.value.isMe) {
+      console.log('UserPageView: User data loaded, copying to temp.');
       userInfoTemp.value = userInfo.value.copy();
       tempCopied.value = true;
     }
