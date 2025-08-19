@@ -342,34 +342,124 @@ const loadCommunityData = async (): Promise<void> => {
     error.value = null
 
     const communityId = route.params.id as string
-    console.log('加载社区数据，ID:', communityId)
+    console.log('=== 开始加载社区数据 ===')
+    console.log('社区ID:', communityId)
 
-    // 从后端获取社区详情
+    if (!communityId || isNaN(Number(communityId))) {
+      throw new Error('社区ID无效')
+    }
+
+    // 获取社区详情
     const response = await CircleAPI.getCircleDetails(Number(communityId))
-    console.log('社区详情响应:', response)
+    console.log('=== API响应 ===')
+    console.log('完整响应:', response)
 
-    if (response && response.data) {
-      const circleData = response.data
-      communityData.value = {
-        id: circleData.circleId || circleData.id,
-        name: circleData.name || '未知社区',
-        description: circleData.description || '',
-        memberCount: circleData.memberCount || 0,
-        isJoined: false, // 需要检查成员状态
-        createdAt: circleData.createdAt || new Date().toISOString(),
-        rulesCount: circleData.rulesCount || 0,
-        category: circleData.category,
-        isPrivate: circleData.isPrivate,
+    // 检查响应状态
+    if (!response) {
+      throw new Error('服务器无响应')
+    }
+
+    if (!response.success || !response.data) {
+      throw new Error(response.message || '获取社区信息失败')
+    }
+
+    // 根据实际的响应结构解析数据（注意是小写的 circle 和 members）
+    const circleInfo = response.data.circle
+    const membersInfo = response.data.members || []
+
+    console.log('解析的圈子信息:', circleInfo)
+    console.log('解析的成员信息:', membersInfo)
+
+    if (!circleInfo) {
+      throw new Error('未找到社区信息')
+    }
+
+    // 设置社区数据
+    communityData.value = {
+      id: circleInfo.circleId,
+      name: circleInfo.name,
+      description: circleInfo.description || '暂无描述',
+      memberCount: circleInfo.memberCount || 0,
+      isJoined: false, // 将在下面检查
+      createdAt: circleInfo.createdAt,
+      rulesCount: 0, // 后端暂不支持
+      category: circleInfo.category || '通用', // 默认分类
+      isPrivate: circleInfo.isPrivate || false, // 默认公开
+    }
+
+    // 检查用户是否已加入
+    const currentUserId = 2 // 与后端硬编码保持一致
+    if (Array.isArray(membersInfo) && membersInfo.length > 0) {
+      communityData.value.isJoined = membersInfo.some(
+        (member: any) => member.userId === currentUserId,
+      )
+
+      // 设置版主信息（圈主）
+      const ownerId = circleInfo.ownerId
+      if (ownerId) {
+        const owner = membersInfo.find((member: any) => member.userId === ownerId)
+        if (owner) {
+          moderators.value = [
+            {
+              id: owner.userId,
+              name: owner.name || `用户${owner.userId}`,
+              handle: `user${owner.userId}`,
+              avatar: `https://placehold.co/100x100/1677ff/ffffff?text=U${owner.userId}`,
+            },
+          ]
+        } else {
+          // 圈主不在成员列表中，创建默认版主信息
+          moderators.value = [
+            {
+              id: ownerId,
+              name: `用户${ownerId}`,
+              handle: `user${ownerId}`,
+              avatar: `https://placehold.co/100x100/1677ff/ffffff?text=U${ownerId}`,
+            },
+          ]
+        }
+      }
+    } else {
+      // 没有成员数据，尝试检查成员状态
+      try {
+        communityData.value.isJoined = await CircleAPI.checkMembership(Number(communityId))
+      } catch (error) {
+        console.error('检查成员状态失败:', error)
+        communityData.value.isJoined = false
       }
 
-      // 检查用户是否已加入该社区
-      await checkMembershipStatus(Number(communityId))
-    } else {
-      throw new Error('社区数据格式错误')
+      // 设置默认版主信息（圈主）
+      if (circleInfo.ownerId) {
+        moderators.value = [
+          {
+            id: circleInfo.ownerId,
+            name: `用户${circleInfo.ownerId}`,
+            handle: `user${circleInfo.ownerId}`,
+            avatar: `https://placehold.co/100x100/1677ff/ffffff?text=U${circleInfo.ownerId}`,
+          },
+        ]
+      }
     }
+
+    console.log('最终的社区数据:', communityData.value)
+    console.log('版主信息:', moderators.value)
   } catch (err) {
-    console.error('加载社区数据失败:', err)
-    error.value = '加载社区信息失败，请稍后重试'
+    console.error('=== 加载社区数据失败 ===')
+    console.error('错误详情:', err)
+
+    let errorMessage = '加载社区信息失败，请稍后重试'
+
+    if (err instanceof Error) {
+      if (err.message.includes('社区不存在') || err.message.includes('404')) {
+        errorMessage = '社区不存在，可能已被删除或ID错误'
+      } else if (err.message.includes('Failed to fetch')) {
+        errorMessage = '无法连接到服务器，请检查网络连接'
+      } else {
+        errorMessage = err.message
+      }
+    }
+
+    error.value = errorMessage
   } finally {
     loading.value = false
   }

@@ -7,20 +7,23 @@ interface ApiResponse<T> {
   message?: string
 }
 
-interface CreateCircleResponse {
-  success?: boolean
-  circleId?: number
-  data?: any
-  message?: string
-}
-
 export class CircleAPI {
   // 获取所有圈子
-  static async getCircles(name?: string) {
+  static async getCircles(name?: string, joinedBy?: number) {
     try {
-      const url = name
-        ? `${API_BASE_URL}/api/circles?name=${encodeURIComponent(name)}`
-        : `${API_BASE_URL}/api/circles`
+      let url = `${API_BASE_URL}/api/circles`
+      const params = new URLSearchParams()
+
+      if (name) {
+        params.append('name', name)
+      }
+      if (joinedBy) {
+        params.append('joinedBy', joinedBy.toString())
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
 
       const response = await fetch(url, {
         method: 'GET',
@@ -40,29 +43,44 @@ export class CircleAPI {
     }
   }
 
+  // 获取用户已加入的圈子
+  static async getUserJoinedCircles(userId: number = 2) {
+    try {
+      return await this.getCircles(undefined, userId)
+    } catch (error) {
+      console.error('获取用户已加入圈子失败:', error)
+      throw error
+    }
+  }
+
   // 创建圈子
   static async createCircle(data: {
     name: string
     description: string
-    category: string
-    isPrivate: boolean
+    category?: string // 前端保留分类字段，但后端可能不存储
+    isPrivate?: boolean
     maxMembers?: number
   }) {
     try {
       console.log('API调用 - 发送数据:', data)
+
+      // 只发送后端支持的字段
+      const backendData = {
+        name: data.name,
+        description: data.description,
+        // 暂时不发送 category, isPrivate, maxMembers 因为后端模型不支持
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/circles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(backendData),
       })
 
       console.log('HTTP状态:', response.status)
-      console.log('Content-Type:', response.headers.get('content-type'))
 
-      // 检查响应是否为JSON
       const contentType = response.headers.get('content-type')
       const isJson = contentType && contentType.includes('application/json')
 
@@ -84,13 +102,11 @@ export class CircleAPI {
         throw new Error(errorMessage)
       }
 
-      // 处理成功响应
       if (isJson) {
         const result = await response.json()
         console.log('JSON响应:', result)
         return result
       } else {
-        // 如果不是JSON但状态码是成功的，可能是纯文本响应
         const textResult = await response.text()
         console.log('文本响应:', textResult)
         return { success: true, message: textResult, rawResponse: textResult }
@@ -118,7 +134,6 @@ export class CircleAPI {
       const responseText = await response.text()
       console.log('加入社区响应:', responseText)
 
-      // 解析响应
       let result
       try {
         result = responseText ? JSON.parse(responseText) : { success: true }
@@ -127,7 +142,6 @@ export class CircleAPI {
       }
 
       if (!response.ok) {
-        // 特殊处理：如果是已经加入的错误，返回特殊标识
         if (response.status === 400 && result.msg && result.msg.includes('已是该圈子成员')) {
           return { success: true, alreadyMember: true, message: '您已经是该社区的成员了' }
         }
@@ -151,9 +165,8 @@ export class CircleAPI {
     try {
       console.log('退出社区 ID:', circleId)
 
-      // 使用DELETE方法和正确的路径
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/membership`, {
-        method: 'DELETE', // 改为DELETE
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -184,10 +197,9 @@ export class CircleAPI {
     }
   }
 
-  // 添加成员状态检查方法
+  // 检查成员状态
   static async checkMembership(circleId: number): Promise<boolean> {
     try {
-      // 通过获取圈子成员列表来检查
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/members`, {
         method: 'GET',
         headers: {
@@ -199,8 +211,7 @@ export class CircleAPI {
         const result = await response.json()
         console.log('成员列表响应:', result)
 
-        // 假设当前用户ID是2（从Controller代码看到的硬编码值）
-        const currentUserId = 2
+        const currentUserId = 2 // 硬编码的用户ID，与后端保持一致
 
         if (result.code === 200 && result.data && Array.isArray(result.data)) {
           return result.data.some((member: any) => member.userId === currentUserId)
@@ -216,6 +227,9 @@ export class CircleAPI {
 
   static async getCircleDetails(circleId: number) {
     try {
+      console.log('=== API调用开始 ===')
+      console.log('请求URL:', `${API_BASE_URL}/api/circles/${circleId}`)
+
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}`, {
         method: 'GET',
         headers: {
@@ -223,13 +237,42 @@ export class CircleAPI {
         },
       })
 
+      console.log('HTTP状态码:', response.status)
+
+      const responseText = await response.text()
+      console.log('原始响应内容:', responseText)
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP ${response.status}: ${responseText}`)
       }
 
-      return await response.json()
+      let result
+      try {
+        result = responseText ? JSON.parse(responseText) : null
+      } catch (parseError) {
+        console.error('JSON解析失败:', parseError)
+        throw new Error(`服务器响应格式错误: ${responseText}`)
+      }
+
+      console.log('解析后的JSON:', result)
+
+      if (!result) {
+        throw new Error('服务器返回空响应')
+      }
+
+      if (result.code === 200) {
+        console.log('=== API调用成功 ===')
+        return {
+          success: true,
+          data: result.data,
+          message: result.msg,
+        }
+      } else {
+        throw new Error(result.msg || `服务器返回错误代码: ${result.code}`)
+      }
     } catch (error) {
-      console.error('获取圈子详情失败:', error)
+      console.error('=== API调用失败 ===')
+      console.error('错误详情:', error)
       throw error
     }
   }

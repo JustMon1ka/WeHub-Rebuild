@@ -7,178 +7,136 @@
     <div class="main-container">
       <!-- 中间主内容区 -->
       <main class="main-content">
+        <!-- 页面标题 -->
+        <div class="page-header">
+          <h1 class="page-title">社区广场</h1>
+          <p class="page-subtitle">发现和加入感兴趣的社区</p>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="search-section">
+          <div class="search-bar">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="搜索社区..."
+              class="search-input"
+              @input="handleSearch"
+            />
+            <button class="search-btn">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <button class="btn btn-primary" @click="handleCreateCommunity">创建社区</button>
+        </div>
+
+        <!-- 内容切换 Tab -->
+        <div class="content-tabs">
+          <a
+            href="#"
+            class="tab-link"
+            :class="{ active: activeTab === 'all' }"
+            @click.prevent="changeTab('all')"
+          >
+            全部社区
+          </a>
+          <a
+            href="#"
+            class="tab-link"
+            :class="{ active: activeTab === 'joined' }"
+            @click.prevent="changeTab('joined')"
+          >
+            已加入
+          </a>
+          <a
+            href="#"
+            class="tab-link"
+            :class="{ active: activeTab === 'recommended' }"
+            @click.prevent="changeTab('recommended')"
+          >
+            推荐
+          </a>
+        </div>
+
         <!-- 加载状态 -->
         <div v-if="loading" class="loading-state">
           <div class="loading-spinner"></div>
-          <p>正在加载社区信息...</p>
+          <p>正在加载社区列表...</p>
         </div>
 
         <!-- 错误状态 -->
         <div v-else-if="error" class="error-state">
           <p>{{ error }}</p>
-          <button class="btn btn-primary" @click="loadCommunityData">重试</button>
+          <button class="btn btn-primary" @click="loadCommunities">重试</button>
         </div>
 
-        <!-- 社区内容 -->
-        <div v-else>
-          <!-- 社区头部 -->
-          <div class="community-header-section">
-            <!-- 背景横幅 -->
+        <!-- 社区列表 -->
+        <div v-else class="communities-grid">
+          <!-- 暂无社区 -->
+          <div v-if="filteredCommunities.length === 0" class="empty-communities">
+            <div class="empty-icon">🏘️</div>
+            <h3>暂无社区</h3>
+            <p>还没有找到符合条件的社区，创建一个新社区吧！</p>
+            <button class="btn btn-primary" @click="handleCreateCommunity">创建社区</button>
+          </div>
+
+          <!-- 社区卡片 -->
+          <div
+            v-else
+            v-for="community in filteredCommunities"
+            :key="community.id"
+            class="community-card"
+            @click="handleCommunityClick(community.id)"
+          >
             <div class="community-banner">
               <img
-                :src="`https://placehold.co/600x200/1677ff/ffffff?text=${encodeURIComponent(communityData.name)}`"
-                :alt="`${communityData.name} banner`"
+                :src="`https://placehold.co/300x120/1677ff/ffffff?text=${encodeURIComponent(community.name)}`"
+                :alt="`${community.name} banner`"
               />
             </div>
 
-            <!-- 头像和操作按钮 -->
-            <div class="community-info-section">
-              <div class="community-header-content">
+            <div class="community-info">
+              <div class="community-header">
                 <img
-                  class="community-large-avatar"
-                  :src="`https://placehold.co/150x150/1677ff/ffffff?text=${encodeURIComponent(communityData.name[0] || 'C')}`"
-                  :alt="`${communityData.name} avatar`"
+                  class="community-avatar"
+                  :src="`https://placehold.co/60x60/1677ff/ffffff?text=${encodeURIComponent(community.name[0] || 'C')}`"
+                  :alt="`${community.name} avatar`"
                 />
-                <div class="community-header-actions">
-                  <button class="btn btn-primary" @click="handleCreatePost">创建帖子</button>
-                  <button class="btn btn-icon" @click="handleNotification">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                      ></path>
-                    </svg>
-                  </button>
-                  <button
-                    class="btn"
-                    :class="[communityData.isJoined ? 'btn-secondary' : 'btn-primary']"
-                    @click="toggleJoinCommunity"
-                    :disabled="isLoading"
-                  >
-                    {{ isLoading ? '处理中...' : communityData.isJoined ? '已加入' : '加入社区' }}
-                  </button>
+                <div class="community-meta">
+                  <h3 class="community-name">{{ community.name }}</h3>
+                  <p class="community-members">
+                    {{ formatMemberCount(community.memberCount) }} 成员
+                  </p>
                 </div>
               </div>
-              <div class="community-meta">
-                <h1 class="community-title">{{ communityData.name }}</h1>
-                <p class="community-member-count">
-                  {{ formatMemberCount(communityData.memberCount) }} 成员
-                </p>
+
+              <p class="community-description">
+                {{ community.description || '暂无描述' }}
+              </p>
+
+              <div class="community-tags">
+                <span class="community-tag">{{ community.category || '通用' }}</span>
+                <span v-if="community.isPrivate" class="community-tag private">私有</span>
               </div>
-            </div>
-          </div>
 
-          <!-- 内容切换 Tab -->
-          <div class="content-tabs">
-            <a
-              href="#"
-              class="tab-link"
-              :class="{ active: activeTab === 'hot' }"
-              @click.prevent="changeTab('hot')"
-            >
-              热门
-            </a>
-            <a
-              href="#"
-              class="tab-link"
-              :class="{ active: activeTab === 'latest' }"
-              @click.prevent="changeTab('latest')"
-            >
-              最新
-            </a>
-            <a
-              href="#"
-              class="tab-link"
-              :class="{ active: activeTab === 'featured' }"
-              @click.prevent="changeTab('featured')"
-            >
-              精华
-            </a>
-          </div>
-
-          <!-- 帖子列表 -->
-          <div class="posts-list">
-            <!-- 置顶帖子 -->
-            <article class="post-item pinned-post">
-              <div class="post-vote-section">
-                <svg class="pin-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-3.125L5 18V4z"></path>
-                </svg>
-              </div>
-              <div class="post-content">
-                <a href="#" class="post-title"
-                  >【版规】{{ communityData.name }}发帖须知 (2024.07更新)</a
-                >
-                <div class="post-meta">
-                  <span class="post-author">版主</span>
-                  <span class="post-date">2024-07-01</span>
-                </div>
-              </div>
-            </article>
-
-            <!-- 普通帖子或暂无内容 -->
-            <div v-if="filteredPosts.length === 0" class="empty-posts">
-              <div class="empty-icon">📝</div>
-              <h3>暂无帖子</h3>
-              <p>这个分类下还没有帖子，成为第一个发帖的人吧！</p>
-              <button class="btn btn-primary" @click="handleCreatePost">创建第一个帖子</button>
-            </div>
-
-            <article
-              v-else
-              v-for="post in filteredPosts"
-              :key="post.id"
-              class="post-item"
-              @click="handlePostClick(post.id)"
-            >
-              <div class="post-vote-section">
+              <div class="community-actions">
                 <button
-                  class="vote-btn vote-up"
-                  :class="{ active: post.userVote === 'up' }"
-                  @click.stop="handleVote(post.id, 'up')"
+                  class="btn btn-sm"
+                  :class="[community.isJoined ? 'btn-secondary' : 'btn-primary']"
+                  @click.stop="toggleJoinCommunity(community.id)"
+                  :disabled="community.isLoading"
                 >
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 15l7-7 7 7"
-                    ></path>
-                  </svg>
-                </button>
-                <p class="vote-count">{{ formatVoteCount(post.votes) }}</p>
-                <button
-                  class="vote-btn vote-down"
-                  :class="{ active: post.userVote === 'down' }"
-                  @click.stop="handleVote(post.id, 'down')"
-                >
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
+                  {{ community.isLoading ? '处理中...' : community.isJoined ? '已加入' : '加入' }}
                 </button>
               </div>
-              <div class="post-content">
-                <a href="#" class="post-title" @click.prevent>{{ post.title }}</a>
-                <p class="post-excerpt">{{ post.excerpt }}</p>
-                <div class="post-meta">
-                  <span class="post-author">
-                    <span class="username">@{{ post.author }}</span> 发布于 {{ post.timeAgo }}
-                  </span>
-                  <span class="post-replies">{{ post.replies }} 回复</span>
-                  <span class="post-last-reply">
-                    <span class="username">@{{ post.lastReplyUser }}</span> 回复于
-                    {{ post.lastReplyTime }}
-                  </span>
-                </div>
-              </div>
-            </article>
+            </div>
           </div>
         </div>
       </main>
@@ -186,54 +144,38 @@
       <!-- 右侧边栏 -->
       <aside class="right-sidebar">
         <div class="sidebar-content">
-          <!-- 社区信息 -->
+          <!-- 热门社区 -->
           <div class="sidebar-card">
-            <h2 class="sidebar-title">关于社区</h2>
-            <p class="community-description">{{ communityData.description || '暂无社区描述' }}</p>
-            <hr class="sidebar-divider" />
-            <div class="community-details">
-              <p class="detail-item">
-                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                创建于 {{ formatDate(communityData.createdAt) }}
-              </p>
-              <p class="detail-item">
-                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                {{ communityData.rulesCount || 0 }}条社区规则
-              </p>
+            <h2 class="sidebar-title">热门社区</h2>
+            <div v-if="popularCommunities.length === 0" class="empty-popular">
+              <p>暂无热门社区</p>
             </div>
+            <ul v-else class="popular-list">
+              <li v-for="community in popularCommunities" :key="community.id" class="popular-item">
+                <div class="popular-info" @click="handleCommunityClick(community.id)">
+                  <h4 class="popular-name">{{ community.name }}</h4>
+                  <p class="popular-members">{{ formatMemberCount(community.memberCount) }} 成员</p>
+                </div>
+              </li>
+            </ul>
           </div>
 
-          <!-- 版主列表 -->
+          <!-- 分类导航 -->
           <div class="sidebar-card">
-            <h2 class="sidebar-title">版主</h2>
-            <div v-if="moderators.length === 0" class="empty-moderators">
-              <p>暂无版主信息</p>
-            </div>
-            <ul v-else class="moderator-list">
-              <li v-for="moderator in moderators" :key="moderator.id" class="moderator-item">
-                <img
-                  class="moderator-avatar"
-                  :src="moderator.avatar"
-                  :alt="`${moderator.name} Avatar`"
-                />
-                <div class="moderator-info">
-                  <p class="moderator-name">{{ moderator.name }}</p>
-                  <p class="moderator-handle">@{{ moderator.handle }}</p>
-                </div>
+            <h2 class="sidebar-title">快速导航</h2>
+            <ul class="category-list">
+              <li class="category-item">
+                <a href="#" @click.prevent="changeTab('all')" class="category-link"> 全部社区 </a>
+              </li>
+              <li class="category-item">
+                <a href="#" @click.prevent="changeTab('joined')" class="category-link">
+                  我的社区
+                </a>
+              </li>
+              <li class="category-item">
+                <a href="#" @click.prevent="handleCreateCommunity" class="category-link">
+                  创建社区
+                </a>
               </li>
             </ul>
           </div>
@@ -244,160 +186,178 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
+import { CircleAPI } from '@/services/api'
 
 // 类型定义
-interface Post {
-  id: number
-  title: string
-  excerpt: string
-  author: string
-  timeAgo: string
-  replies: number
-  lastReplyUser: string
-  lastReplyTime: string
-  votes: number
-  userVote?: 'up' | 'down' | null
-  category: 'hot' | 'latest' | 'featured'
-}
-
-interface CommunityData {
+interface Community {
   id: number
   name: string
   description: string
   memberCount: number
+  category: string
+  isPrivate: boolean
   isJoined: boolean
+  isLoading: boolean
   createdAt: string
-  rulesCount: number
   ownerId?: number
 }
 
-interface Moderator {
-  id: number
-  name: string
-  handle: string
-  avatar: string
-}
-
-// 路由和状态
-const route = useRoute()
+// 路由
 const router = useRouter()
-const activeTab = ref<'hot' | 'latest' | 'featured'>('hot')
-const isLoading = ref(false)
+
+// 状态
+const activeTab = ref<'all' | 'joined' | 'recommended'>('all')
 const loading = ref(true)
 const error = ref<string | null>(null)
+const searchQuery = ref('')
 
-// 模拟当前用户ID（实际项目中应该从认证系统获取）
+// 数据
+const allCommunities = ref<Community[]>([])
+const joinedCommunities = ref<Community[]>([])
+
+// 当前用户ID（与后端硬编码保持一致）
 const currentUserId = 2
 
-// 社区数据
-const communityData = ref<CommunityData>({
-  id: 0,
-  name: '',
-  description: '',
-  memberCount: 0,
-  isJoined: false,
-  createdAt: '',
-  rulesCount: 0,
-})
-
-// 帖子数据（模拟数据，可以后续连接后端）
-const posts = ref<Post[]>([])
-
-// 版主数据
-const moderators = ref<Moderator[]>([])
-
 // 计算属性
-const filteredPosts = computed(() => {
-  return posts.value.filter((post) => post.category === activeTab.value)
+const filteredCommunities = computed(() => {
+  let communities: Community[] = []
+
+  // 根据标签页选择数据源
+  if (activeTab.value === 'joined') {
+    communities = joinedCommunities.value
+  } else if (activeTab.value === 'recommended') {
+    // 推荐逻辑：按成员数排序
+    communities = allCommunities.value
+      .slice()
+      .sort((a, b) => b.memberCount - a.memberCount)
+      .slice(0, 10)
+  } else {
+    communities = allCommunities.value
+  }
+
+  // 按搜索关键词筛选
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    communities = communities.filter(
+      (c) =>
+        c.name.toLowerCase().includes(query) ||
+        (c.description && c.description.toLowerCase().includes(query)),
+    )
+  }
+
+  return communities
 })
 
-// API调用函数
-const apiCall = async (url: string, options: RequestInit = {}): Promise<any> => {
+const popularCommunities = computed(() => {
+  return allCommunities.value
+    .slice()
+    .sort((a, b) => b.memberCount - a.memberCount)
+    .slice(0, 5)
+})
+
+// 加载所有社区
+const loadAllCommunities = async (): Promise<void> => {
   try {
-    const response = await fetch(`http://localhost:5259/api${url}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    })
+    console.log('加载所有社区列表...')
+    const response = await CircleAPI.getCircles()
+    console.log('所有社区响应:', response)
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+    if (response && response.code === 200 && Array.isArray(response.data)) {
+      allCommunities.value = await Promise.all(
+        response.data.map(async (item: any) => {
+          const community: Community = {
+            id: item.circleId || item.id,
+            name: item.name || '未知社区',
+            description: item.description || '',
+            memberCount: item.memberCount || 0,
+            category: item.category || '通用', // 默认分类
+            isPrivate: item.isPrivate || false,
+            isJoined: false, // 将在下面检查
+            isLoading: false,
+            createdAt: item.createdAt || new Date().toISOString(),
+            ownerId: item.ownerId,
+          }
+
+          // 检查用户是否已加入该社区
+          try {
+            community.isJoined = await CircleAPI.checkMembership(community.id)
+          } catch (error) {
+            console.error(`检查社区 ${community.id} 成员状态失败:`, error)
+            community.isJoined = false
+          }
+
+          return community
+        }),
+      )
+
+      console.log('处理后的所有社区列表:', allCommunities.value)
+    } else {
+      throw new Error('社区列表数据格式错误')
     }
+  } catch (err) {
+    console.error('加载所有社区失败:', err)
+    throw err
+  }
+}
 
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('API调用失败:', error)
-    throw error
+// 加载已加入的社区
+const loadJoinedCommunities = async (): Promise<void> => {
+  try {
+    console.log('加载已加入社区列表...')
+    const response = await CircleAPI.getUserJoinedCircles(currentUserId)
+    console.log('已加入社区响应:', response)
+
+    if (response && response.code === 200 && Array.isArray(response.data)) {
+      joinedCommunities.value = response.data.map((item: any) => ({
+        id: item.circleId || item.id,
+        name: item.name || '未知社区',
+        description: item.description || '',
+        memberCount: item.memberCount || 0,
+        category: item.category || '通用',
+        isPrivate: item.isPrivate || false,
+        isJoined: true, // 已加入的社区
+        isLoading: false,
+        createdAt: item.createdAt || new Date().toISOString(),
+        ownerId: item.ownerId,
+      }))
+
+      console.log('处理后的已加入社区列表:', joinedCommunities.value)
+    } else {
+      console.log('没有已加入的社区或数据格式错误')
+      joinedCommunities.value = []
+    }
+  } catch (err) {
+    console.error('加载已加入社区失败:', err)
+    joinedCommunities.value = []
   }
 }
 
 // 加载社区数据
-const loadCommunityData = async (): Promise<void> => {
+const loadCommunities = async (): Promise<void> => {
   try {
     loading.value = true
     error.value = null
 
-    const communityId = route.params.id as string
-    console.log('加载社区数据，ID:', communityId)
-
-    // 获取社区详情
-    const response = await apiCall(`/circles/${communityId}`)
-    console.log('社区详情响应:', response)
-
-    if (response && response.success && response.data) {
-      const { Circle: circleData, Members: membersData } = response.data
-
-      communityData.value = {
-        id: circleData.circleId,
-        name: circleData.name || '未知社区',
-        description: circleData.description || '',
-        memberCount: circleData.memberCount || 0,
-        isJoined: false, // 将在下面检查
-        createdAt: circleData.createdAt || new Date().toISOString(),
-        rulesCount: 0, // 后端数据中没有这个字段，可以设为0或者添加到后端
-        ownerId: circleData.ownerId,
-      }
-
-      // 检查当前用户是否在成员列表中
-      if (membersData && Array.isArray(membersData)) {
-        const isUserMember = membersData.some((member: any) => member.userId === currentUserId)
-        communityData.value.isJoined = isUserMember
-
-        // 设置版主信息（圈主）
-        const owner = membersData.find((member: any) => member.userId === circleData.ownerId)
-        if (owner) {
-          moderators.value = [
-            {
-              id: owner.userId,
-              name: `用户${owner.userId}`, // 实际项目中应该从用户系统获取用户名
-              handle: `user${owner.userId}`,
-              avatar: `https://placehold.co/100x100/1677ff/ffffff?text=U${owner.userId}`,
-            },
-          ]
-        }
-      }
-
-      console.log('处理后的社区数据:', communityData.value)
-    } else {
-      throw new Error('社区数据格式错误')
-    }
+    // 并行加载所有社区和已加入社区
+    await Promise.all([loadAllCommunities(), loadJoinedCommunities()])
   } catch (err) {
     console.error('加载社区数据失败:', err)
-    error.value = '加载社区信息失败，请稍后重试'
+    error.value = '加载社区列表失败，请稍后重试'
   } finally {
     loading.value = false
   }
 }
 
 // 方法
-const changeTab = (tab: 'hot' | 'latest' | 'featured'): void => {
+const changeTab = (tab: 'all' | 'joined' | 'recommended'): void => {
   activeTab.value = tab
+}
+
+const handleSearch = (): void => {
+  // 搜索逻辑已在 computed 中处理
 }
 
 const formatMemberCount = (count: number): string => {
@@ -407,111 +367,70 @@ const formatMemberCount = (count: number): string => {
   return count.toLocaleString()
 }
 
-const formatVoteCount = (count: number): string => {
-  if (count >= 1000) {
-    return (count / 1000).toFixed(1) + 'k'
-  }
-  return count.toString()
+const handleCreateCommunity = (): void => {
+  router.push('/create-community')
 }
 
-const formatDate = (dateString: string): string => {
-  if (!dateString) return '未知'
-  const date = new Date(dateString)
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  return `${year}年${month}月`
+const handleCommunityClick = (communityId: number): void => {
+  router.push(`/community/${communityId}`)
 }
 
-const handleCreatePost = (): void => {
-  console.log('创建帖子')
-}
-
-const handleNotification = (): void => {
-  console.log('通知')
-}
-
-const toggleJoinCommunity = async (): Promise<void> => {
+const toggleJoinCommunity = async (communityId: number): Promise<void> => {
   try {
-    isLoading.value = true
+    // 从所有社区列表中查找
+    let community = allCommunities.value.find((c) => c.id === communityId)
 
-    if (communityData.value.isJoined) {
-      // 退出社区
-      const response = await apiCall(`/circles/${communityData.value.id}/membership`, {
-        method: 'DELETE',
-      })
+    if (!community) {
+      console.error('找不到指定的社区')
+      return
+    }
 
-      if (response && response.success) {
-        communityData.value.isJoined = false
-        communityData.value.memberCount = Math.max(communityData.value.memberCount - 1, 0)
+    community.isLoading = true
+
+    let response
+    if (community.isJoined) {
+      response = await CircleAPI.leaveCircle(communityId)
+      if (response && (response.success || response.code === 200)) {
+        community.isJoined = false
+        community.memberCount = Math.max(community.memberCount - 1, 0)
+
+        // 从已加入列表中移除
+        joinedCommunities.value = joinedCommunities.value.filter((c) => c.id !== communityId)
+
         console.log('成功退出社区')
       }
     } else {
-      // 加入社区
-      const response = await apiCall(`/circles/${communityData.value.id}/join`, {
-        method: 'POST',
-      })
+      response = await CircleAPI.joinCircle(communityId)
+      if (response && (response.success || response.code === 200)) {
+        community.isJoined = true
+        community.memberCount += 1
 
-      if (response && response.success) {
-        communityData.value.isJoined = true
-        communityData.value.memberCount += 1
+        // 添加到已加入列表
+        const joinedCommunity = { ...community }
+        joinedCommunities.value.push(joinedCommunity)
+
         console.log('成功加入社区')
       }
     }
   } catch (error) {
     console.error('操作失败:', error)
-    error.value = '操作失败，请重试'
+    // 可以添加错误提示
   } finally {
-    isLoading.value = false
+    const community = allCommunities.value.find((c) => c.id === communityId)
+    if (community) {
+      community.isLoading = false
+    }
   }
 }
-
-const handleVote = async (postId: number, voteType: 'up' | 'down'): Promise<void> => {
-  try {
-    const post = posts.value.find((p) => p.id === postId)
-    if (!post) return
-
-    const previousVote = post.userVote
-
-    if (post.userVote === voteType) {
-      post.userVote = null
-      post.votes += voteType === 'up' ? -1 : 1
-    } else {
-      if (previousVote) {
-        post.votes += previousVote === 'up' ? -1 : 1
-      }
-
-      post.userVote = voteType
-      post.votes += voteType === 'up' ? 1 : -1
-    }
-
-    console.log(`投票 ${voteType} 帖子 ${postId}`)
-  } catch (error) {
-    console.error('投票失败:', error)
-  }
-}
-
-const handlePostClick = (postId: number): void => {
-  console.log(`点击帖子 ${postId}`)
-}
-
-// 监听路由变化
-watch(
-  () => route.params.id,
-  (newId) => {
-    if (newId) {
-      loadCommunityData()
-    }
-  },
-)
 
 // 生命周期
 onMounted(() => {
-  loadCommunityData()
+  loadCommunities()
 })
 </script>
 
 <style scoped>
-/* 保持原有样式不变 */
+/* 保持之前的样式不变 */
 .main-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -521,13 +440,100 @@ onMounted(() => {
   gap: 24px;
 }
 
+.main-content {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e4e6ea;
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #1d2129;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: #86909c;
+  margin: 0;
+}
+
+.search-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+}
+
+.search-bar {
+  flex: 1;
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 48px 12px 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #1677ff;
+}
+
+.search-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #86909c;
+  cursor: pointer;
+}
+
+.search-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.content-tabs {
+  display: flex;
+  border-bottom: 1px solid #e4e6ea;
+  margin-bottom: 24px;
+}
+
+.tab-link {
+  padding: 16px 24px;
+  color: #86909c;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab-link.active {
+  color: #1677ff;
+  border-bottom-color: #1677ff;
+}
+
+.tab-link:hover {
+  color: #1677ff;
+}
+
 .loading-state,
 .error-state {
   text-align: center;
   padding: 60px 20px;
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #e4e6ea;
 }
 
 .loading-spinner {
@@ -549,26 +555,40 @@ onMounted(() => {
   }
 }
 
-.loading-state p,
-.error-state p {
+.communities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.empty-communities {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
   color: #86909c;
+}
+
+.empty-icon {
+  font-size: 48px;
   margin-bottom: 16px;
 }
 
-.main-content {
-  background: #fff;
-  border-radius: 12px;
+.community-card {
   border: 1px solid #e4e6ea;
+  border-radius: 12px;
   overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
 }
 
-.community-header-section {
-  position: relative;
+.community-card:hover {
+  border-color: #1677ff;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.1);
 }
 
 .community-banner {
-  height: 192px;
-  background: #f7f8fa;
+  height: 120px;
   overflow: hidden;
 }
 
@@ -578,31 +598,73 @@ onMounted(() => {
   object-fit: cover;
 }
 
-.community-info-section {
-  padding: 0 24px;
-  background: #fff;
+.community-info {
+  padding: 16px;
 }
 
-.community-header-content {
-  display: flex;
-  align-items: flex-end;
-  margin-top: -48px;
-  position: relative;
-}
-
-.community-large-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  border: 4px solid #fff;
-  background: #f7f8fa;
-}
-
-.community-header-actions {
-  margin-left: auto;
+.community-header {
   display: flex;
   align-items: center;
+  margin-bottom: 12px;
+}
+
+.community-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.community-meta {
+  flex: 1;
+}
+
+.community-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #1d2129;
+}
+
+.community-members {
+  font-size: 12px;
+  color: #86909c;
+  margin: 0;
+}
+
+.community-description {
+  font-size: 14px;
+  color: #4e5969;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.community-tags {
+  display: flex;
   gap: 8px;
+  margin-bottom: 16px;
+}
+
+.community-tag {
+  padding: 4px 8px;
+  background: #f2f3f5;
+  color: #4e5969;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.community-tag.private {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.community-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .btn {
@@ -613,6 +675,11 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s;
   font-size: 14px;
+}
+
+.btn-sm {
+  padding: 6px 16px;
+  font-size: 12px;
 }
 
 .btn:disabled {
@@ -640,224 +707,6 @@ onMounted(() => {
   color: #1677ff;
 }
 
-.btn-icon {
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #4e5969;
-  padding: 10px;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-icon:hover:not(:disabled) {
-  border-color: #1677ff;
-  color: #1677ff;
-}
-
-.btn-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.community-meta {
-  margin-top: 16px;
-  padding-bottom: 24px;
-}
-
-.community-title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0 0 4px 0;
-  color: #1d2129;
-}
-
-.community-member-count {
-  font-size: 14px;
-  color: #86909c;
-  margin: 0;
-}
-
-.content-tabs {
-  display: flex;
-  border-bottom: 1px solid #e4e6ea;
-}
-
-.tab-link {
-  flex: 1;
-  text-align: center;
-  padding: 16px;
-  color: #86909c;
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.tab-link.active {
-  color: #1677ff;
-  border-bottom-color: #1677ff;
-}
-
-.tab-link:hover {
-  color: #1677ff;
-  background: #f7f8fa;
-}
-
-.posts-list {
-  min-height: 400px;
-}
-
-.empty-posts {
-  text-align: center;
-  padding: 60px 20px;
-  color: #86909c;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.empty-posts h3 {
-  color: #1d2129;
-  margin-bottom: 8px;
-  font-size: 20px;
-}
-
-.empty-posts p {
-  margin-bottom: 24px;
-  line-height: 1.5;
-}
-
-.post-item {
-  padding: 20px 24px;
-  display: flex;
-  gap: 16px;
-  transition: background-color 0.2s;
-  cursor: pointer;
-  border-bottom: 1px solid #f2f3f5;
-}
-
-.post-item:hover {
-  background: #f7f8fa;
-}
-
-.post-item:last-child {
-  border-bottom: none;
-}
-
-.pinned-post {
-  background: #fff7e6;
-  border-bottom: 1px solid #ffe58f;
-}
-
-.post-vote-section {
-  width: 48px;
-  text-align: center;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.pin-icon {
-  width: 24px;
-  height: 24px;
-  color: #d48806;
-  margin: 0 auto;
-}
-
-.vote-btn {
-  padding: 4px;
-  border-radius: 4px;
-  background: none;
-  border: none;
-  color: #86909c;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vote-btn:hover {
-  background: #f2f3f5;
-  color: #1677ff;
-}
-
-.vote-btn.active.vote-up {
-  color: #1677ff;
-  background: #f0f8ff;
-}
-
-.vote-btn.active.vote-down {
-  color: #ff4d4f;
-  background: #fff2f0;
-}
-
-.vote-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.vote-count {
-  font-weight: 700;
-  font-size: 14px;
-  margin: 4px 0;
-  color: #1d2129;
-}
-
-.post-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.post-title {
-  font-weight: 600;
-  font-size: 18px;
-  color: #1d2129;
-  text-decoration: none;
-  display: block;
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.post-title:hover {
-  color: #1677ff;
-}
-
-.post-excerpt {
-  margin: 8px 0;
-  color: #4e5969;
-  font-size: 14px;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.post-meta {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 12px;
-  color: #86909c;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
-.username {
-  font-weight: 600;
-  color: #1677ff;
-}
-
 .right-sidebar {
   display: flex;
   flex-direction: column;
@@ -878,88 +727,69 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
-.community-description {
-  font-size: 14px;
-  color: #4e5969;
-  line-height: 1.5;
-  margin-bottom: 0;
-}
-
-.sidebar-divider {
-  border: none;
-  height: 1px;
-  background: #e4e6ea;
-  margin: 16px 0;
-}
-
-.community-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
+.popular-list,
+.category-list {
+  list-style: none;
+  padding: 0;
   margin: 0;
-  color: #4e5969;
 }
 
-.detail-icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
+.popular-item,
+.category-item {
+  margin-bottom: 12px;
+}
+
+.popular-info {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.popular-info:hover {
+  background: #f7f8fa;
+}
+
+.popular-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #1d2129;
+}
+
+.popular-members {
+  font-size: 12px;
   color: #86909c;
+  margin: 0;
 }
 
-.empty-moderators {
+.category-link {
+  display: block;
+  padding: 8px 12px;
+  color: #4e5969;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.category-link:hover {
+  background: #f7f8fa;
+  color: #1677ff;
+}
+
+.empty-popular {
   text-align: center;
   color: #86909c;
   font-size: 14px;
 }
 
-.moderator-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.moderator-item {
-  display: flex;
-  align-items: center;
-}
-
-.moderator-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-}
-
-.moderator-info {
-  margin-left: 12px;
-  flex: 1;
-}
-
-.moderator-name {
-  font-weight: 600;
-  font-size: 14px;
-  margin: 0;
-  color: #1d2129;
-}
-
-.moderator-handle {
-  color: #86909c;
-  font-size: 12px;
-  margin: 0;
-}
-
 @media (max-width: 1024px) {
   .main-container {
     grid-template-columns: 1fr;
+  }
+
+  .communities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
 
@@ -968,29 +798,13 @@ onMounted(() => {
     padding: 16px;
   }
 
-  .community-header-content {
+  .search-section {
     flex-direction: column;
-    align-items: flex-start;
-    margin-top: -48px;
+    align-items: stretch;
   }
 
-  .community-header-actions {
-    margin-left: 0;
-    margin-top: 16px;
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .post-item {
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .post-vote-section {
-    flex-direction: row;
-    width: auto;
-    justify-content: flex-start;
+  .communities-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
