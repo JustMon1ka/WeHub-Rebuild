@@ -64,7 +64,7 @@ namespace UserDataService.Services
             if (!string.IsNullOrEmpty(request.Gender)) profile.Gender = request.Gender;
             if (!string.IsNullOrEmpty(request.Location)) profile.Location = request.Location;
             if (!string.IsNullOrEmpty(request.Nickname)) profile.Nickname = request.Nickname;
-            if (!string.IsNullOrEmpty(request.AvatarUrl)) profile.ProfileUrl = request.ProfileUrl;
+            if (!string.IsNullOrEmpty(request.ProfileUrl)) profile.ProfileUrl = request.ProfileUrl;
             profile.Birthday = request.Birthday;
             profile.Experience = request.Experience;
             profile.Level = request.Level;

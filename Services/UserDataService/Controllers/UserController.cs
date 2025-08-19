@@ -20,10 +20,6 @@ namespace UserDataService.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BaseHttpResponse<UserInfoResponse>>> GetUser(int id)
         {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdStr, out var userId) || userId != id)
-                return Unauthorized(BaseHttpResponse<string>.Fail(401, "You are not authorized to modify this user"));
-            
             var user = await _userService.GetUserInfoAsync(id);
             if (user == null)
                 return NotFound(BaseHttpResponse<UserInfoResponse>.Fail(404, "User not found"));
