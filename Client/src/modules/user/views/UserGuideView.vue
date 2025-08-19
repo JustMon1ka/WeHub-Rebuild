@@ -6,9 +6,9 @@ import router from '@/router.ts'
 
 const counter = ref(0);
 const selectedTags : Ref<Map<string, string>> = ref(User.getInstance()?.userInfo?.userTags || new Map<string, string>());
-function onSave() {
+async function onSave() {
   User.getInstance()?.userInfo?.updateTags();
-  router.push('/');
+  await router.push('/');
 }
 </script>
 

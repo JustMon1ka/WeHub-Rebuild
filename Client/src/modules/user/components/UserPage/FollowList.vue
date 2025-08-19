@@ -3,6 +3,8 @@ import UserList from '@/modules/user/components/UserList/UserList.vue'
 import TabController, { type TabLabel } from '@/modules/user/scripts/TabController.ts'
 import { User } from '@/modules/auth/public.ts'
 import { watch } from 'vue'
+import router from '@/router.ts'
+import { toggleLoginHover } from '@/App.vue'
 
 const { userId_p, nickName } = defineProps<{
   userId_p: string;
@@ -18,6 +20,10 @@ const curTab = defineModel('curTab', { default: 0 });
 let userId = userId_p || 'Me';
 if (userId === 'Me'){
   userId = User?.getInstance()?.userAuth.userId || 'unknown';
+  if (!userId){
+    toggleLoginHover(true);
+    setTimeout(async () => await router.push('/'), 0);
+  }
 }
 
 const tabLabels : Array<TabLabel> = [

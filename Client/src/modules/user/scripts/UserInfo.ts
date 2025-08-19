@@ -68,11 +68,8 @@ class UserInfo implements UserData{
     // TODO: 如果 TagMap 中没有该标签名，向服务器请求获取或者创建新标签
   }
 
+  // 以下为用户信息
   userId: string;
-  profileLoaded: boolean = false;
-  followLoaded: boolean = false;
-  tagsLoaded: boolean = false;
-
 
   username: string = 'Loading...';
   phone: string = '';
@@ -96,6 +93,11 @@ class UserInfo implements UserData{
 
   userTags :Map<string, string> = new Map(); // Loading only when isMe is true
 
+  // 以下为状态量
+  profileLoaded: boolean = false;
+  followLoaded: boolean = false;
+  tagsLoaded: boolean = false;
+
   isMe: boolean = false;
 
   // Edit related
@@ -112,6 +114,17 @@ class UserInfo implements UserData{
       this.isMe = true;
     }
   }
+
+  async loadUserData() {
+    try {
+      await this.loadProfile();
+      await this.loadFollow();
+      if (this.isMe) await this.loadTags();
+    } catch (error:any) {
+      this.handleError(error);
+    }
+  }
+
 
   async loadProfile() {
     const result = await getUserDataAPI(this.userId);
@@ -160,16 +173,6 @@ class UserInfo implements UserData{
       }
     }
     this.tagsLoaded = true;
-  }
-
-  async loadUserData() {
-    try {
-      await this.loadProfile();
-      await this.loadFollow();
-      if (this.isMe) await this.loadTags();
-    } catch (error:any) {
-      this.handleError(error);
-    }
   }
 
   copy(copyUserInfo: UserInfo = new UserInfo(this.userId, true)): UserInfo {

@@ -23,14 +23,14 @@ function toggleFollow() {
     return;
   }
 
-  if (followed.value) {
+  if (following.value) {
     User.getInstance()?.unfollowUser(userId);
     emit('unfollowed');
   } else {
     User.getInstance()?.followUser(userId);
     emit('followed');
   }
-  followed.value = !followed.value;
+  following.value = !following.value;
 }
 
 </script>
@@ -41,7 +41,7 @@ function toggleFollow() {
 <!--    *  false    false       未关注      => 显示“关注”按钮-->
 <!--    *  false    true        关注对方     => 显示“正在关注”按钮-->
 <!--    *  true     false       被对方关注   => 显示“回关”按钮-->
-<!--    *  true     true        双向关注     => 显示“已回关”按钮-->
+<!--    *  true     true        双向关注     => 显示“已互关”按钮-->
     <button @click="toggleFollow" v-if="!followed && !following" :class="styles.followBtnShape + styles.followBtn">
       关 注
     </button>
@@ -49,7 +49,7 @@ function toggleFollow() {
       回 关
     </button>
     <button @click="toggleFollow" v-else :class="styles.followBtnShape + styles.followingBtn">
-      <span class="text-following">{{ followed ? '已回关' : '正在关注' }}</span>
+      <span class="text-following">{{ followed ? '已互关' : '已关注' }}</span>
       <span class="text-unfollow">取消关注</span>
     </button>
   </div>
