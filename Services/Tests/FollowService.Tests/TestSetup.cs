@@ -115,5 +115,47 @@ namespace FollowService.Tests
             // Act & Assert
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.FollowAsync(dto));
         }
+
+        [Fact]
+        public async Task GetFollowCountsAsync_ReturnsCorrectCounts()
+        {
+            // Arrange
+            _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "1") }, "TestAuth"))
+            });
+            _mockRepository.Setup(r => r.GetFollowingCountAsync(1)).ReturnsAsync(5);
+            _mockRepository.Setup(r => r.GetFollowerCountAsync(1)).ReturnsAsync(3);
+
+            // Act
+            var result = await _service.GetFollowCountsAsync();
+
+            // Assert
+            Assert.Equal(5, result.FollowingCount);
+            Assert.Equal(3, result.FollowerCount);
+        }
+
+        [Fact]
+        public async Task GetFollowingListAsync_ReturnsPagedList()
+        {
+            // Arrange
+            _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "1") }, "TestAuth"))
+            });
+            var follows = new List<Follow>
+            {
+                new Follow { FollowerId = 1, FolloweeId = 2, CreatedAt = DateTime.UtcNow }
+            };
+            _mockRepository.Setup(r => r.GetFollowingCountAsync(1)).ReturnsAsync(1);
+            _mockRepository.Setup(r => r.GetFollowingListAsync(1, 1, 10)).ReturnsAsync(follows);
+
+            // Act
+            var result = await _service.GetFollowingListAsync(1, 10);
+
+            // Assert
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Items);
+        }
     }
 }

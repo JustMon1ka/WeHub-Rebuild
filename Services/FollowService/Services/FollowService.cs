@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using FollowService.DTOs;
@@ -65,6 +66,59 @@ namespace FollowService.Services
         {
             int currentUserId = GetCurrentUserId();
             return await _followRepository.DeleteFollowAsync(currentUserId, followeeId);
+        }
+
+        public async Task<UserCountDto> GetFollowCountsAsync()
+        {
+            int currentUserId = GetCurrentUserId();
+            var followingCount = await _followRepository.GetFollowingCountAsync(currentUserId);
+            var followerCount = await _followRepository.GetFollowerCountAsync(currentUserId);
+
+            return new UserCountDto
+            {
+                FollowingCount = followingCount,
+                FollowerCount = followerCount
+            };
+        }
+
+        public async Task<PagedFollowListDto> GetFollowingListAsync(int page, int pageSize)
+        {
+            int currentUserId = GetCurrentUserId();
+            var totalCount = await _followRepository.GetFollowingCountAsync(currentUserId);
+            var follows = await _followRepository.GetFollowingListAsync(currentUserId, page, pageSize);
+
+            return new PagedFollowListDto
+            {
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                Items = follows.Select(f => new FollowDto
+                {
+                    FollowerId = f.FollowerId,
+                    FolloweeId = f.FolloweeId,
+                    CreatedAt = f.CreatedAt
+                }).ToList()
+            };
+        }
+
+        public async Task<PagedFollowListDto> GetFollowersListAsync(int page, int pageSize)
+        {
+            int currentUserId = GetCurrentUserId();
+            var totalCount = await _followRepository.GetFollowerCountAsync(currentUserId);
+            var follows = await _followRepository.GetFollowerListAsync(currentUserId, page, pageSize);
+
+            return new PagedFollowListDto
+            {
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                Items = follows.Select(f => new FollowDto
+                {
+                    FollowerId = f.FollowerId,
+                    FolloweeId = f.FolloweeId,
+                    CreatedAt = f.CreatedAt
+                }).ToList()
+            };
         }
     }
 }

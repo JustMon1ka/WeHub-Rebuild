@@ -7,7 +7,7 @@ namespace FollowService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // 要求认证
+    [Authorize]
     public class FollowsController : ControllerBase
     {
         private readonly IFollowService _followService;
@@ -44,6 +44,37 @@ namespace FollowService.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetFollowCounts()
+        {
+            var result = await _followService.GetFollowCountsAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("following")]
+        public async Task<IActionResult> GetFollowing([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (page < 1 || pageSize < 1)
+            {
+                return BadRequest("分页参数无效");
+            }
+
+            var result = await _followService.GetFollowingListAsync(page, pageSize);
+            return Ok(result);
+        }
+
+        [HttpGet("followers")]
+        public async Task<IActionResult> GetFollowers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (page < 1 || pageSize < 1)
+            {
+                return BadRequest("分页参数无效");
+            }
+
+            var result = await _followService.GetFollowersListAsync(page, pageSize);
+            return Ok(result);
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FollowService.Data;
 using FollowService.Models;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace FollowService.Repositories
@@ -38,6 +40,38 @@ namespace FollowService.Repositories
             _context.Follows.Remove(follow);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<int> GetFollowingCountAsync(int userId)
+        {
+            return await _context.Follows
+                .CountAsync(f => f.FollowerId == userId);
+        }
+
+        public async Task<int> GetFollowerCountAsync(int userId)
+        {
+            return await _context.Follows
+                .CountAsync(f => f.FolloweeId == userId);
+        }
+
+        public async Task<List<Follow>> GetFollowingListAsync(int userId, int page, int pageSize)
+        {
+            return await _context.Follows
+                .Where(f => f.FollowerId == userId)
+                .OrderBy(f => f.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<List<Follow>> GetFollowerListAsync(int userId, int page, int pageSize)
+        {
+            return await _context.Follows
+                .Where(f => f.FolloweeId == userId)
+                .OrderBy(f => f.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
     }
 }
