@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TrendingTopic } from '@/types/community'
+import type { TrendingTopic } from '../types.ts'
 
 defineProps<{
   topics: TrendingTopic[]

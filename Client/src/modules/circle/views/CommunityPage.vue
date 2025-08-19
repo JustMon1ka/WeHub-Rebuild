@@ -188,8 +188,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import NavBar from '@/components/NavBar.vue'
-import { CircleAPI } from '@/services/api'
+import NavBar from '../components/NavBar.vue'
+import { CircleAPI } from '../api.ts'
 
 // 类型定义
 interface Community {

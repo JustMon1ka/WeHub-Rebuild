@@ -246,8 +246,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import NavBar from '@/components/NavBar.vue'
-import { CircleAPI } from '@/services/api'
+import NavBar from '../components/NavBar.vue'
+import { CircleAPI } from '../api.ts'
 import type { Community } from '@/types/community'
 
 // 类型定义

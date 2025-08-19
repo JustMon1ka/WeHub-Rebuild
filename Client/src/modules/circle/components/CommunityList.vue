@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Community } from '@/types/community'
+import type { Community } from '../types.ts'
 
 defineProps<{
   communities: Community[]

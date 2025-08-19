@@ -1,0 +1,29 @@
+// src/modules/circle/router.ts
+import CommunityPage from './views/CommunityPage.vue'
+import CommunityDetailPage from './views/CommunityDetailPage.vue'
+
+export default {
+  getRoutes() {
+    return [
+      {
+        path: '/community',
+        name: 'community',
+        component: CommunityPage,
+        meta: { title: '社区', navi: true, recommend: true },
+      },
+      {
+        path: '/communities',
+        name: 'communities',
+        component: CommunityPage,
+        meta: { title: '社区列表', navi: true, recommend: true },
+      },
+      {
+        path: '/community/:id',
+        name: 'community-detail',
+        component: CommunityDetailPage,
+        props: true,
+        meta: { title: '社区详情', navi: true, recommend: false },
+      },
+    ]
+  },
+}

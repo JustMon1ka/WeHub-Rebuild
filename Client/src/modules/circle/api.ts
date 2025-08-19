@@ -1,5 +1,6 @@
 // src/services/api.ts
-const API_BASE_URL = 'http://localhost:5080'
+// 使用相对路径，通过 Vite 代理转发到后端
+const API_BASE_URL = ''
 
 interface ApiResponse<T> {
   success: boolean
@@ -25,18 +26,26 @@ export class CircleAPI {
         url += `?${params.toString()}`
       }
 
+      console.log('发送请求到:', url)
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        // 如果需要发送 cookies 可以添加这个
+        credentials: 'include',
       })
+
+      console.log('响应状态:', response.status)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      return await response.json()
+      const result = await response.json()
+      console.log('响应数据:', result)
+      return result
     } catch (error) {
       console.error('获取圈子列表失败:', error)
       throw error
@@ -77,6 +86,7 @@ export class CircleAPI {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(backendData),
+        credentials: 'include',
       })
 
       console.log('HTTP状态:', response.status)
@@ -127,6 +137,7 @@ export class CircleAPI {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       })
 
       console.log('加入社区响应状态:', response.status)
@@ -170,6 +181,7 @@ export class CircleAPI {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       })
 
       console.log('退出社区响应状态:', response.status)
@@ -205,6 +217,7 @@ export class CircleAPI {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -228,13 +241,15 @@ export class CircleAPI {
   static async getCircleDetails(circleId: number) {
     try {
       console.log('=== API调用开始 ===')
-      console.log('请求URL:', `${API_BASE_URL}/api/circles/${circleId}`)
+      const url = `${API_BASE_URL}/api/circles/${circleId}`
+      console.log('请求URL:', url)
 
-      const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       })
 
       console.log('HTTP状态码:', response.status)
@@ -284,6 +299,7 @@ export class CircleAPI {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -304,6 +320,7 @@ export class CircleAPI {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       })
 
       if (!response.ok) {
