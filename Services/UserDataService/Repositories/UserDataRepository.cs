@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Models;
 using UserDataService.Data;
-using UserDataService.Models;
 
 namespace UserDataService.Repositories
 {

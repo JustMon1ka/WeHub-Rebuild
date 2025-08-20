@@ -102,7 +102,9 @@ namespace PostService
             builder.Services.AddControllers();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IPostRedisRepository, PostRedisRepository>();
+            builder.Services.AddScoped<ICommentRepository, CommentRepository>();
             builder.Services.AddScoped<IPostService, PostService.Services.PostService>();
+            builder.Services.AddScoped<ICommentService, CommentService>();
 
             var app = builder.Build();
 

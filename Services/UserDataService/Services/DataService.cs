@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using UserDataService.Models;
 using UserDataService.Repositories;
 
 namespace UserDataService.Services

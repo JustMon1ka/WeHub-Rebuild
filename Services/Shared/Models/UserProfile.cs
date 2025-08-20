@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Models;
 
-namespace UserDataService.Models
+namespace Models
 {
     [Table("USERPROFILE")]
     public class UserProfile
@@ -11,7 +11,7 @@ namespace UserDataService.Models
         [Key]
         [ForeignKey("User")]
         [Column("USER_ID")]
-        public int UserId { get; set; }
+        public long UserId { get; set; }
 
         [Column("AVATAR_URL")]
         public string? AvatarUrl { get; set; }

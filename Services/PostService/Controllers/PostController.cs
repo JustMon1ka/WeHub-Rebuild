@@ -12,10 +12,12 @@ namespace PostService.Controllers;
 public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
+    private readonly ICommentService _commentService;
 
-    public PostController(IPostService postService)
+    public PostController(IPostService postService, ICommentService commentService)
     {
         _postService = postService;
+        _commentService = commentService;
     }
     
     [HttpGet]
@@ -221,5 +223,39 @@ public class PostController : ControllerBase
             // ...
             return BaseHttpResponse<List<SearchSuggestResponse>>.Fail(500, "An error occurred while retrieving search suggestions.");
         }
+    }
+
+    [HttpPost("comment")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<CommentResponse>> Comment([FromBody] CommentRequest commentRequest)
+    {
+        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+        {
+            return BaseHttpResponse<CommentResponse>.Fail(401, "未认证的用户");
+        }
+
+        var userId = long.Parse(userIdClaim.Value);
+        return await _commentService.AddCommentOrReplyAsync(userId, commentRequest);
+    }
+
+    [HttpDelete("comment")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<object?>> DeleteComment([FromQuery] long id, [FromQuery] CommentRequest.CommentType type)
+    {
+        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+        {
+            return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+        }
+
+        var userId = long.Parse(userIdClaim.Value);
+        return await _commentService.DeleteCommentOrReplyAsync(userId, id, type);
+    }
+
+    [HttpGet("comment")]
+    public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetComments([FromQuery] long postId)
+    {
+        return await _commentService.GetCommentsAsync(postId);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Models;
+using PostService.Models;
 
 namespace PostService.Data;
 
@@ -14,6 +15,9 @@ public class AppDbContext : DbContext
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PostTag> PostTags => Set<PostTag>();
+    public DbSet<Comments> Comments => Set<Comments>();
+    public DbSet<Reply> Replies => Set<Reply>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
