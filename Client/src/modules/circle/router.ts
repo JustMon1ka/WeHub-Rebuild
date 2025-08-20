@@ -9,7 +9,7 @@ export default {
         path: '/community',
         name: 'community',
         component: CommunityPage,
-        meta: { title: '社区', navi: true, recommend: true },
+        meta: { title: '社区', navi: true, recommend: false },
       },
       {
         path: '/communities',

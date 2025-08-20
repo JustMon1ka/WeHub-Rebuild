@@ -1,7 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import authRouter from './modules/auth/router.ts'
 import coreRouter from './modules/core/router.ts'
-import circleRouter from './modules/circle/router.ts' // 添加这行
+import circleRouter from './modules/circle/router.ts'
+import messageRouter from './modules/message/router.ts'
+import noticeRouter from './modules/notice/router.ts'
+//import reportRouter from './modules/report/router.ts'
 import notFound from './NotFound.vue'
 
 const router = createRouter({
@@ -13,7 +16,10 @@ const router = createRouter({
     },
     ...coreRouter.getRoutes(),
     ...authRouter.getRoutes(),
-    ...circleRouter.getRoutes(), // 添加这行
+    ...circleRouter.getRoutes(),
+    ...messageRouter.getRoutes(),
+    ...noticeRouter.getRoutes(),
+    //...reportRouter.getRoutes(),
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
