@@ -1,10 +1,10 @@
 <!--APP.vue 中的内容会应用于全局，谨慎添加！！！-->
 
 <script setup lang="ts">
-import NavBar from '../components/NavBar.vue'
-//import NavigationBar from '@/modules/core/components/NavigationBar.vue'
-//import NavigationBarMobile from '@/modules/core/components/NavigationBarMobile.vue'
-//import RecommendBar from '@/modules/core/components/RecommendBar.vue'
+import NavBar from './modules/circle/components/NavBar.vue'
+import NavigationBar from './modules/core/components/NavigationBar.vue'
+import NavigationBarMobile from './modules/core/components/NavigationBarMobile.vue'
+import RecommendBar from './modules/core/components/RecommendBar.vue'
 import { RouterView } from 'vue-router'
 </script>
 

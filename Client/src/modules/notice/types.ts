@@ -1,4 +1,4 @@
-import type { user } from "./message";
+import type { user } from "../message/types";
 
 // 通知类型
 export const noticeType = {
@@ -11,16 +11,16 @@ export type noticeType = typeof noticeType[keyof typeof noticeType];
 
 // 通知
 export interface baseNoticeInfo {
-    id: number; // 通知id
+    noticeId: number; // 通知id
     sender: user; // 发送者
     time: string; // 发送时间
     isRead: boolean; // 是否已读
-    objectType: 'post' | 'comment' | 'user'; // 目标对象类型
+    objectType: 'post' | 'comment' | 'user'; // 目标对象类型  
 };
 
 export interface targetPostInfo {
     targetPostId: number; // 目标帖子id
-    targetPostTitle: string; // 目标帖子简介
+    targetPostTitle: string; // 目标帖子简介 
     targetPostTitleImage: string; // 目标帖子简介图片
 }
 
@@ -59,6 +59,7 @@ export interface atNoticeInfo extends baseNoticeInfo, targetPostInfo {
     targetCommentAuthor?: string;
 }
 
+// 关注通知
 export interface followNoticeInfo extends baseNoticeInfo, targetPostInfo {
     type: 'follow';
     objectType: 'user';

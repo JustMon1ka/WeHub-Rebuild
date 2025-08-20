@@ -1,10 +1,6 @@
 <template>
   <teleport to="body">
-    <div
-      v-if="visible"
-      class="report-dialog-overview"
-      @click.self="handleCloseClick"
-    >
+    <div v-if="visible" class="report-dialog-overview" @click.self="handleCloseClick">
       <div class="report-dialog-content">
         <div class="dialog-header">
           <span class="dialog-title">我要举报</span>
@@ -14,38 +10,17 @@
         <div class="report-section">
           <span class="report-section-title">违反法律法规</span>
           <div class="report-reason">
-            <label
-              class="reason-button"
-              :class="{ active: reportReasons.includes('illegal') }"
-            >
-              <input
-                type="checkbox"
-                v-model="reportReasons"
-                value="illegal"
-                hidden
-              />违法违禁
+            <label class="reason-button" :class="{ active: reportReasons.includes('illegal') }">
+              <input type="checkbox" v-model="reportReasons" value="illegal" hidden />违法违禁
             </label>
-            <label
-              class="reason-button"
-              :class="{ active: reportReasons.includes('gambling') }"
-            >
-              <input
-                type="checkbox"
-                v-model="reportReasons"
-                value="gambling"
-                hidden
-              />赌博诈骗
+            <label class="reason-button" :class="{ active: reportReasons.includes('gambling') }">
+              <input type="checkbox" v-model="reportReasons" value="gambling" hidden />赌博诈骗
             </label>
             <label
               class="reason-button"
               :class="{ active: reportReasons.includes('infringement') }"
             >
-              <input
-                type="checkbox"
-                v-model="reportReasons"
-                value="infringement"
-                hidden
-              />侵权申诉
+              <input type="checkbox" v-model="reportReasons" value="infringement" hidden />侵权申诉
             </label>
           </div>
         </div>
@@ -75,10 +50,7 @@
                 hidden
               />涉社会事件谣言
             </label>
-            <label
-              class="reason-button"
-              :class="{ active: reportReasons.includes('false_info') }"
-            >
+            <label class="reason-button" :class="{ active: reportReasons.includes('false_info') }">
               <input
                 type="checkbox"
                 v-model="reportReasons"
@@ -148,12 +120,7 @@
               class="reason-button"
               :class="{ active: reportReasons.includes('inciting_conflict') }"
             >
-              <input
-                type="checkbox"
-                v-model="reportReasons"
-                value="inciting_conflict"
-                hidden
-              />引战
+              <input type="checkbox" v-model="reportReasons" value="inciting_conflict" hidden />引战
             </label>
           </div>
         </div>
@@ -191,12 +158,7 @@
                 active: reportReasons.includes('pornographic'),
               }"
             >
-              <input
-                type="checkbox"
-                v-model="reportReasons"
-                value="pornographic"
-                hidden
-              />色情低俗
+              <input type="checkbox" v-model="reportReasons" value="pornographic" hidden />色情低俗
             </label>
 
             <label
@@ -205,12 +167,7 @@
                 active: reportReasons.includes('uncomfortable'),
               }"
             >
-              <input
-                type="checkbox"
-                v-model="reportReasons"
-                value="uncomfortable"
-                hidden
-              />观感不适
+              <input type="checkbox" v-model="reportReasons" value="uncomfortable" hidden />观感不适
             </label>
             <label
               class="reason-button"
@@ -231,12 +188,7 @@
                 active: reportReasons.includes('other'),
               }"
             >
-              <input
-                type="checkbox"
-                v-model="reportReasons"
-                value="other"
-                hidden
-              />其他
+              <input type="checkbox" v-model="reportReasons" value="other" hidden />其他
             </label>
           </div>
         </div>
@@ -261,56 +213,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 interface Props {
-  visible: boolean;
-  reportTargetId: number;
-  reportTargetType: "message" | "user" | "post";
+  visible: boolean
+  reportTargetId: number
+  reportTargetType: 'message' | 'user' | 'post'
 }
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 interface Emits {
-  (e: "close"): void; // 关闭弹窗
+  (e: 'close'): void // 关闭弹窗
   (
-    e: "submit",
+    e: 'submit',
     payload: {
-      reasons: string[];
-      description: string;
-      targetId?: number;
-      targetType?: string;
+      reasons: string[]
+      description: string
+      targetId?: number
+      targetType?: string
     }
-  ): void; // 提交举报
+  ): void // 提交举报
 }
-const emits = defineEmits<Emits>();
+const emits = defineEmits<Emits>()
 
-const reportReasons = ref<string[]>([]);
-const description = ref<string>("");
+const reportReasons = ref<string[]>([])
+const description = ref<string>('')
 
 const handleCloseClick = () => {
-  emits("close");
-  reportReasons.value = [];
-  description.value = "";
-};
+  emits('close')
+  reportReasons.value = []
+  description.value = ''
+}
 
 const handleSubmitClick = () => {
   if (!reportReasons.value) {
-    alert("请选择举报原因");
-    return;
+    alert('请选择举报原因')
+    return
   }
   if (!description.value) {
-    alert("请详细描述举报原因");
-    return;
+    alert('请详细描述举报原因')
+    return
   }
 
-  emits("submit", {
+  emits('submit', {
     reasons: reportReasons.value,
     description: description.value.trim(),
     targetId: props.reportTargetId,
     targetType: props.reportTargetType,
-  });
-  handleCloseClick();
-};
+  })
+  handleCloseClick()
+}
 </script>
 
 <style scoped>

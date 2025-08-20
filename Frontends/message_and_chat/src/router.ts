@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MessageView from './views/MessageView.vue'
-import NoticeView from './views/NoticeView.vue'
+import NoticeView from '../../../Client/src/modules/notice/views/NoticeView.vue'
 import OtherUserHomepage from './views/OtherUserHomepage.vue'
 import PersonalHomepage from './views/PersonalHomepage.vue'
 import LikeDetailsView from './views/LikeDetailsView.vue'

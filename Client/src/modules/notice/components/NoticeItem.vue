@@ -2,8 +2,7 @@
   <div
     class="notice-item"
     :class="{
-      clickable:
-        notice.type === 'like' && notice.sender.nickname.includes('等'),
+      clickable: notice.type === 'like' && notice.sender.nickname.includes('等'),
     }"
     @click="handleItemClick"
   >
@@ -42,12 +41,8 @@
           <span class="action">{{ getNoticeContent(notice) }}</span>
         </div>
         <div class="post-comment-content">
-          <span v-if="notice.type === 'comment'">
-            "{{ notice.newCommentContent }}"</span
-          >
-          <span v-else-if="notice.type === 'at'">
-            "{{ notice.atContent }}"</span
-          >
+          <span v-if="notice.type === 'comment'"> "{{ notice.newCommentContent }}"</span>
+          <span v-else-if="notice.type === 'at'"> "{{ notice.atContent }}"</span>
         </div>
 
         <div class="other-info">
@@ -58,37 +53,23 @@
             @click="handleReplyClick"
             >回复</span
           >
-          <span
-            class="like"
-            v-if="notice.type === 'comment' || notice.type === 'at'"
-            >点赞</span
-          >
+          <span class="like" v-if="notice.type === 'comment' || notice.type === 'at'">点赞</span>
         </div>
       </div>
       <!-- 帖子/评论内容 -->
       <div class="notice-target">
-        <span
-          v-if="notice.objectType === 'post' && notice.targetPostTitleImage"
-        >
-          <img
-            class="target-post-image"
-            :src="notice.targetPostTitleImage"
-            alt="帖子封面"
-          />
+        <span v-if="notice.objectType === 'post' && notice.targetPostTitleImage">
+          <img class="target-post-image" :src="notice.targetPostTitleImage" alt="帖子封面" />
         </span>
         <span
           class="post-or-comment-title"
-          v-else-if="
-            notice.objectType === 'post' && !notice.targetCommentContent
-          "
+          v-else-if="notice.objectType === 'post' && !notice.targetCommentContent"
         >
           "{{ notice.targetPostTitle }}"
         </span>
         <span
           class="post-or-comment-title"
-          v-else-if="
-            notice.objectType === 'comment' && notice.targetCommentContent
-          "
+          v-else-if="notice.objectType === 'comment' && notice.targetCommentContent"
         >
           "{{ notice.targetCommentContent }}"
         </span>
@@ -110,94 +91,92 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { type notice } from "../types/notice";
-import { formatTime } from "../types/message";
-import ReplyCommentInput from "./ReplyCommentInput.vue";
+import { ref } from 'vue'
+import { type notice } from '../types'
+import { formatTime } from '../../core/utils/time'
+import ReplyCommentInput from './ReplyCommentInput.vue'
 
 interface Props {
-  notice: notice;
-  likeCount?: number;
-  likeNotices?: notice[];
+  notice: notice
+  likeCount?: number
+  likeNotices?: notice[]
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 const emit = defineEmits<{
-  showLikeDetails: [postId: number];
-}>();
-const diffime = formatTime(props.notice.time);
-const showCommentInput = ref(false);
-const currentUserAvatar = ref(
-  "https://placehold.co/100x100/facc15/78350f?text=F"
-);
+  showLikeDetails: [postId: number]
+}>()
+const diffime = formatTime(props.notice.time)
+const showCommentInput = ref(false)
+const currentUserAvatar = ref('https://placehold.co/100x100/facc15/78350f?text=F')
 
 const getNoticeIcon = (type: string) => {
   switch (type) {
-    case "like":
-      return "👍";
-    case "comment":
-      return "💬";
-    case "at":
-      return "@";
-    case "follow":
-      return "👤";
+    case 'like':
+      return '👍'
+    case 'comment':
+      return '💬'
+    case 'at':
+      return '@'
+    case 'follow':
+      return '👤'
     default:
-      return "📢";
+      return '📢'
   }
-};
+}
 
 const getNoticeContent = (notice: notice) => {
   switch (notice.type) {
-    case "like":
-      if (notice.objectType === "comment") {
-        return "赞了你的评论";
+    case 'like':
+      if (notice.objectType === 'comment') {
+        return '赞了你的评论'
       } else {
-        return "赞了你的帖子"; // 默认为帖子
+        return '赞了你的帖子' // 默认为帖子
       }
-    case "comment":
-      if (notice.objectType === "comment") {
-        return "回复了你的评论";
+    case 'comment':
+      if (notice.objectType === 'comment') {
+        return '回复了你的评论'
       } else {
-        return "回复了你的帖子";
+        return '回复了你的帖子'
       }
-    case "at":
-      return "提到了你";
-    case "follow":
-      return "关注了你";
+    case 'at':
+      return '提到了你'
+    case 'follow':
+      return '关注了你'
     default:
-      return "通知了你";
+      return '通知了你'
   }
-};
+}
 
 // 点击人数
 const handleLikeCountClick = () => {
-  if (props.notice.type === "like" && props.likeCount && props.likeCount > 0) {
-    emit("showLikeDetails", props.notice.targetPostId);
+  if (props.notice.type === 'like' && props.likeCount && props.likeCount > 0) {
+    emit('showLikeDetails', props.notice.targetPostId)
   }
-};
+}
 
 // 点击整个通知项
 const handleItemClick = () => {
-  if (props.notice.type === "like" && props.likeCount && props.likeCount > 0) {
-    emit("showLikeDetails", props.notice.targetPostId);
+  if (props.notice.type === 'like' && props.likeCount && props.likeCount > 0) {
+    emit('showLikeDetails', props.notice.targetPostId)
   }
-};
+}
 
 // 点击回复按钮
 const handleReplyClick = (event: Event) => {
-  event.stopPropagation();
-  showCommentInput.value = !showCommentInput.value;
-};
+  event.stopPropagation()
+  showCommentInput.value = !showCommentInput.value
+}
 
 // 提交评论按钮
 const handleSubmitComment = () => {
-  showCommentInput.value = false;
-};
+  showCommentInput.value = false
+}
 
 // 取消评论
 const handleCancelComment = () => {
-  showCommentInput.value = false;
-};
+  showCommentInput.value = false
+}
 </script>
 
 <style scoped>

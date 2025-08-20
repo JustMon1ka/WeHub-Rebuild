@@ -37,38 +37,31 @@
         <div class="divider-horizontal"></div>
       </div>
       <div class="divider-vertical"></div>
-      <div class="right">
-        <SearchInput v-model="searchText" placeholder="搜索..." />
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import SideNavigationBar from "../components/SideNavigationBar.vue";
-import SearchInput from "../components/SearchInput.vue";
-import { getLikeUsersByPostId, getPostTitleById } from "../data/noticeData";
-import { useRoute } from "vue-router";
+import { ref, computed } from 'vue'
+import { getLikeUsersByPostId, getPostTitleById } from '../noticeData'
+import { useRoute } from 'vue-router'
 
-const route = useRoute();
-const postId = ref(Number(route.params.postId));
-const postTitle = ref(getPostTitleById(postId.value));
-const searchText = ref("");
+const route = useRoute()
+const postId = ref(Number(route.params.postId))
+const postTitle = ref(getPostTitleById(postId.value))
+const searchText = ref('')
 
 // 获取点赞用户列表
 const likeUsers = computed(() => {
-  const users = getLikeUsersByPostId(postId.value);
+  const users = getLikeUsersByPostId(postId.value)
 
   if (searchText.value.trim()) {
-    const searchLower = searchText.value.toLowerCase();
-    return users.filter((user) =>
-      user.username.toLowerCase().includes(searchLower)
-    );
+    const searchLower = searchText.value.toLowerCase()
+    return users.filter((user) => user.username.toLowerCase().includes(searchLower))
   }
 
-  return users;
-});
+  return users
+})
 </script>
 
 

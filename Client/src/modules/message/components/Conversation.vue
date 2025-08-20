@@ -1,9 +1,10 @@
 <template>
-  <div class = "conversation-item"
-       :class="{selected: props.selected}">
+  <div class="conversation-item" :class="{ selected: props.selected }">
     <div class="avatar">
-      <img :src="props.conversation.contactUser.avatar"
-           :alt="props.conversation.contactUser.nickname"/>
+      <img
+        :src="props.conversation.contactUser.avatar"
+        :alt="props.conversation.contactUser.nickname"
+      />
     </div>
     <div class="content">
       <div class="header">
@@ -12,22 +13,19 @@
       </div>
       <div class="newest-message">{{ props.conversation.newestMessage }}</div>
     </div>
-    
   </div>
 </template>
 
 <script setup lang="ts">
-import { formatTime } from '../types/message'
-import type { conversation } from '../types/message'
+import { formatTime } from '../../core/utils/time'
+import type { conversation } from '../types'
 
 const props = defineProps<{
-  conversation: conversation,
+  conversation: conversation
   selected?: boolean
 }>()
 
-
-const diffime = formatTime(props.conversation.time);
-
+const diffime = formatTime(props.conversation.time)
 </script>
 
 <style scoped>
@@ -35,7 +33,7 @@ const diffime = formatTime(props.conversation.time);
   display: flex;
   align-items: center;
   min-width: 0;
-  padding:8px 0;
+  padding: 8px 0;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -81,7 +79,7 @@ const diffime = formatTime(props.conversation.time);
   font-weight: bold;
   font-size: 18px;
 }
- 
+
 .time {
   font-size: 12px;
   color: #999;

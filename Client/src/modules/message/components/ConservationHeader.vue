@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import type { conversation } from '../types/message'
+import type { conversation } from '../types'
 
 const props = defineProps<{
      conversation: conversation
