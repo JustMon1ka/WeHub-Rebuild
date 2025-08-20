@@ -66,7 +66,6 @@ watch( () => userId_p, (newId, oldId) => {
 watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
   (newValue, oldValue) => {
     if (newValue && !oldValue && userInfo.value.isMe) {
-      console.log('UserPageView: User data loaded, copying to temp.');
       userInfoTemp.value = userInfo.value.copy();
       tempCopied.value = true;
     }
@@ -82,6 +81,9 @@ function onCancel(){
 function onSave(){
   userInfo.value = userInfoTemp.value.copy(userInfo.value);
   editMode.value = false;
+  if (userInfo.value.isMe) {
+    User.getInstance()?.reloadUserInfo();
+  }
 }
 </script>
 

@@ -9,7 +9,7 @@ const coreRouter = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: { title: 'Home', navi: true, recommend: true , requiredLogin: false },
+      meta: { title: 'Home', navi: true, recommend: true , requireLogin: false },
     },
     {
       path: '/about',
@@ -18,7 +18,7 @@ const coreRouter = createRouter({
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: AboutView,
-      meta: { title: 'About', navi: true, recommend: true , requiredLogin: false },
+      meta: { title: 'About', navi: true, recommend: true , requireLogin: false },
     },
   ],
 })

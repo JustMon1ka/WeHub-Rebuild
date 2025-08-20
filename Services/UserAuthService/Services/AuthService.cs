@@ -52,15 +52,18 @@ public class AuthService : IAuthService
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return null;
 
-        return _jwtService.GenerateToken(user);
+        return _jwtService.GenerateToken(user, true);
+    }
+
+    public async Task<string?> RefreshTokenAsync(string username)
+    {
+        var user = await _userAuthRepo.GetByUsernameAsync(username);
+        if (user == null) return null;
+        return _jwtService.GenerateToken(user, false);
     }
     
     public async Task<(bool Success, string Message)> SendEmailCodeAsync(string email)
     {
-        var user = await _userAuthRepo.GetByIdentifierAsync(email);
-        if (user == null)
-            return (false, "Email not registered");
-
         var code = new Random().Next(100000, 999999).ToString();
         _emailService.SaveCode(email, code);
         await _emailService.SendEmailAsync(email, "验证码登录", $"你的验证码是：{code}");
@@ -68,10 +71,12 @@ public class AuthService : IAuthService
         return (true, "The verification code has been sent.");
     }
     
-    public async Task<string?> LoginByEmailCodeAsync(string email, string code)
+    public async Task<(bool Success, string Message, string? data)> LoginByEmailCodeAsync(string email, string code)
     {
-        if (!_emailService.ValidateCode(email, code)) return null;
+        if (!_emailService.ValidateCode(email, code)) return (false, "Invalid code.", null);
         var user = await _userAuthRepo.GetByIdentifierAsync(email);
-        return user == null ? null : _jwtService.GenerateToken(user);
+        if (user == null)
+            return (false, "Email not registered", null);
+        return (true, "Login Succuss", _jwtService.GenerateToken(user, true));
     }
 }

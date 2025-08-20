@@ -6,6 +6,7 @@ public interface IAuthService
 {
     Task<(bool Success, string Message)> RegisterAsync(RegisterRequest request);
     Task<string?> LoginAsync(LoginRequest request);
+    Task<string?> RefreshTokenAsync(string username);
     Task<(bool Success, string Message)> SendEmailCodeAsync(string email);
-    Task<string?> LoginByEmailCodeAsync(string email, string code);
+    Task<(bool Success, string Message, string? data)> LoginByEmailCodeAsync(string email, string code);
 }

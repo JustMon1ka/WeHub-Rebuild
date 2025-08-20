@@ -110,7 +110,7 @@ const dateConfig = ref({
       </div>
       <div>
         <label for="birthday" v-bind:class="styles.label">🎂 出生日期</label>
-        <vue-flatpickr :config="dateConfig" id="birthday" v-model="userInfo.birthday" @change="userInfo.changed = true"
+        <vue-flatpickr v-bind:config="dateConfig" id="birthday" v-model="userInfo.birthday" @change="userInfo.changed = true"
                        v-bind:class="styles.input" placeholder="Select date" name="date" tabindex="3"/>
       </div>
       <div>

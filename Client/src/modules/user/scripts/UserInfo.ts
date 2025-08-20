@@ -169,7 +169,7 @@ class UserInfo implements UserData{
     for (const tag of result.data.tags) {
       const tagName = await UserInfo.getTagName(tag.toString());
       if (tagName) {
-        this.userTags.set(tag, tagName);
+        this.userTags.set(tag.toString(), tagName);
       }
     }
     this.tagsLoaded = true;
@@ -255,6 +255,7 @@ class UserInfo implements UserData{
 
   async updateTags() {
     try {
+      console.log(...this.userTags.values());
       const result = await setTagsAPI(this.userId, {
         tags: [...this.userTags.keys()].map((tagId) => Number(tagId)),
       });

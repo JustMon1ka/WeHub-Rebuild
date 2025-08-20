@@ -5,6 +5,7 @@ import authRouter from './modules/auth/router.ts'
 import coreRouter from './modules/core/router.ts'
 import notFound from './NotFound.vue'
 import userRouter from './modules/user/router.ts'
+import { toggleNavigationBar, toggleRecommendBar } from '@/App.vue'
 // import yourRouter from './yourModule/router.ts'
 
 
@@ -20,7 +21,7 @@ const router = createRouter({
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: notFound,
-      meta: { title: '404', navi: true, recommend: false , requiredLogin: false },
+      meta: { title: '404', navi: true, recommend: false , requireLogin: false },
     },
   ],
 })
@@ -30,37 +31,33 @@ router.beforeEach((to, from, next) => {
   // yourRouter.beforeEach((to, from, next) => {}); // 假如有其他模块的路由trigger，可以在这里调用
 
   document.title = (to.meta.title ? to.meta.title as string + ' - ' : '' )+ 'WeHub';
+  toggleNavigationBar(!!to.meta.navi);
+  toggleRecommendBar(!!to.meta.recommend);
 
-  if (to.meta.requiredLogin) {
+  const checkLogin = () => {
     if (!User.getInstance()) {
       toggleLoginHover(true);
-      if (from === undefined || from.meta.requiredLogin) {
-        // 如果当前路由需要登录，但用户未登录且上一个路由也需要登录，则跳转回首页
+      if (!from.name) { // 如果没有from.name，说明是首次加载
         next('/');
-        return;
-      }
-      if (from.path === '/login' || from.path === '/register' || from.path === '/password_reset') {
-        toggleLoginHover(false);
       }
       return;
     }
-  }
-
-  if (to.path === '/login' || to.path === '/register' || to.path === '/password_reset') {
     toggleLoginHover(false);
+    next();
   }
 
-  if (to.meta.navi) {
-    document.getElementById('navigation-pc')!.classList.remove('hidden');
+  if (to.meta.requireLogin) {
+    if (User.loading){
+      User.afterLoadCallbacks.push(checkLogin);
+      return;
+    } else {
+      checkLogin();
+      return;
+    }
   } else {
-    document.getElementById('navigation-pc')!.classList.add('hidden');
+    toggleLoginHover(false);
+    next();
   }
-  if (to.meta.recommend) {
-    document.getElementById('recommend')!.classList.remove('hidden');
-  } else {
-    document.getElementById('recommend')!.classList.add('hidden');
-  }
-  next();
 })
 
 export default router

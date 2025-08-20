@@ -2,7 +2,7 @@ import router from '@/router.ts'
 import { UserInfo } from '@/modules/user/public.ts'
 import {
   loginAPI,
-  meAPI,
+  meAPI, refreshTokenAPI,
   registerAPI,
   sendCodeAPI,
   verifyCodeAPI
@@ -22,37 +22,43 @@ class User {
     return User.#singleton;
   }
 
-  static readonly MAX_COOKIE_AGE = 5184000; // 60 days
-  static readonly MIN_COOKIE_AGE = 3600; // 1 hour
+  static readonly COOKIE_AGE = 60 * 60 * 24 * 60; // 60 days
+  static readonly CHECK_INTERVAL = 1000 * 60 * 5; // 每5分钟检查一次
+  static readonly REFRESH_THRESHOLD = 1000 * 60 * 6; // 提前6分钟刷新
+  static loading = false;
+  static afterLoadCallbacks: (() => void)[] = [];
 
+  // 静态块用于初始化用户实例
   static {
-    let userId: string | undefined = undefined;
-    let token: string | undefined = undefined;
-    document.cookie.split('; ').forEach(cookie => {
-      const [name, value] = cookie.split('=');
-      if (name === 'userId') {
-        userId = value;
-      } else if (name === 'token') {
-        token = value;
+    const token_s = sessionStorage.getItem('token');
+    let creating = false;
+    if (token_s) {
+      const tokenExpiration = User.getTokenExpiration(token_s);
+      if(tokenExpiration && Date.now() < tokenExpiration - User.REFRESH_THRESHOLD) {
+        User.create(token_s, 'session').catch(async () => {
+          sessionStorage.removeItem('token');
+          await User.createFromCookie();
+        }).catch((e) => {}) // 捕获可能的错误，避免影响页面加载
+        creating = true;
       }
-    });
-    if (userId && token)
-      User.#singleton = new User(userId, token);
-      setTimeout(async  () => {
-        try {
-          // 认证token有效性
-          const me = await meAPI(token || '');
-          if (me.code !== 200) {
-            return;
-          }
-        } catch (error: any) {
-          if (error.message === 'Unauthorized') {
-            User.#singleton?.logout();
-          }
-        }
-      });
+    }
+    if (!creating) {
+      User.createFromCookie().catch((e) => {}) // 捕获可能的错误，避免影响页面加载
+    }
   }
 
+  static async createFromCookie() {
+    for (const cookie of document.cookie.split('; ')) {
+      const [name, value] = cookie.split('=');
+      if (name === 'token') {
+        User.create(value, 'auth').catch(() => {
+          document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; // 清除无效的token
+        })
+      }
+    }
+  }
+
+  // 以下为静态工具函数
   static async generateHash(password: string) {
     // 1. 将密码转换为 Uint8Array
     const encoder = new TextEncoder();
@@ -64,6 +70,15 @@ class User {
     // 3. 将哈希结果转换为十六进制字符串
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  static getTokenExpiration(token: string): number | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp ? payload.exp * 1000 : null; // 返回毫秒时间戳
+    } catch {
+      return null;
+    }
   }
 
   static readonly msgTranslation = new Map<string, string>([
@@ -79,8 +94,10 @@ class User {
     ["Failed to fetch", "获取数据失败，请检查网络连接"],
     ["Invalid credentials", "用户名或密码错误"],
     ["You are not authorized to modify this user", "您无权修改此用户"],
-    ["Unauthorized", "未授权访问"],
+    ["Unauthorized", "请登录后再操作"],
     ["Email not registered", "邮箱未注册"],
+    ["Invalid code.", "验证码错误"],
+    ["Login failed, no token generated", "登录失败，未生成令牌"],
   ]);
 
   static handleError(error: any): resultState {
@@ -96,6 +113,7 @@ class User {
     }
   }
 
+  // 以下为接入后端API的方法
   static async login(username: string, password: string, rememberMe: boolean = false) : Promise<resultState> {
     let passwordHash = await User.generateHash(password);
     try {
@@ -105,11 +123,11 @@ class User {
         password: passwordHash,
       });
 
-      // 获取用户信息
-      const me = await meAPI(login.data);
+      await User.create(login.data, 'auth');
+      if (rememberMe) {
+        document.cookie = `token=${login.data}; path=/; max-age=${User.COOKIE_AGE}`;
+      }
 
-      User.#singleton = new User(me.data.id, login.data);
-      User.#singleton?.saveToCookie(rememberMe ? User.MAX_COOKIE_AGE : User.MIN_COOKIE_AGE);
       return {
         success: true,
       };
@@ -138,9 +156,15 @@ class User {
     }
   }
 
+  static async getSessionToken(token: string) {
+    const sessionToken = (await refreshTokenAPI(token)).data;
+    sessionStorage.setItem('token', sessionToken);
+    return sessionToken || '';
+  }
+
   static async sendAuthCode(email: string): Promise<resultState> {
     try {
-      const result = await sendCodeAPI(email);
+      await sendCodeAPI(email);
       return {
         success: true,
       }
@@ -155,11 +179,11 @@ class User {
         email: email,
         code: code,
       });
-      // 获取用户信息
-      const me = await meAPI(login.data);
 
-      User.#singleton = new User(me.data.id, login.data);
-      User.#singleton?.saveToCookie(rememberMe ? User.MAX_COOKIE_AGE : User.MIN_COOKIE_AGE);
+      await User.create(login.data, 'auth');
+      if (rememberMe) {
+        document.cookie = `token=${login.data}; path=/; max-age=${User.COOKIE_AGE}`;
+      }
 
       return {
         success: true,
@@ -169,43 +193,96 @@ class User {
     }
   }
 
-  readonly #userid: string;
-  readonly #token: string;
+  // 以下为用户实例的相关方法和属性
+  readonly #userId: string;
+  #token: string = '';
+  #expiresTime: number | null = null;
+  refreshTimer: any;
   followingList: Set<string> = new Set<string>();
   followerList: Set<string> = new Set<string>();
   userInfo: UserInfo | undefined = undefined;
 
-  constructor(userid: string, token: string) {
-    this.#userid = userid;
+  // 工厂函数，用于创建用户实例，并在创建前检查错误
+  static async create(token: string, tokenType: 'session' | 'auth') {
+    try {
+      User.loading = true;
+      if (User.#singleton) return
+      if (!token) return
+
+      if (tokenType === 'auth') {
+        token = await User.getSessionToken(token)
+      }
+      const userId = (await meAPI(token)).data.id
+      const expiresTime = User.getTokenExpiration(token)
+
+      if (!userId || !token || !expiresTime || Date.now() >= expiresTime) return
+      User.#singleton = new User(userId, token, expiresTime)
+    } finally {
+      User.loading = false;
+      User.afterLoadCallbacks.forEach(callback => {
+        try {
+          callback();
+        } catch (e) {
+          console.error('USER_ERROR_REPORT: Error in afterLoad callback:',callback.toString(),'ERROR_MESSAGE: ', e);
+        }
+      });
+      User.afterLoadCallbacks = [];
+    }
+  }
+
+  constructor(userid: string, token: string, expiresTime: number) {
+    this.#userId = userid;
     this.#token = token;
-    // 延迟加载 UserInfo 实例，避免在User未初始化时就尝试获取用户信息
+    this.#expiresTime = expiresTime;
+
+    this.refreshTimer = setInterval(async () => {
+      if (this.#expiresTime && Date.now() >= this.#expiresTime - User.REFRESH_THRESHOLD) {
+        this.#token = await User.getSessionToken(this.#token);
+        this.#expiresTime = User.getTokenExpiration(this.#token);
+
+        if (!this.#token || !this.#expiresTime) {
+          User.#singleton?.logout();
+          clearInterval(this.refreshTimer);
+          return;
+        }
+      }
+    }, User.CHECK_INTERVAL, { immediate: true }); // 每5分钟检查一次
+
     setTimeout(async () => {
       this.userInfo = new UserInfo(userid, false);
       await this.userInfo.loadProfile();
     }, 0);
   }
 
-  saveToCookie(cookieAge: number = User.MIN_COOKIE_AGE) {
-    console.log(cookieAge)
-    document.cookie = `userId=${this.#userid}; max-age=${cookieAge}`;
-    document.cookie = `token=${this.#token}; max-age=${cookieAge}`;
-  }
-
   async logout() {
     document.cookie.split('; ').forEach(cookie => {
       const [name] = cookie.split('=');
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      if (name === 'token')
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
     });
+    sessionStorage.removeItem('token');
     User.#singleton = undefined;
     // 刷新当前页面
     await router.push('/');
     location.reload();
   }
 
+  get userAuth() {
+    return {
+      userId: this.#userId.slice(), // 防止外部修改
+      token: this.#token.slice(),
+    }
+  }
+
+  async reloadUserInfo() {
+    this.userInfo = new UserInfo(this.#userId);
+    await this.userInfo.loadProfile();
+  }
+
   async resetPassword(newPassword: string): Promise<resultState> {
     try {
       const passwordHash = await User.generateHash(newPassword);
-      const result = await setUserAuthDataAPI(this.#userid , {
+      const result = await setUserAuthDataAPI(this.#userId , {
         username: this.userInfo?.username || '',
         password: passwordHash,
         email: this.userInfo?.email || '',
@@ -217,13 +294,6 @@ class User {
       }
     } catch (error: any) {
       return User.handleError(error);
-    }
-  }
-
-  get userAuth() {
-    return {
-      userId: this.#userid.slice(), // 防止外部修改
-      token: this.#token.slice(),
     }
   }
 

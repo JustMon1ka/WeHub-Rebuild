@@ -18,7 +18,7 @@ interface codeVerifyData {
 
 const BASE_URL = 'http://localhost:5001';
 
-async function fetchFromAPI(url: string, method: string, data: string | null = null, token: string | null = null) {
+async function fetchFromAPI(url: string, method: string, data: string | undefined = undefined, token: string | null = null) {
   const result =  await fetch(url, {
     method: method,
     headers: {
@@ -26,7 +26,7 @@ async function fetchFromAPI(url: string, method: string, data: string | null = n
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
     },
-    body: data ? data : undefined,
+    body: data,
   });
   const resultData = await result.json();
   if (!result.ok) {
@@ -43,6 +43,10 @@ async function loginAPI(userData: loginData) {
   return await fetchFromAPI(`${BASE_URL}/api/auth/login`, 'POST', JSON.stringify(userData));
 }
 
+async function refreshTokenAPI(token: string) {
+  return await fetchFromAPI(`${BASE_URL}/api/auth/refresh-token`, 'GET', undefined, token);
+}
+
 async function meAPI(token: string) {
   return await fetchFromAPI(`${BASE_URL}/api/auth/me`, 'GET', undefined, token);
 }
@@ -55,4 +59,4 @@ async function verifyCodeAPI(data: codeVerifyData) {
   return await fetchFromAPI(`${BASE_URL}/api/auth/login-email-code`, 'POST', JSON.stringify(data));
 }
 
-export { registerAPI, loginAPI, meAPI, sendCodeAPI, verifyCodeAPI , type registerData, type loginData };
+export { registerAPI, loginAPI, refreshTokenAPI , meAPI, sendCodeAPI, verifyCodeAPI , type registerData, type loginData };

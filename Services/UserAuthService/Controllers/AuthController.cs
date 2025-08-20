@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DTOs;
@@ -37,6 +38,20 @@ public class AuthController : ControllerBase
 
         return Ok(BaseHttpResponse<string>.Success(token , "Login successful"));
     }
+    
+    [HttpGet("refresh-token")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<ActionResult<BaseHttpResponse<string>>> RefreshToken()
+    {
+        var username = User.FindFirstValue(ClaimTypes.Name) ?? User.Identity?.Name;
+        if (username == null)
+            return Unauthorized(BaseHttpResponse<string>.Fail(401, "Invalid token"));
+        
+        var token = await _authService.RefreshTokenAsync(username);
+        if (token == null)
+            return Unauthorized(BaseHttpResponse<string>.Fail(401, "Invalid token"));
+        return Ok(BaseHttpResponse<string>.Success(token , "Refresh token successful"));
+    }
 
     [HttpGet("me")]
     [Authorize(AuthenticationSchemes = "Bearer")]
@@ -61,10 +76,12 @@ public class AuthController : ControllerBase
     [HttpPost("login-email-code")]
     public async Task<IActionResult> LoginByEmailCode([FromBody] LoginByEmailCodeRequest request)
     {
-        var token = await _authService.LoginByEmailCodeAsync(request.Email, request.Code);
-        return token == null
-            ? Unauthorized(BaseHttpResponse<string>.Fail(401, "验证码错误"))
-            : Ok(BaseHttpResponse<string>.Success(token));
+        var result = await _authService.LoginByEmailCodeAsync(request.Email, request.Code);
+        if (!result.Success)
+            return Unauthorized(BaseHttpResponse<string>.Fail(401, result.Message));
+        if (string.IsNullOrEmpty(result.data))
+            return NotFound(BaseHttpResponse<string>.Fail(404, "Login failed, no token generated"));
+        return Ok(BaseHttpResponse<string>.Success(result.data ?? "", result.Message));
     }
 
 }

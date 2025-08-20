@@ -9,7 +9,7 @@ const emit = defineEmits<{
 }>();
 
 const selectedTags: Ref<Map<string, string>> = defineModel<Map<string, string>>(
-  'selectedTags', { required: true, default: () => new Map<string, string>() });
+  'selectedTags', { required: true });
 
 const editing: Ref<boolean> = defineModel<boolean>(
   'editing', { required: true, default: false });

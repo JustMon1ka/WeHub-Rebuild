@@ -5,8 +5,10 @@ import { User } from '@/modules/auth/public.ts'
 import router from '@/router.ts'
 
 const counter = ref(0);
-const selectedTags : Ref<Map<string, string>> = ref(User.getInstance()?.userInfo?.userTags || new Map<string, string>());
+const selectedTags : Ref<Map<string, string>> = ref(new Map<string, string>());
 async function onSave() {
+  if (User.getInstance()?.userInfo?.userTags)
+    User.getInstance().userInfo.userTags = selectedTags.value;
   User.getInstance()?.userInfo?.updateTags();
   await router.push('/');
 }
