@@ -80,7 +80,7 @@ namespace UserDataService
             // ------------------ Controllers & Services ------------------
             builder.Services.AddControllers();
             builder.Services.AddScoped<IUserDataRepository, UserDataRepository>();
-            builder.Services.AddScoped<IDataService, DataService>();
+            builder.Services.AddScoped<IUserDataService, DataService>();
 
             var app = builder.Build();
 
