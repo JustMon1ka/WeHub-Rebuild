@@ -4,7 +4,7 @@ import coreRouter from './modules/core/router.ts'
 import circleRouter from './modules/circle/router.ts'
 import messageRouter from './modules/message/router.ts'
 import noticeRouter from './modules/notice/router.ts'
-//import reportRouter from './modules/report/router.ts'
+import reportRouter from './modules/report/router.ts'
 import notFound from './NotFound.vue'
 
 const router = createRouter({
@@ -19,7 +19,7 @@ const router = createRouter({
     ...circleRouter.getRoutes(),
     ...messageRouter.getRoutes(),
     ...noticeRouter.getRoutes(),
-    //...reportRouter.getRoutes(),
+    ...reportRouter.getRoutes(),
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',

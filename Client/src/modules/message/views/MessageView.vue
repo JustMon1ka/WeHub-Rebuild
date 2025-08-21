@@ -1,6 +1,5 @@
 <template>
   <div class="page-content-wrapper">
-    <!-- 左侧导航栏 -->
 
     <!-- 中间内容 -->
     <div class="center">
@@ -56,25 +55,20 @@
     </div>
     <div class="divider-vertical"></div>
   </div>
-  <!-- 举报弹窗组件 -->
-  <!-- <ReportDialog
-      :visible="isReportDialogVisible"
-      :reportTargetId="currentReportTargetId || 0"
-      :reportTargetType="'message'"
-      @close="isReportDialogVisible = false"
-    /> -->
 </template>
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import SearchInput from '../components/SearchInput.vue'
 import Conversation from '../components/Conversation.vue'
 import ConservationHeader from '../components/ConservationHeader.vue'
 import ChatInput from '../components/ChatInput.vue'
 import ChatMessage from '../components/ChatMessage.vue'
-import ReportDialog from '../components/ReportDialog.vue'
+import ReportDialog from '../../report/views/ReportDialog.vue'
 import type { conversation, chatHistory, user, message } from '../types'
 
+const router = useRouter()
 const searchText = ref('')
 const conversationListData = ref<conversation[]>([
   {
@@ -253,7 +247,17 @@ const handleMessageAction = async (action: string, message: message) => {
       await handleMessageCopy(message)
       break
     case 'report':
-      showReportDialog(message.messageId, 'message')
+      const to = router.resolve({
+        name: 'report',
+        params: { type: 'message', id: message.messageId },
+        query: {
+          reporterId: myUserId.value,
+          reportedId: message.sender.id,
+          reportTime: new Date().toISOString(),
+        },
+      })
+      const url = new URL(to.href, window.location.origin) // 保证绝对地址
+      window.open(url.toString(), '_blank', 'noopener,noreferrer')
       break
   }
 }

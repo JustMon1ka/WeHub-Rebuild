@@ -23,6 +23,7 @@
           {{ text }}
         </button>
       </div>
+      <div class="divider-horizontal"></div>
 
       <div class="notice-information">
         <div v-if="selectedNotices.length === 0" class="empty-state">
