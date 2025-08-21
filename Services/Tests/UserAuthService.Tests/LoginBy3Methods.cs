@@ -20,11 +20,9 @@ public class LoginBy3Methods
     {
         _output = output;
 
-        // 启动 UserAuthService
         var authFactory = new WebApplicationFactory<UserAuthService.Program>();
         _authClient = authFactory.CreateClient();
 
-        // 启动 UserDataService
         var dataFactory = new WebApplicationFactory<UserDataService.Program>();
         _dataClient = dataFactory.CreateClient();
     }
@@ -47,7 +45,6 @@ public class LoginBy3Methods
         content.Should().Contain("successful");
         _output.WriteLine("✅ 注册成功");
 
-        // 三种登录方式测试
         var identifiers = new[] { registerRequest.Username, registerRequest.Email, registerRequest.Phone };
         string? lastToken = null;
 
@@ -60,27 +57,31 @@ public class LoginBy3Methods
             };
 
             var loginResponse = await _authClient.PostAsJsonAsync("/api/auth/login", loginRequest);
-            var loginContent = await loginResponse.Content.ReadAsStringAsync();
             loginResponse.EnsureSuccessStatusCode();
+
+            var loginContent = await loginResponse.Content.ReadAsStringAsync();
             var json = JObject.Parse(loginContent);
-            var token = json["token"]?.ToString();
+
+            var token = json["data"]?.ToString(); // 🔥 关键修改：从 data 中读取 token
             token.Should().NotBeNullOrEmpty($"登录失败: {identifier}");
             _output.WriteLine($"✅ 使用 {identifier} 登录成功，Token: {token}");
-            lastToken = token; // 保存最后一个可用的 token
+
+            lastToken = token;
         }
 
         // Step4: 获取当前用户信息
         _authClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", lastToken);
         var meResponse = await _authClient.GetAsync("/api/auth/me");
         meResponse.EnsureSuccessStatusCode();
+
         var meJson = JObject.Parse(await meResponse.Content.ReadAsStringAsync());
-        var userId = meJson["id"]?.ToString();
+        var userId = meJson["data"]?["id"]?.ToString(); // 🔥 关键修改：从 data 中读取 id
         userId.Should().NotBeNullOrEmpty();
         _output.WriteLine($"✅ 获取当前用户信息成功，用户ID: {userId}");
 
-        // Step5: 注销该用户（使用 UserDataService）
+        // Step5: 注销该用户（模拟 UserDataService）
         _dataClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", lastToken);
-        var deleteResponse = await _dataClient.DeleteAsync("/api/user/delete");
+        var deleteResponse = await _dataClient.DeleteAsync($"/api/users/{userId}/delete");
         deleteResponse.EnsureSuccessStatusCode();
         var deleteResult = await deleteResponse.Content.ReadAsStringAsync();
         _output.WriteLine($"✅ 注销成功，响应: {deleteResult}");

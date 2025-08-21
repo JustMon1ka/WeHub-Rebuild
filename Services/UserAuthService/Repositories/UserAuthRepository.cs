@@ -7,17 +7,17 @@ namespace UserAuthService.Repositories
     public interface IUserAuthRepository
     {
         Task<User?> GetByUsernameAsync(string username);
-        Task<bool> ExistsByUsernameOrEmailAsync(string username, string email);
+        Task<bool> ExistsByUsernameOrEmailOrPhoneAsync(string username, string email,string phone);
         Task AddUserAsync(User user);
         Task SaveChangesAsync();
         Task<User?> GetByIdentifierAsync(string identifier);
     }
 
-    public class UserAuthAuthRepository : IUserAuthRepository
+    public class UserAuthRepository : IUserAuthRepository
     {
         private readonly AppDbContext _context;
 
-        public UserAuthAuthRepository(AppDbContext context)
+        public UserAuthRepository(AppDbContext context)
         {
             _context = context;
         }
@@ -27,10 +27,10 @@ namespace UserAuthService.Repositories
             return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        public async Task<bool> ExistsByUsernameOrEmailAsync(string username, string email)
+        public async Task<bool> ExistsByUsernameOrEmailOrPhoneAsync(string username, string email, string phone)
         {
             var count = await _context.Users
-                .Where(u => u.Username == username || u.Email == email)
+                .Where(u => u.Username == username || u.Email == email || u.Phone == phone)
                 .CountAsync();
             return count > 0;
         }
