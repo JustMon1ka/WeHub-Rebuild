@@ -4,16 +4,16 @@
     <!-- Logo -->
     <div class="h-16 flex items-center mb-4">
       <img src="@/assets/logo.svg" alt="Logo" class="w-9 h-9">
-      <span class="ml-2 text-xl font-bold">论坛</span>
+      <span class="ml-2 text-xl font-bold">WeHub</span>
     </div>
 
     <!-- 导航菜单 -->
     <nav class="flex-grow">
       <ul class="space-y-2">
-        <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+        <li><router-link to="/" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
           <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
           首页
-        </a></li>
+        </router-link></li>
         <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
           <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
           发现
@@ -30,10 +30,11 @@
           <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
           私信
         </a></li>
-        <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+        <li><router-link :to="{ name: 'UserPage', params: { userId_p: 'Me' } }"
+                         class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
           <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
           个人
-        </a></li>
+        </router-link></li>
       </ul>
     </nav>
 
@@ -63,6 +64,10 @@
         <svg class="w-5 h-5 ml-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
       </a>
     </div>
+
+    <button v-if="logout" @click.prevent="User.getInstance()?.logout()" class=" bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition-colors p-1 m-2 w-30 rounded-full text-xl ">
+      退出
+    </button>
   </div>
 
 </template>
@@ -95,4 +100,13 @@ const openPostCreate = () => {
     router.push({ name: 'post-create' })
   }
 }
+import { User } from '@/modules/auth/public.ts'
+import { ref } from 'vue'
+
+const logout = ref(false);
+User.afterLoadCallbacks.push(() => {
+  if (User.getInstance()) {
+    logout.value = true;
+  }
+});
 </script>

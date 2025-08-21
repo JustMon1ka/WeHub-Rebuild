@@ -1,13 +1,33 @@
 <!--APP.vue 中的内容会应用于全局，谨慎添加！！！-->
-
 <script setup lang="ts">
 import NavigationBar from '@/modules/core/components/NavigationBar.vue'
 import NavigationBarMobile from '@/modules/core/components/NavigationBarMobile.vue'
 import RecommendBar from '@/modules/core/components/RecommendBar.vue'
 import { RouterView, useRoute } from 'vue-router'
 import PostCreate from '@/modules/postCreate/views/CreatePostView.vue'
+import { RouterView } from 'vue-router'
+import LoginHover from '@/modules/auth/views/LoginHover.vue'
+</script>
+
+<script lang="ts">
+import { ref } from 'vue'
+
+const showNavigationBar = ref(true);
+const showRecommendBar = ref(true);
+const showHoverLogin = ref(false);
+
+export function toggleLoginHover(value: boolean | undefined) {
+  showHoverLogin.value = value !== undefined ? value : !showHoverLogin.value;
+}
 
 const route = useRoute()
+export function toggleNavigationBar(value: boolean | undefined) {
+  showNavigationBar.value = value !== undefined ? value : !showNavigationBar.value;
+}
+
+export function toggleRecommendBar(value: boolean | undefined) {
+  showRecommendBar.value = value !== undefined ? value : !showRecommendBar.value;
+}
 </script>
 
 <template>
@@ -42,4 +62,3 @@ const route = useRoute()
   </nav>
 </body>
 </template>
-

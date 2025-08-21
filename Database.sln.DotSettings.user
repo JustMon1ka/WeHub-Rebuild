@@ -27,5 +27,13 @@
     &lt;TestId&gt;xUnit::59F9D0AA-AC24-47C2-BCA3-37E4A856E6C1::net8.0::MediaService.Test.Upload_Download.Upload_File_Should_Exist&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::67EB285F-961C-476D-8048-9F928B3A3578::net8.0::TagService.Test.AddGetTag.LoginAddGet&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
+	
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5c64d292_002D9d77_002D488c_002Db467_002D9a785c6c32b8/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="LoginBy3Methods.cs 中的所有测试" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;Or&gt;&#xD;
+    &lt;ProjectFile&gt;95890EE9-7B63-40A5-8079-CDEB29BA8F04/f:LoginBy3Methods.cs&lt;/ProjectFile&gt;&#xD;
+    &lt;ProjectFile&gt;15E2904F-C8BB-46B5-8E51-7AE8E1992C1F/f:UserLifecycleTests.cs&lt;/ProjectFile&gt;&#xD;
+    &lt;ProjectFile&gt;DFACE89C-2850-4AFA-B8C1-11D68BD2A6BB/f:UserTagTests.cs&lt;/ProjectFile&gt;&#xD;
+    &lt;ProjectFile&gt;95890EE9-7B63-40A5-8079-CDEB29BA8F04/f:LoginByEmailCode.cs&lt;/ProjectFile&gt;&#xD;
+  &lt;/Or&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	</wpf:ResourceDictionary>

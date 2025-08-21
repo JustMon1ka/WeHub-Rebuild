@@ -33,6 +33,12 @@ namespace Models
 
         [Column("LEVEL")]
         public int Level { get; set; }
+        
+        [Column("NICKNAME")]
+        public string? Nickname { get; set; }
+        
+        [Column("PROFILE_URL")]
+        public string? ProfileUrl { get; set; }
 
         public User? User { get; set; }
     }

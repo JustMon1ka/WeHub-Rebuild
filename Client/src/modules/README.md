@@ -1,3 +1,42 @@
+# New: 2025年8月20日
+## router-link
+使用vue的router-link组件来创建路由链接，使用方式如下：
+```html
+<router-link to="/login">登录</router-link>
+```
+不要使用`<a>`标签，`<a>`标签会导致页面重新加载。
+
+## router懒加载
+使用vue的路由懒加载功能，可以实现按需加载路由组件，使用方式如下：
+```ts
+const LoginView = () => import('./views/LoginView.vue');
+```
+这样可以避免一次性加载所有路由组件，提高应用性能。
+
+## 新增requireLogin路由元数据
+在需要登录才能访问的页面中，添加`meta`字段，设置`requireLogin`为`true`，示例如下：
+```typescript
+{
+  path: '/me',
+  name: 'Me',
+  component: MeView,
+  meta: {
+    title: '个人中心',
+    requireLogin: true
+  }
+}
+```
+此时会在路由守卫中进行判断，如果用户未登录，则会停止跳转并弹出登录悬浮窗。另外，因为其中使用了router的name进行判断，假如name为null/undefined/空字符串等任意会被转换为false的值，则会被认为是首次加载，所以务必指定name字段。
+
+此外，该功能也可以通过APP.vue下的toggleLoginHover方法来实现，传入true即打开登录界面
+
+## User类
+在Auth模块下有User类，该类为单例类，表示用户本身，包含用户的基本信息和状态。
+- 可以通过`User.getInstance()`方法获取该类的实例。
+- 通过`User.getInstance()?.userAuth`获取用户的认证信息，返回值为{ userId: string, token: string }的形式，token的有效期一般为1小时，User内置了自动刷新token的功能，所以在使用时随取随用可能是更好的方式。
+- User类会在应用启动时自动检查cookie或sessionStorage中是否有用户信息，如果有则自动创建User实例，但创建是异步创建的，所以在使用User实例时需要注意等待用户信息加载完成。可以通过`User.getInstance()?.loading`来判断用户信息是否正在加载，或者使用`User.getInstance()?.afterLoadCallback`来添加回调函数，回调函数会在用户信息加载完成后执行。
+- 假如不勾选“自动登录”，登录只在当前页面有效（即只储存到sessionStorage）。关闭页面后会丢失登录状态，此时需要重新登录。勾选“自动登录”后，登录状态会被保存到cookie中，关闭页面后仍然有效，除非cookie过期（默认30天）或被清除（登出）。
+
 # 模块文件标准
 ```
 modules
