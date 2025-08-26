@@ -1,4 +1,6 @@
 import axios from 'axios';
+import type { PostDetail } from "./types";
+import { unwrap } from "./types";
 import type {
   ToggleLikeRequest,
   BaseResp,
@@ -46,4 +48,9 @@ export async function getSearchSuggestion(keyword?: string, limits: number = 10)
 export async function getSearch(query?: string, limits?: number){
   const resp = await axios.get<SearchResponse>("/search", {params: {query: query, limits: limits}});
   return resp.data;
+}
+
+export async function getPostDetail(postId: number): Promise<PostDetail> {
+  const res = await axios.get(`/api/posts/${postId}`);
+  return unwrap<PostDetail>(res.data);
 }

@@ -47,3 +47,23 @@ export type SearchResponse = BaseResp<{
   tags: Array<string>,
   content: string
 }[]>;
+
+export interface PostDetail {
+  postId: number;
+  userId: number;
+  title: string;
+  content: string;
+  tags: string[];
+  createdAt: string | Date;
+  views: number;
+  likes: number;
+  circleId?: number | null;
+}
+
+export function unwrap<T>(payload: BaseResp<T>): T {
+  // 兼容你们的 BaseHttpResponse 包装结构
+  // 如果没有 data 字段，就当作 T 直接返回
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
+  return payload?.data ?? payload;
+}
