@@ -13,7 +13,7 @@ public class CircleDto
     /// <summary>
     /// 圈子名称
     /// </summary>
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// 圈子描述
@@ -34,4 +34,19 @@ public class CircleDto
     /// 圈子成员数量
     /// </summary>
     public int MemberCount { get; set; }
+
+    /// <summary>
+    /// 圈子分类标签
+    /// </summary>
+    public string? Categories { get; set; }
+
+    /// <summary>
+    /// 圈子头像图片URL
+    /// </summary>
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
+    /// 圈子背景图片URL
+    /// </summary>
+    public string? BannerUrl { get; set; }
 } 

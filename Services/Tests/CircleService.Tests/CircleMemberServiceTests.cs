@@ -62,7 +62,7 @@ public class CircleMemberServiceTests
 
         // Assert
         Assert.IsFalse(result.Success);
-        Assert.AreEqual("您已经申请过或已是该圈子成员。", result.ErrorMessage);
+        Assert.AreEqual("您已是该圈子成员或已提交申请。", result.ErrorMessage);
     }
 
     [TestMethod]

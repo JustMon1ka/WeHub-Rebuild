@@ -21,6 +21,10 @@ builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
 builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
 
+// 3. 配置 FileBrowser 服务
+builder.Services.Configure<FileBrowserOptions>(builder.Configuration.GetSection("FileBrowser"));
+builder.Services.AddScoped<IFileBrowserClient, FileBrowserClient>();
+
 
 // 3. 添加控制器服务
 builder.Services.AddControllers();

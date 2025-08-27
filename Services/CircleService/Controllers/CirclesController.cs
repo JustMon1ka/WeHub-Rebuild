@@ -30,15 +30,26 @@ public class CirclesController : ControllerBase
     // --- Circle Management Endpoints ---
 
     /// <summary>
-    /// 获取所有圈子，支持按名称搜索，或查询某个用户加入的圈子
+    /// 获取所有圈子，支持按名称搜索、分类筛选，或查询某个用户加入的圈子
     /// </summary>
     /// <param name="name">可选的搜索名称</param>
+    /// <param name="category">可选的分类标签，用于筛选圈子</param>
     /// <param name="joinedBy">可选的用户ID，用于查询该用户已加入的圈子</param>
     [HttpGet]
-    public async Task<IActionResult> GetAllCircles([FromQuery] string? name = null, [FromQuery] int? joinedBy = null)
+    public async Task<IActionResult> GetAllCircles([FromQuery] string? name = null, [FromQuery] string? category = null, [FromQuery] int? joinedBy = null)
     {
-        var circles = await _circleService.GetAllCirclesAsync(name, joinedBy);
+        var circles = await _circleService.GetAllCirclesAsync(name, category, joinedBy);
         return Ok(BaseHttpResponse<object>.Success(circles));
+    }
+
+    /// <summary>
+    /// 获取所有圈子分类标签列表，用于分类筛选下拉菜单
+    /// </summary>
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetAllCategories()
+    {
+        var categories = await _circleService.GetAllCategoriesAsync();
+        return Ok(BaseHttpResponse<object>.Success(categories));
     }
 
     /// <summary>
@@ -307,5 +318,104 @@ public class CirclesController : ControllerBase
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
         }
         return Ok(BaseHttpResponse<object>.Success(null, "活动删除成功。"));
+    }
+
+    // --- 图片上传相关接口 ---
+
+    /// <summary>
+    /// 上传圈子头像
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="file">图片文件</param>
+    [HttpPost("{circleId}/avatar")]
+    public async Task<IActionResult> UploadAvatar(int circleId, IFormFile file)
+    {
+        // 临时调试：检查圈子是否存在
+        var circle = await _circleService.GetCircleByIdAsync(circleId);
+        if (circle == null)
+        {
+            return NotFound(BaseHttpResponse.Fail(404, $"圈子ID {circleId} 不存在"));
+        }
+        
+        Console.WriteLine($"DEBUG: 找到圈子 {circleId}, 名称: {circle.Name}");
+        
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "请选择要上传的图片文件"));
+        }
+
+        // 验证文件类型
+        var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "只支持 JPG、PNG、GIF 格式的图片"));
+        }
+
+        // 验证文件大小（限制为5MB）
+        if (file.Length > 5 * 1024 * 1024)
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "图片文件大小不能超过5MB"));
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = await _circleService.UploadAvatarAsync(circleId, stream, file.FileName, file.ContentType);
+            
+            if (result == null)
+            {
+                return NotFound(BaseHttpResponse.Fail(404, $"圈子ID {circleId} 不存在或FileBrowser上传失败。请检查：1.圈子是否存在 2.FileBrowser服务是否正常 3.网络连接是否正常"));
+            }
+
+            return Ok(BaseHttpResponse<object>.Success(result, "头像上传成功"));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, BaseHttpResponse.Fail(500, $"上传失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// 上传圈子背景图
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="file">图片文件</param>
+    [HttpPost("{circleId}/banner")]
+    public async Task<IActionResult> UploadBanner(int circleId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "请选择要上传的图片文件"));
+        }
+
+        // 验证文件类型
+        var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "只支持 JPG、PNG、GIF 格式的图片"));
+        }
+
+        // 验证文件大小（限制为10MB）
+        if (file.Length > 10 * 1024 * 1024)
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "背景图片文件大小不能超过10MB"));
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = await _circleService.UploadBannerAsync(circleId, stream, file.FileName, file.ContentType);
+            
+            if (result == null)
+            {
+                return NotFound(BaseHttpResponse.Fail(404, $"圈子ID {circleId} 不存在或FileBrowser上传失败。请检查：1.圈子是否存在 2.FileBrowser服务是否正常 3.网络连接是否正常"));
+            }
+
+            return Ok(BaseHttpResponse<object>.Success(result, "背景图上传成功"));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, BaseHttpResponse.Fail(500, $"上传失败: {ex.Message}"));
+        }
     }
 } 

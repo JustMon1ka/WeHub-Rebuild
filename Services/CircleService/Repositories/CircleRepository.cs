@@ -23,13 +23,18 @@ public class CircleRepository : ICircleRepository
         return await _context.Circles.FindAsync(id);
     }
 
-    public async Task<IEnumerable<Circle>> GetAllAsync(string? name = null, int? userId = null)
+    public async Task<IEnumerable<Circle>> GetAllAsync(string? name = null, string? category = null, int? userId = null)
     {
         var query = _context.Circles.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(name))
         {
             query = query.Where(c => c.Name.Contains(name));
+        }
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            query = query.Where(c => c.Categories != null && c.Categories.Contains(category));
         }
 
         if (userId.HasValue)

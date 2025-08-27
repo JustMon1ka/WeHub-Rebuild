@@ -23,7 +23,7 @@ public class Circle
     [Required]
     [MaxLength(100)]
     [Column("NAME")]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// 圈子描述
@@ -43,4 +43,22 @@ public class Circle
     /// </summary>
     [Column("CREATED_AT")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 圈子分类标签（多个分类用逗号分隔）
+    /// </summary>
+    [Column("CATEGORIES")]
+    public string? Categories { get; set; }
+
+    /// <summary>
+    /// 圈子头像图片URL
+    /// </summary>
+    [Column("AVATAR_URL")]
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
+    /// 圈子背景图片URL
+    /// </summary>
+    [Column("BANNER_URL")]
+    public string? BannerUrl { get; set; }
 } 

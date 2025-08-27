@@ -17,12 +17,13 @@ public interface ICircleRepository
     Task<Circle?> GetByIdAsync(int id);
 
     /// <summary>
-    /// 异步获取所有圈子的列表，支持按名称模糊搜索
+    /// 异步获取所有圈子的列表，支持按名称模糊搜索和分类筛选
     /// </summary>
     /// <param name="name">可选的圈子名称，用于模糊搜索</param>
+    /// <param name="category">可选的分类标签，用于筛选圈子</param>
     /// <param name="userId">可选的用户ID，用于查询该用户加入的圈子</param>
     /// <returns>返回所有圈子的列表</returns>
-    Task<IEnumerable<Circle>> GetAllAsync(string? name = null, int? userId = null);
+    Task<IEnumerable<Circle>> GetAllAsync(string? name = null, string? category = null, int? userId = null);
 
     /// <summary>
     /// 异步添加一个新圈子

@@ -18,12 +18,13 @@ public interface ICircleService
     Task<CircleDto?> GetCircleByIdAsync(int id);
 
     /// <summary>
-    /// 异步获取所有圈子的DTO列表，支持按名称模糊搜索
+    /// 异步获取所有圈子的DTO列表，支持按名称模糊搜索和分类筛选
     /// </summary>
     /// <param name="name">可选的圈子名称，用于模糊搜索</param>
+    /// <param name="category">可选的分类标签，用于筛选圈子</param>
     /// <param name="userId">可选的用户ID，用于查询该用户加入的圈子</param>
     /// <returns>返回所有圈子的DTO列表</returns>
-    Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null, int? userId = null);
+    Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null, string? category = null, int? userId = null);
 
     /// <summary>
     /// 异步创建一个新圈子
@@ -48,4 +49,30 @@ public interface ICircleService
     /// <param name="deleterId">执行删除操作的用户ID</param>
     /// <returns>返回一个布尔值，表示删除是否成功</returns>
     Task<bool> DeleteCircleAsync(int id, int deleterId);
+
+    /// <summary>
+    /// 异步获取所有不重复的圈子分类列表
+    /// </summary>
+    /// <returns>返回所有分类标签的列表</returns>
+    Task<IEnumerable<string>> GetAllCategoriesAsync();
+
+    /// <summary>
+    /// 异步上传圈子头像
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="fileStream">图片文件流</param>
+    /// <param name="fileName">文件名</param>
+    /// <param name="contentType">文件类型</param>
+    /// <returns>返回上传结果</returns>
+    Task<ImageUploadResponseDto?> UploadAvatarAsync(int circleId, Stream fileStream, string fileName, string contentType);
+
+    /// <summary>
+    /// 异步上传圈子背景图
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="fileStream">图片文件流</param>
+    /// <param name="fileName">文件名</param>
+    /// <param name="contentType">文件类型</param>
+    /// <returns>返回上传结果</returns>
+    Task<ImageUploadResponseDto?> UploadBannerAsync(int circleId, Stream fileStream, string fileName, string contentType);
 } 
