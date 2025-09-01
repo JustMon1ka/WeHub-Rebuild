@@ -200,5 +200,12 @@ namespace CircleService.Services
 
             return await response.Content.ReadAsStreamAsync();
         }
+
+        public string GetAuthenticatedImageUrl(string storedName)
+        {
+            // 生成带时间戳的URL，用于缓存破坏
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            return $"{_options.BaseUrl}/api/resources/uploads/{storedName}?t={timestamp}";
+        }
     }
 }

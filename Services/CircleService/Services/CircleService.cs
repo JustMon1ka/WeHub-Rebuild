@@ -155,16 +155,22 @@ public class CircleService : ICircleService
             return null;
         }
 
-        // 构建图片URL
-        var imageUrl = $"http://120.26.118.70:5001/api/resources/{uniqueFileName}";
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        // 构建图片URL 
+        var imageUrl = $"http://120.26.118.70:5001/api/preview/big/uploads/{uniqueFileName}?inline=true&key={timestamp}";
 
         // 更新数据库中的头像URL
         circle.AvatarUrl = imageUrl;
         await _circleRepository.UpdateAsync(circle);
 
+        // 返回带预览功能的URL给前端 - 使用公开访问路径避免401认证，添加inline参数直接返回图片
+     
+        var previewUrl = $"http://120.26.118.70:5001/api/preview/big/uploads/{uniqueFileName}?inline=true&key={timestamp}";
+
         return new ImageUploadResponseDto
         {
-            ImageUrl = imageUrl,
+            ImageUrl = previewUrl, // 返回预览URL
             FileName = fileName,
             FileSize = fileStream.Length,
             ContentType = contentType
@@ -191,17 +197,21 @@ public class CircleService : ICircleService
         {
             return null;
         }
+    
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        // 构建图片URL
-        var imageUrl = $"http://120.26.118.70:5001/api/resources/{uniqueFileName}";
+        // 构建图片URL 
+        var imageUrl = $"http://120.26.118.70:5001/api/preview/big/uploads/{uniqueFileName}?inline=true&key={timestamp}";
 
         // 更新数据库中的背景图URL
         circle.BannerUrl = imageUrl;
         await _circleRepository.UpdateAsync(circle);
 
+        var previewUrl = $"http://120.26.118.70:5001/api/preview/big/uploads/{uniqueFileName}?inline=true&key={timestamp}";
+
         return new ImageUploadResponseDto
         {
-            ImageUrl = imageUrl,
+            ImageUrl = previewUrl, // 返回预览URL
             FileName = fileName,
             FileSize = fileStream.Length,
             ContentType = contentType
