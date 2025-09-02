@@ -599,6 +599,89 @@ const rawNoticeList = [
     }
 ];
 
+// ====== 追加更多本地模拟数据：用于前端分页/无限滚动测试 ======
+// 说明：为避免手写大体量静态数据，这里按时间倒序（每条相差 1 分钟）
+// 自动生成若干条点赞/评论/@我三类通知，便于在本地进行分页滚动测试。
+function pad2(n: number) {
+    return n.toString().padStart(2, '0');
+}
+
+function formatUtcToLocalString(date: Date) {
+    const y = date.getUTCFullYear();
+    const m = pad2(date.getUTCMonth() + 1);
+    const d = pad2(date.getUTCDate());
+    const hh = pad2(date.getUTCHours());
+    const mm = pad2(date.getUTCMinutes());
+    return `${y}-${m}-${d} ${hh}:${mm}`;
+}
+
+function createSender(i: number) {
+    const id = 100 + i;
+    return {
+        id,
+        nickname: `user_${id}`,
+        avatar: 'https://placehold.co/100x100/0ea5e9/0c4a6e?text=U',
+        url: `/user/user_${id}`,
+    };
+}
+
+(function appendGeneratedNotices() {
+    // 以 2024-01-16 10:30 的 UTC 时间为基准，之后每条记录减 1 分钟
+    const baseUtcMs = Date.UTC(2024, 0, 16, 10, 30, 0);
+    const total = 180; // 可按需增大
+
+    for (let i = 0; i < total; i++) {
+        const timeMs = baseUtcMs - (i + 1) * 60 * 1000;
+        const date = new Date(timeMs);
+        const time = formatUtcToLocalString(date);
+        const sender = createSender(i);
+        const targetPostId = 1000 + (i % 25);
+        const targetPostTitle = `测试帖子 #${targetPostId}`;
+        const targetPostTitleImage = `https://placehold.co/400x200/334155/ffffff?text=Post+${targetPostId}`;
+
+        const mod = i % 3;
+        if (mod === 0) {
+            // like
+            rawNoticeList.push({
+                type: 'like',
+                sender,
+                time,
+                isRead: false,
+                objectType: 'post',
+                targetPostId,
+                targetPostTitle,
+                targetPostTitleImage,
+            } as any);
+        } else if (mod === 1) {
+            // comment
+            rawNoticeList.push({
+                type: 'comment',
+                sender,
+                time,
+                isRead: false,
+                objectType: 'post',
+                targetPostId,
+                targetPostTitle,
+                targetPostTitleImage,
+                newCommentContent: `这是一条测试评论 ${i}`,
+            } as any);
+        } else {
+            // at
+            rawNoticeList.push({
+                type: 'at',
+                sender,
+                time,
+                isRead: false,
+                objectType: 'post',
+                targetPostId,
+                targetPostTitle,
+                targetPostTitleImage,
+                atContent: `@你 测试 @ 提醒 ${i}`,
+            } as any);
+        }
+    }
+})();
+
 export const noticeList: notice[] = rawNoticeList.map((n, i) => {
     const { id, ...rest } = n as any;
     return { noticeId: i + 1, ...rest } as notice;

@@ -1,43 +1,38 @@
 <template>
-  <div class="page-container">
-    <div class="page-content-wrapper">
-      <div class="left">
-        <SideNavigationBar />
+  <div class="page-content-wrapper">
+    <div class="divider-vertical"></div>
+    <div class="center">
+      <div class="divider-horizontal"></div>
+      <div class="notice-heading">
+        <span class="separator">通知 > </span>
+        <span @click="$router.go(-1)" class="back-link">收到的赞</span>
+        <span> > 点赞详情</span>
       </div>
-      <div class="divider-vertical"></div>
-      <div class="center">
-        <div class="divider-horizontal"></div>
-        <div class="notice-heading">
-          <span class="separator">通知 > </span>
-          <span @click="$router.go(-1)" class="back-link">收到的赞</span>
-          <span class="separator"> > 点赞详情</span>
-        </div>
-        <div class="divider-horizontal"></div>
-        <div class="post-info">
-          <span class="post-title">帖子：{{ postTitle }}</span>
-        </div>
-        <div class="divider-horizontal"></div>
+      <div class="divider-horizontal"></div>
+      <div class="post-info">
+        <span class="post-title">帖子：{{ postTitle }}</span>
+      </div>
+      <div class="divider-horizontal"></div>
 
-        <div class="like-users-list">
-          <div v-for="user in likeUsers" :key="user.id" class="like-user-item">
-            <div class="item-left">
-              <div class="user-avater">
-                <img :src="user.avatar" :alt="user.username" />
-              </div>
-            </div>
-            <div class="item-right">
-              <div class="item-content">
-                <span class="username">{{ user.username }}</span>
-                <span class="action">赞了我</span>
-              </div>
-              <span class="time">{{ user.time }}</span>
+      <div class="like-users-list">
+        <div v-for="user in likeUsers" :key="user.id" class="like-user-item">
+          <div class="item-left">
+            <div class="user-avater">
+              <img :src="user.avatar" :alt="user.username" />
             </div>
           </div>
+          <div class="item-right">
+            <div class="item-content">
+              <span class="username">{{ user.username }}</span>
+              <span class="action">赞了我</span>
+            </div>
+            <span class="time">{{ user.time }}</span>
+          </div>
         </div>
-        <div class="divider-horizontal"></div>
       </div>
-      <div class="divider-vertical"></div>
+      <div class="divider-horizontal"></div>
     </div>
+    <div class="divider-vertical"></div>
   </div>
 </template>
 
@@ -67,17 +62,14 @@ const likeUsers = computed(() => {
 
 
 <style scoped>
-.left {
-  width: 25%;
-
+.page-content-wrapper {
   display: flex;
-  align-items: center;
+  flex-direction: row;
   justify-content: center;
 }
 
 .center {
-  width: 50%;
-
+  width: 60%;
   display: flex;
   flex-direction: column;
   overflow-wrap: break-word;
@@ -98,10 +90,6 @@ const likeUsers = computed(() => {
 
 .back-link:hover {
   color: #3b82f6;
-}
-
-.separator {
-  color: #666;
 }
 
 .post-info {

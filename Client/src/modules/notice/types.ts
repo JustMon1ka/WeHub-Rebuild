@@ -9,6 +9,17 @@ export const noticeType = {
 } as const;
 export type noticeType = typeof noticeType[keyof typeof noticeType];
 
+// 未读通知数量
+export interface unreadNoticeCount {
+    totalUnread: number // 总未读数
+    unreadByType: {
+        reply: number  // 回复
+        like: number  // 点赞
+        repost: number  // 转发
+        mention: number  // @
+    }
+}
+
 // 通知
 export interface baseNoticeInfo {
     noticeId: number; // 通知id

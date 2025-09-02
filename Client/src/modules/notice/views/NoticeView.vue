@@ -1,9 +1,5 @@
-<template>
+ <template>
   <div class="page-content-wrapper">
-    <div class="left">
-      <SideNavigationBar />
-    </div>
-
     <div class="divider-vertical" aria-hidden="true"></div>
 
     <div class="center">
@@ -11,6 +7,8 @@
       <div class="notice-heading">
         <span>通知 > {{ noticeTypeTexts[selectedNoticeType] }}</span>
       </div>
+      <div v-if="loadingUnread">加载中...</div>
+      <div v-else-if="unreadError">{{ unreadError }}</div>
       <div class="divider-horizontal"></div>
 
       <div class="notice-type">
@@ -19,8 +17,15 @@
           :key="index"
           :class="{ active: selectedNoticeType === index }"
           @click="selectedNoticeType = index"
+          class="notice-tab-button"
         >
           {{ text }}
+          <span
+            v-if="index !== 0 && getUnreadCountByType(index) > 0"
+            class="unread-notice-type-count"
+          >
+            {{ displayUnreadNoticeCount(getUnreadCountByType(index)) }}
+          </span>
         </button>
       </div>
       <div class="divider-horizontal"></div>
@@ -49,18 +54,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { type notice } from '../types'
+import { type notice, type unreadNoticeCount } from '../types'
 import NoticeItem from '../components/NoticeItem.vue'
 import { noticeList as noticeData } from '../noticeData'
+import { getUnreadNoticeCount, markNotificationsRead } from '../api'
 
 const selectedNoticeType = ref(0)
 const searchText = ref('')
 const noticeTypeTexts = ['全部消息', '@我', '回复我的', '收到的赞']
 const router = useRouter()
-
 const noticeList = ref<notice[]>(noticeData)
+const unreadSummary = ref<unreadNoticeCount | null>(null)
+const loadingUnread = ref(false)
+const unreadError = ref<string | null>(null)
+const readOnce = ref<Set<string>>(new Set())
 
 // 筛选通知
 const selectedNotices = computed(() => {
@@ -174,21 +183,73 @@ const getLikeNoticesForPost = (postId: number) => {
 const handleShowLikeDetailsClick = (postId: number) => {
   router.push(`/notice/likeDetails/${postId}`)
 }
+
+// 显示未读通知数量
+const getUnreadCountByType = (index: number) => {
+  if (!unreadSummary.value) return 0
+  const u = unreadSummary.value.unreadByType
+
+  if (index === 1) return u.mention || 0
+  if (index === 2) return u.reply || 0
+  if (index === 3) return u.like || 0
+  return 0
+}
+
+// 显示未读通知数量
+const displayUnreadNoticeCount = (n: number) => (n > 99 ? '99+' : n)
+
+// 将索引转换为类型
+const indexToType = (idx: number): 'mention' | 'reply' | 'like' | 'repost' | null => {
+  if (idx === 1) return 'mention'
+  if (idx === 2) return 'reply'
+  if (idx === 3) return 'like'
+  return null
+}
+
+onMounted(async () => {
+  loadingUnread.value = true
+  try {
+    unreadSummary.value = await getUnreadNoticeCount()
+  } catch (err: any) {
+    unreadError.value = err?.message ?? '加载未读通知失败'
+  } finally {
+    loadingUnread.value = false
+  }
+})
+
+watch(
+  selectedNoticeType,
+  async (idx) => {
+    const t = indexToType(idx)
+    if (!t) return
+    if (readOnce.value.has(t)) return
+    try {
+      await markNotificationsRead(t)
+      readOnce.value.add(t)
+
+      // 本地即时更新未读计数，立刻隐藏红点
+      if (unreadSummary.value) {
+        const delta = unreadSummary.value.unreadByType[t] || 0
+        unreadSummary.value.unreadByType[t] = 0
+        unreadSummary.value.totalUnread = Math.max(
+          0,
+          (unreadSummary.value.totalUnread || 0) - delta
+        )
+      }
+    } catch (e) {
+      // 可选：提示失败，不影响继续浏览
+      console.error('标记已读失败', e)
+    }
+  },
+  { immediate: false }
+)
 </script>
 
 <style scoped>
 .page-content-wrapper {
   display: flex;
   flex-direction: row;
-  /* 不要用 gap，否则分割线不会贴合 */
-}
-
-.left {
-  width: 20%;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  padding-left: 16px;
 }
 
 .center {
@@ -199,15 +260,47 @@ const handleShowLikeDetailsClick = (postId: number) => {
   word-break: break-all;
 }
 
+.notice-heading {
+  display: flex;
+  padding: 12px 6px;
+}
+
 .notice-type {
   display: flex;
+  padding: 16px 0;
 }
 .notice-type button {
   flex: 1;
   text-align: center;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
+
+.notice-tab-button {
+  position: relative;
+}
+
+.unread-notice-type-count {
+  position: absolute;
+  top: -8px;
+  right: 6px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 99px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  justify-content: center;
+}
+
+.notice-type button:hover {
+  color: #00aeec;
+}
+
 .notice-type button.active {
   font-weight: bold;
+  color: #00aeec;
 }
 
 .notice-information {
