@@ -5,9 +5,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
     <ItemGroup>
-      <Content Include="DTOs\DTOs.csproj" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.7" />
     </ItemGroup>
 
 </Project>

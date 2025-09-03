@@ -1,9 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Models;
 using UserDataService.DTOs;
 using UserDataService.Repositories;
-using UserDataService.Models;
 
 namespace UserDataService.Services
 {

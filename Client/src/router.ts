@@ -1,24 +1,40 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createRouter, createWebHistory } from 'vue-router'
-import { toggleLoginHover } from './App.vue'
 import { User } from './modules/auth/scripts/User.ts'
 import authRouter from './modules/auth/router.ts'
 import coreRouter from './modules/core/router.ts'
+import postRouter from './modules/post/router.ts'
+import postCreateRouter from './modules/postCreate/router.ts'
 import notFound from './NotFound.vue'
 import userRouter from './modules/user/router.ts'
-import { toggleNavigationBar, toggleRecommendBar } from '@/App.vue'
+import { showHoverLogin, showNavigationBar, showRecommendBar } from './App.vue'
+import {ref} from "vue";
 // import yourRouter from './yourModule/router.ts'
 
+export function toggleLoginHover(value: boolean | undefined) {
+  showHoverLogin.value = value !== undefined ? value : !showHoverLogin.value
+}
+
+export function toggleNavigationBar(value: boolean | undefined) {
+  showNavigationBar.value = value !== undefined ? value : !showNavigationBar.value
+}
+
+export function toggleRecommendBar(value: boolean | undefined) {
+  showRecommendBar.value = value !== undefined ? value : !showRecommendBar.value
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    ...postCreateRouter.getRoutes(),             // postCreate 模块路由数组
+    // ...yourRouter.getRoutes(),     // 如果有其他模块路由
     ...coreRouter.getRoutes(),
     ...authRouter.getRoutes(),
     ...userRouter.getRoutes(),
     // ...yourRouter.getRoutes(),
     // your router must be imported before NotFound route
     {
-      path: '/:pathMatch(.*)*',
+      path: '/:pathMatch(.*)*',      // 404 路由
       name: 'not-found',
       component: notFound,
       meta: { title: '404', navi: true, recommend: false , requireLogin: false },
@@ -26,19 +42,19 @@ const router = createRouter({
   ],
 })
 
-
 router.beforeEach((to, from, next) => {
-  // yourRouter.beforeEach((to, from, next) => {}); // 假如有其他模块的路由trigger，可以在这里调用
+  // 设置页面标题
+  document.title = (to.meta.title ? (to.meta.title as string) + ' - ' : '') + 'WeHub';
 
-  document.title = (to.meta.title ? to.meta.title as string + ' - ' : '' )+ 'WeHub';
+  // 用响应式变量控制显示，不再操作 DOM
   toggleNavigationBar(!!to.meta.navi);
   toggleRecommendBar(!!to.meta.recommend);
 
   const checkLogin = () => {
     if (!User.getInstance()) {
       toggleLoginHover(true);
-      if (!from.name) { // 如果没有from.name，说明是首次加载
-        next('/');
+      if (!from.name) {
+        next('/'); // 首次加载时跳转首页
       }
       return;
     }
@@ -47,7 +63,7 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.requireLogin) {
-    if (User.loading){
+    if (User.loading) {
       User.afterLoadCallbacks.push(checkLogin);
       return;
     } else {
@@ -58,6 +74,6 @@ router.beforeEach((to, from, next) => {
     toggleLoginHover(false);
     next();
   }
-})
+});
 
 export default router

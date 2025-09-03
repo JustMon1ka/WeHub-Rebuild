@@ -16,7 +16,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Shared\DTOs\DTOs.csproj" />
       <ProjectReference Include="..\Shared\Models\Models.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Models\" />
     </ItemGroup>
 
 </Project>

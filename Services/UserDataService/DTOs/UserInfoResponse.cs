@@ -2,7 +2,7 @@
 
 public class UserInfoResponse
 {
-    public int UserId { get; set; }
+    public long? UserId { get; set; }
     
     public string? Username { get; set; }
     
@@ -10,9 +10,9 @@ public class UserInfoResponse
     
     public string? Phone { get; set; }
     
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
     
-    public int Status { get; set; }
+    public int? Status { get; set; }
     
     public string? AvatarUrl { get; set; }
     
@@ -20,7 +20,7 @@ public class UserInfoResponse
     
     public string? Gender { get; set; }
     
-    public DateTime Birthday { get; set; }
+    public DateTime? Birthday { get; set; }
     
     public string? Location { get; set; }
     

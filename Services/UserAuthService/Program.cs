@@ -47,7 +47,8 @@ namespace UserAuthService
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // 允许前端端口
+                    policy.WithOrigins("http://localhost:5000",
+                            "http://localhost:5173") // 允许前端端口
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });

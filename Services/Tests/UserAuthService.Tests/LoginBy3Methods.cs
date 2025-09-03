@@ -71,6 +71,7 @@ public class LoginBy3Methods
 
         // Step4: 获取当前用户信息
         _authClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", lastToken);
+        _output.WriteLine($"{_authClient.DefaultRequestHeaders}");
         var meResponse = await _authClient.GetAsync("/api/auth/me");
         meResponse.EnsureSuccessStatusCode();
 

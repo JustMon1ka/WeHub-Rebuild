@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社交论坛登录页预览</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts 的 Inter 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 应用 Inter 字体 */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="w-full max-w-md">
+            <!-- Logo 和标题 -->
+            <div class="text-center mb-8">
+                <svg class="w-12 h-12 text-sky-400 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="text-3xl font-bold mt-4">登录到您的账户</h1>
+                <p class="text-slate-400 mt-2">欢迎回来！请输入您的凭据。</p>
+            </div>
+
+            <!-- 登录表单 -->
+            <div class="bg-slate-800 p-8 rounded-2xl shadow-lg">
+                <form class="space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-300">邮箱或用户名</label>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" required class="mt-1 block w-full bg-slate-700/50 border border-slate-600 rounded-md shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-baseline">
+                            <label for="password" class="block text-sm font-medium text-slate-300">密码</label>
+                            <a href="#" class="text-sm text-sky-400 hover:underline">忘记密码？</a>
+                        </div>
+                        <input type="password" id="password" name="password" required class="mt-1 block w-full bg-slate-700/50 border border-slate-600 rounded-md shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-sky-500 hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500 transition-colors duration-200">
+                            登 录
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-slate-400">
+                        还没有账户？
+                        <a href="#" class="font-medium text-sky-400 hover:underline">
+                            立即注册
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
