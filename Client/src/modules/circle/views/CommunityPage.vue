@@ -97,7 +97,10 @@
           >
             <div class="community-banner">
               <img
-                :src="`https://placehold.co/300x120/1677ff/ffffff?text=${encodeURIComponent(community.name)}`"
+                :src="
+                  getImageUrl(community.bannerUrl) ||
+                  `https://placehold.co/300x120/1677ff/ffffff?text=${encodeURIComponent(community.name)}`
+                "
                 :alt="`${community.name} banner`"
               />
             </div>
@@ -106,7 +109,10 @@
               <div class="community-header">
                 <img
                   class="community-avatar"
-                  :src="`https://placehold.co/60x60/1677ff/ffffff?text=${encodeURIComponent(community.name[0] || 'C')}`"
+                  :src="
+                    getImageUrl(community.avatarUrl) ||
+                    `https://placehold.co/60x60/1677ff/ffffff?text=${encodeURIComponent(community.name[0] || 'C')}`
+                  "
                   :alt="`${community.name} avatar`"
                 />
                 <div class="community-meta">
@@ -129,11 +135,11 @@
               <div class="community-actions">
                 <button
                   class="btn btn-sm"
-                  :class="[community.isJoined ? 'btn-secondary' : 'btn-primary']"
+                  :class="[getButtonClass(community)]"
                   @click.stop="toggleJoinCommunity(community.id)"
-                  :disabled="community.isLoading"
+                  :disabled="communityStore.getCommunityLoadingState(community.id)"
                 >
-                  {{ community.isLoading ? '处理中...' : community.isJoined ? '已加入' : '加入' }}
+                  {{ getButtonText(community) }}
                 </button>
               </div>
             </div>
@@ -190,6 +196,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import { CircleAPI } from '../api.ts'
+import { useCommunityStore } from '../store.ts'
+
+const getImageUrl = (imageUrl: string): string => {
+  return CircleAPI.getImageProxyUrl(imageUrl)
+}
 
 // 类型定义
 interface Community {
@@ -203,10 +214,14 @@ interface Community {
   isLoading: boolean
   createdAt: string
   ownerId?: number
+  avatarUrl?: string // 新增
+  bannerUrl?: string
 }
 
 // 路由
 const router = useRouter()
+
+const communityStore = useCommunityStore()
 
 // 状态
 const activeTab = ref<'all' | 'joined' | 'recommended'>('all')
@@ -266,19 +281,22 @@ const loadAllCommunities = async (): Promise<void> => {
     console.log('所有社区响应:', response)
 
     if (response && response.code === 200 && Array.isArray(response.data)) {
-      allCommunities.value = await Promise.all(
+      const communities = await Promise.all(
         response.data.map(async (item: any) => {
           const community: Community = {
             id: item.circleId || item.id,
             name: item.name || '未知社区',
             description: item.description || '',
             memberCount: item.memberCount || 0,
-            category: item.category || '通用', // 默认分类
+            category: item.categories || item.category || '通用',
             isPrivate: item.isPrivate || false,
-            isJoined: false, // 将在下面检查
+            isJoined: false,
             isLoading: false,
             createdAt: item.createdAt || new Date().toISOString(),
             ownerId: item.ownerId,
+            // 兼容多种命名方式
+            avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
+            bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
           }
 
           // 检查用户是否已加入该社区
@@ -292,6 +310,10 @@ const loadAllCommunities = async (): Promise<void> => {
           return community
         }),
       )
+
+      // 使用store管理状态
+      communityStore.setAllCommunities(communities)
+      allCommunities.value = communities
 
       console.log('处理后的所有社区列表:', allCommunities.value)
     } else {
@@ -311,27 +333,36 @@ const loadJoinedCommunities = async (): Promise<void> => {
     console.log('已加入社区响应:', response)
 
     if (response && response.code === 200 && Array.isArray(response.data)) {
-      joinedCommunities.value = response.data.map((item: any) => ({
+      const communities = response.data.map((item: any) => ({
         id: item.circleId || item.id,
         name: item.name || '未知社区',
         description: item.description || '',
         memberCount: item.memberCount || 0,
-        category: item.category || '通用',
+        category: item.categories || item.category || '通用',
         isPrivate: item.isPrivate || false,
-        isJoined: true, // 已加入的社区
+        isJoined: true,
         isLoading: false,
         createdAt: item.createdAt || new Date().toISOString(),
         ownerId: item.ownerId,
+        // 兼容多种命名方式
+        avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
+        bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
       }))
+
+      // 使用store管理状态
+      communityStore.setJoinedCommunities(communities)
+      joinedCommunities.value = communities
 
       console.log('处理后的已加入社区列表:', joinedCommunities.value)
     } else {
       console.log('没有已加入的社区或数据格式错误')
       joinedCommunities.value = []
+      communityStore.setJoinedCommunities([])
     }
   } catch (err) {
     console.error('加载已加入社区失败:', err)
     joinedCommunities.value = []
+    communityStore.setJoinedCommunities([])
   }
 }
 
@@ -377,49 +408,9 @@ const handleCommunityClick = (communityId: number): void => {
 
 const toggleJoinCommunity = async (communityId: number): Promise<void> => {
   try {
-    // 从所有社区列表中查找
-    let community = allCommunities.value.find((c) => c.id === communityId)
-
-    if (!community) {
-      console.error('找不到指定的社区')
-      return
-    }
-
-    community.isLoading = true
-
-    let response
-    if (community.isJoined) {
-      response = await CircleAPI.leaveCircle(communityId)
-      if (response && (response.success || response.code === 200)) {
-        community.isJoined = false
-        community.memberCount = Math.max(community.memberCount - 1, 0)
-
-        // 从已加入列表中移除
-        joinedCommunities.value = joinedCommunities.value.filter((c) => c.id !== communityId)
-
-        console.log('成功退出社区')
-      }
-    } else {
-      response = await CircleAPI.joinCircle(communityId)
-      if (response && (response.success || response.code === 200)) {
-        community.isJoined = true
-        community.memberCount += 1
-
-        // 添加到已加入列表
-        const joinedCommunity = { ...community }
-        joinedCommunities.value.push(joinedCommunity)
-
-        console.log('成功加入社区')
-      }
-    }
+    await communityStore.toggleCommunityMembership(communityId)
   } catch (error) {
     console.error('操作失败:', error)
-    // 可以添加错误提示
-  } finally {
-    const community = allCommunities.value.find((c) => c.id === communityId)
-    if (community) {
-      community.isLoading = false
-    }
   }
 }
 
@@ -427,10 +418,31 @@ const toggleJoinCommunity = async (communityId: number): Promise<void> => {
 onMounted(() => {
   loadCommunities()
 })
+
+const getButtonText = (community: Community): string => {
+  if (communityStore.getCommunityLoadingState(community.id)) {
+    return '处理中...'
+  }
+
+  if (activeTab.value === 'joined') {
+    return '退出'
+  }
+
+  const isJoined = communityStore.getCommunityJoinStatus(community.id)
+  return isJoined ? '退出' : '加入'
+}
+
+const getButtonClass = (community: Community): string => {
+  if (activeTab.value === 'joined') {
+    return 'btn-secondary'
+  }
+
+  const isJoined = communityStore.getCommunityJoinStatus(community.id)
+  return isJoined ? 'btn-secondary' : 'btn-primary'
+}
 </script>
 
 <style scoped>
-/* 保持之前的样式不变 */
 .main-container {
   max-width: 1200px;
   margin: 0 auto;

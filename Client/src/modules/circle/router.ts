@@ -1,6 +1,7 @@
 // src/modules/circle/router.ts
 import CommunityPage from './views/CommunityPage.vue'
 import CommunityDetailPage from './views/CommunityDetailPage.vue'
+import CreateCommunity from './components/CreateCommunity.vue'
 
 export default {
   getRoutes() {
@@ -23,6 +24,12 @@ export default {
         component: CommunityDetailPage,
         props: true,
         meta: { title: '社区详情', navi: true, recommend: false },
+      },
+      {
+        path: '/create-community',
+        name: 'create-community',
+        component: CreateCommunity,
+        meta: { title: '创建社区', navi: false, recommend: false },
       },
     ]
   },

@@ -1,4 +1,3 @@
-<!-- src/views/CreateCommunity.vue -->
 <template>
   <div class="create-community-container">
     <!-- 主要内容区域 -->
@@ -100,17 +99,15 @@
             class="form-select"
             :class="{ error: errors.category }"
             @change="validateField('category')"
+            :disabled="categoriesLoading"
           >
-            <option value="">请选择分类</option>
-            <option value="technology">技术</option>
-            <option value="lifestyle">生活</option>
-            <option value="entertainment">娱乐</option>
-            <option value="education">教育</option>
-            <option value="business">商业</option>
-            <option value="sports">体育</option>
-            <option value="other">其他</option>
+            <option value="">{{ categoriesLoading ? '加载中...' : '请选择分类' }}</option>
+            <option v-for="category in availableCategories" :key="category" :value="category">
+              {{ category }}
+            </option>
           </select>
           <p v-if="errors.category" class="error-message">{{ errors.category }}</p>
+          <p v-if="categoriesError" class="error-message">{{ categoriesError }}</p>
         </div>
 
         <!-- 社区设置 -->
@@ -179,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { CircleAPI } from '../api.ts'
 
@@ -191,6 +188,8 @@ const form = ref({
   description: '',
   category: '',
   isPrivate: false,
+  avatarFile: null as File | null,
+  bannerFile: null as File | null,
   rules: [
     { title: '友善交流', content: '保持友善和尊重的交流氛围' },
     { title: '内容相关', content: '发布与社区主题相关的内容' },
@@ -204,6 +203,11 @@ const errors = ref({
   category: '',
 })
 
+// 分类相关状态
+const availableCategories = ref<string[]>([])
+const categoriesLoading = ref(false)
+const categoriesError = ref('')
+
 // 图片预览
 const avatarPreview = ref('')
 const bannerPreview = ref('')
@@ -211,6 +215,29 @@ const bannerPreview = ref('')
 // 文件输入引用
 const avatarInput = ref<HTMLInputElement>()
 const bannerInput = ref<HTMLInputElement>()
+
+// 加载分类列表
+const loadCategories = async () => {
+  categoriesLoading.value = true
+  categoriesError.value = ''
+
+  try {
+    const categories = await CircleAPI.getCategories()
+    availableCategories.value = categories
+  } catch (error) {
+    console.error('加载分类失败:', error)
+    categoriesError.value = '加载分类失败，请刷新页面重试'
+    // 如果加载失败，使用默认分类作为备选
+    availableCategories.value = ['技术', '生活', '娱乐', '教育', '商业', '体育', '其他']
+  } finally {
+    categoriesLoading.value = false
+  }
+}
+
+// 页面加载时获取分类
+onMounted(() => {
+  loadCategories()
+})
 
 // 表单验证
 const validateField = (field: string) => {
@@ -266,16 +293,33 @@ const triggerAvatarUpload = () => {
   avatarInput.value?.click()
 }
 
-const handleAvatarUpload = (event: Event) => {
+const handleAvatarUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      avatarPreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+  if (!file) return
+
+  // 验证文件大小（5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    alert('头像文件大小不能超过5MB')
+    return
   }
+
+  // 验证文件类型
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+  if (!allowedTypes.includes(file.type)) {
+    alert('只支持 JPG、PNG、GIF 格式的图片')
+    return
+  }
+
+  // 先显示本地预览
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    avatarPreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+
+  // 存储文件，等创建社区成功后上传
+  form.value.avatarFile = file
 }
 
 const removeAvatar = () => {
@@ -290,16 +334,33 @@ const triggerBannerUpload = () => {
   bannerInput.value?.click()
 }
 
-const handleBannerUpload = (event: Event) => {
+const handleBannerUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      bannerPreview.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
+  if (!file) return
+
+  // 验证文件大小（10MB）
+  if (file.size > 10 * 1024 * 1024) {
+    alert('横幅文件大小不能超过10MB')
+    return
   }
+
+  // 验证文件类型
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+  if (!allowedTypes.includes(file.type)) {
+    alert('只支持 JPG、PNG、GIF 格式的图片')
+    return
+  }
+
+  // 先显示本地预览
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    bannerPreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+
+  // 存储文件，等创建社区成功后上传
+  form.value.bannerFile = file
 }
 
 const removeBanner = () => {
@@ -333,9 +394,8 @@ const handleSubmit = async (): Promise<void> => {
     const createData = {
       name: form.value.name.trim(),
       description: form.value.description.trim(),
-      category: form.value.category,
+      categories: form.value.category,
       isPrivate: form.value.isPrivate,
-      maxMembers: form.value.maxMembers || undefined,
     }
 
     console.log('发送的数据:', createData)
@@ -348,7 +408,6 @@ const handleSubmit = async (): Promise<void> => {
     let newCircleId: number | null = null
 
     if (response) {
-      // 尝试从不同可能的字段获取ID
       newCircleId =
         response.circleId ||
         response.id ||
@@ -357,29 +416,85 @@ const handleSubmit = async (): Promise<void> => {
       console.log('提取的社区ID:', newCircleId)
     }
 
-    // 2. 如果成功获取到ID，尝试自动加入
-    if (newCircleId) {
-      try {
-        console.log('自动加入社区，ID:', newCircleId)
-        const joinResponse = await CircleAPI.joinCircle(newCircleId)
-        console.log('加入社区响应:', joinResponse)
-
-        alert('社区创建成功，您已自动成为创建者！')
-      } catch (joinError) {
-        console.error('自动加入失败:', joinError)
-        alert('社区创建成功！作为创建者，您已默认加入该社区。')
-      }
-    } else {
-      // 即使没有获取到ID，也提示创建成功
-      console.log('未获取到社区ID，但继续流程')
-      alert('社区创建成功！')
+    if (!newCircleId) {
+      throw new Error('创建成功但未获取到社区ID')
     }
 
-    // 3. 跳转到社区列表并刷新
-    await router.push({
-      path: '/communities',
-      query: { refresh: 'true' },
-    })
+    // 2. 上传头像
+    if (form.value.avatarFile) {
+      try {
+        console.log('准备上传头像，文件信息:', {
+          name: form.value.avatarFile.name,
+          size: form.value.avatarFile.size,
+          type: form.value.avatarFile.type,
+        })
+        const avatarResult = await CircleAPI.uploadCircleAvatar(newCircleId, form.value.avatarFile)
+        console.log('头像上传成功，返回结果:', avatarResult)
+
+        if (avatarResult.success && avatarResult.data?.imageUrl) {
+          console.log('头像上传成功！')
+          console.log('头像URL:', avatarResult.data.imageUrl)
+          console.log('文件名:', avatarResult.data.fileName)
+          console.log('文件大小:', avatarResult.data.fileSize)
+
+          // 验证URL是否可访问
+          const testImg = new Image()
+          testImg.onload = () => console.log('头像URL可访问')
+          testImg.onerror = () => console.log('头像URL无法访问')
+          testImg.src = avatarResult.data.imageUrl
+        } else {
+          console.log('头像上传响应格式异常:', avatarResult)
+        }
+      } catch (error) {
+        console.error('头像上传失败:', error)
+        alert(`头像上传失败: ${error}`)
+      }
+    }
+
+    // 3. 上传横幅
+    if (form.value.bannerFile) {
+      try {
+        console.log('准备上传横幅，文件信息:', {
+          name: form.value.bannerFile.name,
+          size: form.value.bannerFile.size,
+          type: form.value.bannerFile.type,
+        })
+        const bannerResult = await CircleAPI.uploadCircleBanner(newCircleId, form.value.bannerFile)
+        console.log('横幅上传成功，返回结果:', bannerResult)
+
+        if (bannerResult.success && bannerResult.data?.imageUrl) {
+          console.log('横幅上传成功！')
+          console.log('横幅URL:', bannerResult.data.imageUrl)
+          console.log('文件名:', bannerResult.data.fileName)
+          console.log('文件大小:', bannerResult.data.fileSize)
+
+          // 验证URL是否可访问
+          const testImg = new Image()
+          testImg.onload = () => console.log('横幅URL可访问')
+          testImg.onerror = () => console.log('横幅URL无法访问')
+          testImg.src = bannerResult.data.imageUrl
+        } else {
+          console.log('横幅上传响应格式异常:', bannerResult)
+        }
+      } catch (error) {
+        console.error('横幅上传失败:', error)
+        alert(`横幅上传失败: ${error}`)
+      }
+    }
+
+    // 4. 自动加入社区
+    try {
+      console.log('自动加入社区，ID:', newCircleId)
+      await CircleAPI.joinCircle(newCircleId)
+      console.log('加入社区成功')
+    } catch (joinError) {
+      console.error('自动加入失败:', joinError)
+    }
+
+    alert('社区创建成功！')
+
+    // 5. 跳转到社区详情页
+    await router.push(`/community/${newCircleId}`)
   } catch (error: unknown) {
     console.error('创建社区出错:', error)
 
@@ -398,16 +513,19 @@ const handleSubmit = async (): Promise<void> => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 20px;
-  display: grid;
-  grid-template-columns: 1fr 300px;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
+  min-height: 100vh;
 }
 
 .create-community-content {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
+  overflow: visible;
+  width: 100%;
+  flex: 1;
 }
 
 /* 页面头部 */
@@ -460,6 +578,8 @@ const handleSubmit = async (): Promise<void> => {
 /* 表单样式 */
 .create-form {
   padding: 24px;
+  max-height: none;
+  overflow: visible;
 }
 
 .form-section {
@@ -503,6 +623,11 @@ const handleSubmit = async (): Promise<void> => {
 .form-textarea.error,
 .form-select.error {
   border-color: #f53f3f;
+}
+
+.form-select:disabled {
+  background-color: #f7f8fa;
+  cursor: not-allowed;
 }
 
 .form-textarea {
@@ -758,13 +883,20 @@ const handleSubmit = async (): Promise<void> => {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .create-community-container {
-    grid-template-columns: 1fr;
     padding: 16px;
     gap: 16px;
+    display: flex;
+    flex-direction: column;
   }
 
   .page-header {
     padding: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 20px;
   }
 
   .create-form {
@@ -778,6 +910,10 @@ const handleSubmit = async (): Promise<void> => {
 
   .remove-rule-btn {
     align-self: flex-start;
+  }
+
+  .sidebar {
+    order: -1;
   }
 }
 </style>

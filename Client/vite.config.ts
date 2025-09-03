@@ -31,6 +31,24 @@ export default defineConfig({
           })
         },
       },
+
+      // 添加文件代理配置
+      '/files': {
+        target: 'http://120.26.118.70:5001',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('files proxy error', err)
+          })
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('📁 Files Request:', req.method, req.url)
+          })
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('📁 Files Response:', proxyRes.statusCode, req.url)
+          })
+        },
+      },
     },
   },
 })

@@ -2,7 +2,6 @@
   <div>
     <!-- 顶部导航 -->
     <NavBar />
-
     <!-- 主要内容 -->
     <div class="main-container">
       <!-- 中间主内容区 -->
@@ -25,10 +24,8 @@
           <div class="community-header-section">
             <!-- 背景横幅 -->
             <div class="community-banner">
-              <img
-                :src="`https://placehold.co/600x200/1677ff/ffffff?text=${encodeURIComponent(communityData.name)}`"
-                :alt="`${communityData.name} banner`"
-              />
+              {{ imageSrc }}
+              <img :src="imageSrc" alt="" />
             </div>
 
             <!-- 头像和操作按钮 -->
@@ -36,7 +33,10 @@
               <div class="community-header-content">
                 <img
                   class="community-large-avatar"
-                  :src="`https://placehold.co/150x150/1677ff/ffffff?text=${encodeURIComponent(communityData.name[0])}`"
+                  :src="
+                    processedAvatarUrl ||
+                    `https://placehold.co/150x150/1677ff/ffffff?text=${encodeURIComponent(communityData.name[0] || 'C')}`
+                  "
                   :alt="`${communityData.name} avatar`"
                 />
                 <div class="community-header-actions">
@@ -53,11 +53,21 @@
                   </button>
                   <button
                     class="btn"
-                    :class="[communityData.isJoined ? 'btn-secondary' : 'btn-primary']"
+                    :class="[
+                      communityStore.getCommunityJoinStatus(communityData.id)
+                        ? 'btn-secondary'
+                        : 'btn-primary',
+                    ]"
                     @click="toggleJoinCommunity"
-                    :disabled="isLoading"
+                    :disabled="communityStore.getCommunityLoadingState(communityData.id)"
                   >
-                    {{ isLoading ? '处理中...' : communityData.isJoined ? '已加入' : '加入' }}
+                    {{
+                      communityStore.getCommunityLoadingState(communityData.id)
+                        ? '处理中...'
+                        : communityStore.getCommunityJoinStatus(communityData.id)
+                          ? '退出'
+                          : '加入'
+                    }}
                   </button>
                 </div>
               </div>
@@ -192,6 +202,17 @@
             <p class="community-description">{{ communityData.description || '暂无社区描述' }}</p>
             <hr class="sidebar-divider" />
             <div class="community-details">
+              <p class="detail-item" v-if="communityData.category">
+                <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  ></path>
+                </svg>
+                分类：{{ communityData.category }}
+              </p>
               <p class="detail-item">
                 <svg class="detail-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -247,8 +268,15 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
-import { CircleAPI } from '../api.ts'
-import type { Community } from '@/types/community'
+import { CircleAPI, getSpuPage } from '../api.ts'
+import { useCommunityStore } from '../store.ts'
+
+const imageSrc = ref<string>('')
+
+const fetchImage = async () => {
+  const url = 'http://120.26.118.70:5001/api/preview/big/uploads/circles/81/avatar_20250901142455_1eXD0VQr.png?inline=true&key=1756736695790'
+  imageSrc.value = await getSpuPage(encodeURIComponent(url))
+}
 
 // 类型定义
 interface Post {
@@ -275,6 +303,8 @@ interface CommunityData {
   rulesCount: number
   category?: string
   isPrivate?: boolean
+  avatarUrl?: string
+  bannerUrl?: string
 }
 
 interface Moderator {
@@ -287,10 +317,55 @@ interface Moderator {
 // 路由和状态
 const route = useRoute()
 const router = useRouter()
+const communityStore = useCommunityStore()
 const activeTab = ref<'hot' | 'latest' | 'featured'>('hot')
 const isLoading = ref(false)
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// 添加图片URL状态管理
+const processedAvatarUrl = ref<string>('')
+const processedBannerUrl = ref<string>('')
+
+// 获取带认证的图片 - 这里就是使用 request.get() 的地方
+const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
+  if (!imageUrl) return ''
+
+  try {
+    // 提取相对路径部分（去掉域名）
+    const imagePath = imageUrl.replace('http://120.26.118.70:5001', '')
+
+    // 这里就是 request.get() 的使用！自动携带Cookie
+    const response = await request.get(imagePath, {
+      responseType: 'blob',
+    })
+
+    // 将返回的blob转换为可显示的URL
+    return URL.createObjectURL(response.data)
+  } catch (error) {
+    console.error('获取图片失败:', error)
+    return ''
+  }
+}
+
+// 处理图片URL
+const processImageUrls = async (): Promise<void> => {
+  console.log('开始处理图片URL...')
+
+  // 处理头像
+  if (communityData.value.avatarUrl) {
+    console.log('原始头像URL:', communityData.value.avatarUrl)
+    processedAvatarUrl.value = await getAuthenticatedImageUrl(communityData.value.avatarUrl)
+    console.log('处理后头像URL:', processedAvatarUrl.value)
+  }
+
+  // 处理横幅
+  if (communityData.value.bannerUrl) {
+    console.log('原始横幅URL:', communityData.value.bannerUrl)
+    processedBannerUrl.value = await getAuthenticatedImageUrl(communityData.value.bannerUrl)
+    console.log('处理后横幅URL:', processedBannerUrl.value)
+  }
+}
 
 // 社区数据
 const communityData = ref<CommunityData>({
@@ -340,10 +415,7 @@ const loadCommunityData = async (): Promise<void> => {
   try {
     loading.value = true
     error.value = null
-
     const communityId = route.params.id as string
-    console.log('=== 开始加载社区数据 ===')
-    console.log('社区ID:', communityId)
 
     if (!communityId || isNaN(Number(communityId))) {
       throw new Error('社区ID无效')
@@ -351,10 +423,7 @@ const loadCommunityData = async (): Promise<void> => {
 
     // 获取社区详情
     const response = await CircleAPI.getCircleDetails(Number(communityId))
-    console.log('=== API响应 ===')
-    console.log('完整响应:', response)
 
-    // 检查响应状态
     if (!response) {
       throw new Error('服务器无响应')
     }
@@ -363,36 +432,39 @@ const loadCommunityData = async (): Promise<void> => {
       throw new Error(response.message || '获取社区信息失败')
     }
 
-    // 根据实际的响应结构解析数据（注意是小写的 circle 和 members）
+    // 根据实际的响应结构解析数据
     const circleInfo = response.data.circle
     const membersInfo = response.data.members || []
-
-    console.log('解析的圈子信息:', circleInfo)
-    console.log('解析的成员信息:', membersInfo)
 
     if (!circleInfo) {
       throw new Error('未找到社区信息')
     }
 
-    // 设置社区数据
+    // 直接使用后端传来的URL，不做任何处理
+    const avatarUrl = circleInfo.avatarUrl || circleInfo.avatar_url || circleInfo.AVATAR_URL
+    const bannerUrl = circleInfo.bannerUrl || circleInfo.banner_url || circleInfo.BANNER_URL
+
     communityData.value = {
       id: circleInfo.circleId,
       name: circleInfo.name,
       description: circleInfo.description || '暂无描述',
       memberCount: circleInfo.memberCount || 0,
-      isJoined: false, // 将在下面检查
+      isJoined: false,
       createdAt: circleInfo.createdAt,
-      rulesCount: 0, // 后端暂不支持
-      category: circleInfo.category || '通用', // 默认分类
-      isPrivate: circleInfo.isPrivate || false, // 默认公开
+      rulesCount: 0,
+      category: circleInfo.categories || circleInfo.category || '通用',
+      isPrivate: circleInfo.isPrivate || false,
+      avatarUrl: avatarUrl,
+      bannerUrl: bannerUrl,
     }
 
     // 检查用户是否已加入
     const currentUserId = 2 // 与后端硬编码保持一致
     if (Array.isArray(membersInfo) && membersInfo.length > 0) {
-      communityData.value.isJoined = membersInfo.some(
-        (member: any) => member.userId === currentUserId,
-      )
+      const isJoined = membersInfo.some((member: any) => member.userId === currentUserId)
+      communityData.value.isJoined = isJoined
+      // 同步到store
+      communityStore.updateCommunity(communityData.value.id, { isJoined })
 
       // 设置版主信息（圈主）
       const ownerId = circleInfo.ownerId
@@ -422,7 +494,10 @@ const loadCommunityData = async (): Promise<void> => {
     } else {
       // 没有成员数据，尝试检查成员状态
       try {
-        communityData.value.isJoined = await CircleAPI.checkMembership(Number(communityId))
+        const isJoined = await CircleAPI.checkMembership(Number(communityId))
+        communityData.value.isJoined = isJoined
+        // 同步到store
+        communityStore.updateCommunity(communityData.value.id, { isJoined })
       } catch (error) {
         console.error('检查成员状态失败:', error)
         communityData.value.isJoined = false
@@ -441,14 +516,12 @@ const loadCommunityData = async (): Promise<void> => {
       }
     }
 
-    console.log('最终的社区数据:', communityData.value)
-    console.log('版主信息:', moderators.value)
+    // 在这里添加图片处理
+    await processImageUrls()
   } catch (err) {
-    console.error('=== 加载社区数据失败 ===')
-    console.error('错误详情:', err)
+    console.error('加载社区数据失败:', err)
 
     let errorMessage = '加载社区信息失败，请稍后重试'
-
     if (err instanceof Error) {
       if (err.message.includes('社区不存在') || err.message.includes('404')) {
         errorMessage = '社区不存在，可能已被删除或ID错误'
@@ -462,18 +535,6 @@ const loadCommunityData = async (): Promise<void> => {
     error.value = errorMessage
   } finally {
     loading.value = false
-  }
-}
-
-// 检查成员状态
-const checkMembershipStatus = async (communityId: number): Promise<void> => {
-  try {
-    const isMember = await CircleAPI.checkMembership(communityId)
-    communityData.value.isJoined = isMember
-  } catch (error) {
-    console.error('检查成员状态失败:', error)
-    // 如果检查失败，默认为未加入
-    communityData.value.isJoined = false
   }
 }
 
@@ -514,30 +575,21 @@ const handleNotification = (): void => {
 
 const toggleJoinCommunity = async (): Promise<void> => {
   try {
-    isLoading.value = true
+    const result = await communityStore.toggleCommunityMembership(communityData.value.id)
 
-    let response
-    if (communityData.value.isJoined) {
-      response = await CircleAPI.leaveCircle(communityData.value.id)
-    } else {
-      response = await CircleAPI.joinCircle(communityData.value.id)
-    }
+    if (result && result.success) {
+      // 更新本地数据
+      const isJoined = communityStore.getCommunityJoinStatus(communityData.value.id)
+      communityData.value.isJoined = isJoined
 
-    if (response && response.success) {
-      communityData.value.isJoined = !communityData.value.isJoined
-
-      if (communityData.value.isJoined) {
+      if (isJoined) {
         communityData.value.memberCount += 1
       } else {
         communityData.value.memberCount = Math.max(communityData.value.memberCount - 1, 0)
       }
     }
-
-    console.log(`${communityData.value.isJoined ? '加入' : '退出'}社区成功`)
   } catch (error) {
     console.error('操作失败:', error)
-  } finally {
-    isLoading.value = false
   }
 }
 
@@ -547,7 +599,6 @@ const handleVote = async (postId: number, voteType: 'up' | 'down'): Promise<void
     if (!post) return
 
     const previousVote = post.userVote
-
     if (post.userVote === voteType) {
       post.userVote = null
       post.votes += voteType === 'up' ? -1 : 1
@@ -555,7 +606,6 @@ const handleVote = async (postId: number, voteType: 'up' | 'down'): Promise<void
       if (previousVote) {
         post.votes += previousVote === 'up' ? -1 : 1
       }
-
       post.userVote = voteType
       post.votes += voteType === 'up' ? 1 : -1
     }
@@ -583,6 +633,7 @@ watch(
 // 生命周期
 onMounted(() => {
   loadCommunityData()
+  fetchImage()
 })
 </script>
 
@@ -980,7 +1031,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   font-size: 14px;
-  margin: 0;
+  margin: 8px 0;
   color: #4e5969;
 }
 
@@ -989,6 +1040,7 @@ onMounted(() => {
   height: 20px;
   margin-right: 8px;
   color: #86909c;
+  flex-shrink: 0;
 }
 
 .empty-moderators {
