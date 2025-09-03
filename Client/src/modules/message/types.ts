@@ -16,6 +16,23 @@ export interface message {
     type: 'text' | 'image' // 消息类型
 }
 
+// 最新消息
+export interface lastMessage {
+    messageId: number; // id
+    senderId: number; // 发送者id
+    receiverId: number; // 接收者id
+    content: string; // 内容
+    sendTime: string; // 发送时间
+    type: 'text' | 'image'; // 消息类型
+    isRead: boolean; // 是否已读
+}
+
+export interface conversation2 {
+    contactUserId: number; // 其他用户id
+    lastMessage: lastMessage; // 最新消息
+    unreadMessageCount: number; // 未读消息数
+}
+
 // 会话
 export interface conversation {
     contactUser: user // 联系人 
@@ -33,3 +50,4 @@ export interface chatHistory {
 // 会话列表
 export type conversationList = conversation[];
 
+export type conversationList2 = conversation2[];
