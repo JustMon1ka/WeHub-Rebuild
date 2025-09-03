@@ -11,15 +11,18 @@ public interface ICommentService
     Task<BaseHttpResponse<object?>> DeleteCommentOrReplyAsync(long userId, long commentId, CommentRequest.CommentType type);
     Task<BaseHttpResponse<List<GetCommentResponse>>> GetCommentsByPostIdAsync(long postId);
     Task<List<GetCommentResponse>> GetCommentsByUserIdAsync(long userId);
+    Task<List<GetCommentResponse>> GetCommentsByIdsAsync(List<long> ids, CommentRequest.CommentType type);
 }
 
 public class CommentService : ICommentService
 {
     private readonly ICommentRepository _repo;
+    private readonly IPostRedisRepository _redis;
 
-    public CommentService(ICommentRepository repo)
+    public CommentService(ICommentRepository repo, IPostRedisRepository redis)
     {
         _repo = repo;
+        _redis = redis;
     }
 
     public async Task<BaseHttpResponse<CommentResponse>> AddCommentOrReplyAsync(long userId, CommentRequest request)
@@ -51,6 +54,8 @@ public class CommentService : ICommentService
             };
 
             var saved = await _repo.AddCommentAsync(comment);
+            await _redis.InsertUnreadNoticeAsync(await _repo.GetUserIdByPostIdAsync(comment.PostId), "comment",
+                saved.CommentId);
 
             return BaseHttpResponse<CommentResponse>.Success(new CommentResponse
             {
@@ -78,6 +83,8 @@ public class CommentService : ICommentService
             };
 
             var saved = await _repo.AddReplyAsync(reply);
+            await _redis.InsertUnreadNoticeAsync(await _repo.GetUserIdByCommentIdAsync(reply.CommentId), "reply",
+                saved.ReplyId);
 
             return BaseHttpResponse<CommentResponse>.Success(new CommentResponse
             {
@@ -212,5 +219,47 @@ public class CommentService : ICommentService
         
         // 5. 按时间排序所有评论和回复，并返回
         return result.OrderByDescending(x => x.CreatedAt).ToList();
+    }
+
+    public async Task<List<GetCommentResponse>> GetCommentsByIdsAsync(List<long> ids, CommentRequest.CommentType type)
+    {
+        var resultList = new List<GetCommentResponse>();
+
+        if (type == CommentRequest.CommentType.Comment)
+        {
+            var comments = await _repo.GetCommentsByIdsAsync(ids);
+            resultList.AddRange(comments.Select(c => new GetCommentResponse
+            {
+                Type = type,
+                Id = c.CommentId,
+                TargetId = c.PostId, // 假设 TargetId 是 PostId
+                UserId = c.UserId,
+                UserName = c.User?.Username,
+                AvatarUrl = c.User?.UserProfile?.AvatarUrl,
+                Content = c.Content,
+                CreatedAt = c.CreatedAt,
+                Likes = c.Likes,
+                PostTitle = c.Post?.Title // 假设 Post 有 Title 属性
+            }));
+        }
+        else if (type == CommentRequest.CommentType.Reply)
+        {
+            var replies = await _repo.GetRepliesByIdsAsync(ids);
+            resultList.AddRange(replies.Select(r => new GetCommentResponse
+            {
+                Type = type,
+                Id = r.ReplyId,
+                TargetId = r.CommentId, // 假设 TargetId 是 CommentId
+                UserId = r.UserId,
+                UserName = r.User?.Username,
+                AvatarUrl = r.User?.UserProfile?.AvatarUrl,
+                Content = r.Content,
+                CreatedAt = r.CreatedAt,
+                Likes = 0, // 回复表没有点赞字段，这里暂时设为0
+                PostTitle = null
+            }));
+        }
+
+        return resultList;
     }
 }
