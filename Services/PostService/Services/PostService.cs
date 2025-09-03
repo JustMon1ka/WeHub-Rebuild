@@ -16,6 +16,7 @@ namespace PostService.Services
         Task<List<string>> GetTagsByPostIdAsync(long postId);
         Task<List<SearchResponse>> SearchPostsAsync(string? query, int? limits);
         Task<List<SearchSuggestResponse>> GetSearchSuggestionsAsync(string? keyword, int limits);
+        Task<List<Post>> GetPostsByUserIdAsync(long userId);
     }
     
     public class PostService : IPostService
@@ -242,5 +243,9 @@ namespace PostService.Services
                 .ToList();
         }
         
+        public async Task<List<Post>> GetPostsByUserIdAsync(long userId)
+        {
+            return await _postRepository.GetPostsByUserIdAsync(userId);
+        }
     }
 }

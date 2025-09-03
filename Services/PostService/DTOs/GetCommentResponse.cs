@@ -11,4 +11,5 @@ public class GetCommentResponse
     public string? Content { get; set; }
     public DateTime CreatedAt { get; set; }
     public long Likes { get; set; }
+    public string? PostTitle { get; set; }
 }

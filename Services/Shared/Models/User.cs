@@ -31,6 +31,9 @@ public class User
     public int? Status { get; set; }
     
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+    public virtual ICollection<Comments> Comments { get; set; } = new List<Comments>();
+    public virtual ICollection<Reply> Replies { get; set; } = new List<Reply>();
+    public virtual UserProfile? UserProfile { get; set; }
 }
 
 

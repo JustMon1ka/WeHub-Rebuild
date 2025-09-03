@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PostService.Models;
+namespace Models;
 
 [Table("COMMENTS")]
 public class Comments
@@ -21,4 +21,8 @@ public class Comments
     public long Likes { get; set; }
     [Column("IS_DELETED")]
     public int? IsDeleted { get; set; } 
+    
+    public virtual User? User { get; set; }
+    public virtual Post? Post { get; set; }
+    public virtual ICollection<Reply> Replies { get; set; } = new List<Reply>();
 }

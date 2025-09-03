@@ -4,7 +4,7 @@ import { type resultState,User } from '@/modules/auth/scripts/User.ts'
 import router from '@/router.ts'
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthCode, Email, Password, Phone, UserName } from '@/modules/auth/scripts/UserMetaData.ts'
-import { toggleLoginHover } from '@/App.vue'
+import { toggleLoginHover } from '@/router.ts'
 
 enum AuthType {
   PasswordLogin,

@@ -2,7 +2,7 @@
 import styles from '@/modules/user/scripts/Styles.ts'
 import { User } from '@/modules/auth/public.ts'
 import { ref, type Ref } from 'vue'
-import { toggleLoginHover } from '@/App.vue'
+import { toggleLoginHover } from '@/router.ts'
 
 const { userId } = defineProps<{
   userId: string;

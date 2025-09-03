@@ -1,6 +1,6 @@
 ﻿using DTOs;
 using PostService.DTOs;
-using PostService.Models;
+using Models;
 using PostService.Repositories;
 
 namespace PostService.Services;
@@ -9,7 +9,8 @@ public interface ICommentService
 {
     Task<BaseHttpResponse<CommentResponse>> AddCommentOrReplyAsync(long userId, CommentRequest request);
     Task<BaseHttpResponse<object?>> DeleteCommentOrReplyAsync(long userId, long commentId, CommentRequest.CommentType type);
-    Task<BaseHttpResponse<List<GetCommentResponse>>> GetCommentsAsync(long postId);
+    Task<BaseHttpResponse<List<GetCommentResponse>>> GetCommentsByPostIdAsync(long postId);
+    Task<List<GetCommentResponse>> GetCommentsByUserIdAsync(long userId);
 }
 
 public class CommentService : ICommentService
@@ -120,52 +121,96 @@ public class CommentService : ICommentService
         }
     }
 
-    public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetCommentsAsync(long postId)
+    public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetCommentsByPostIdAsync(long postId)
     {
         var comments = await _repo.GetCommentsByPostIdAsync(postId);
-        var replies = await _repo.GetRepliesByCommentIdsAsync(comments.Select(c => c.CommentId));
 
         var result = new List<GetCommentResponse>();
 
         foreach (var c in comments)
         {
-            var user = await _repo.GetUserByIdAsync(c.UserId);
-            var profile = await _repo.GetUserProfileByIdAsync(c.UserId);
-
+            // 直接使用已加载的导航属性，无需进行额外的数据库查询
             result.Add(new GetCommentResponse
             {
                 Type = CommentRequest.CommentType.Comment,
                 Id = c.CommentId,
                 TargetId = c.PostId,
                 UserId = c.UserId,
-                UserName = user?.Username,
-                AvatarUrl = profile?.AvatarUrl,
+                UserName = c.User?.Username, // 安全访问已加载的 User
+                AvatarUrl = c.User?.UserProfile?.AvatarUrl, // 安全访问已加载的 UserProfile
                 Content = c.Content,
                 CreatedAt = c.CreatedAt,
                 Likes = c.Likes
             });
 
-            var cReplies = replies.Where(r => r.CommentId == c.CommentId);
-            foreach (var r in cReplies)
+            // 同样，直接使用已加载的 Replies 集合
+            foreach (var r in c.Replies)
             {
-                var rUser = await _repo.GetUserByIdAsync(r.UserId);
-                var rProfile = await _repo.GetUserProfileByIdAsync(r.UserId);
-
                 result.Add(new GetCommentResponse
                 {
                     Type = CommentRequest.CommentType.Reply,
                     Id = r.ReplyId,
                     TargetId = r.CommentId,
                     UserId = r.UserId,
-                    UserName = rUser?.Username,
-                    AvatarUrl = rProfile?.AvatarUrl,
+                    UserName = r.User?.Username, // 安全访问已加载的 User
+                    AvatarUrl = r.User?.UserProfile?.AvatarUrl, // 安全访问已加载的 UserProfile
                     Content = r.Content,
                     CreatedAt = r.CreatedAt,
-                    Likes = 0
+                    Likes = 0 // 回复没有点赞字段，这里可以根据你的业务逻辑设定
                 });
             }
         }
 
         return BaseHttpResponse<List<GetCommentResponse>>.Success(result);
+    }
+    
+    public async Task<List<GetCommentResponse>> GetCommentsByUserIdAsync(long userId)
+    {
+        // 1. 获取用户发表的评论
+        var comments = await _repo.GetCommentsByUserIdAsync(userId);
+        
+        // 2. 获取用户发表的回复
+        var replies = await _repo.GetRepliesByUserIdAsync(userId);
+
+        var result = new List<GetCommentResponse>();
+
+        // 3. 将评论映射到响应模型
+        foreach (var c in comments)
+        {
+            result.Add(new GetCommentResponse
+            {
+                Type = CommentRequest.CommentType.Comment,
+                Id = c.CommentId,
+                TargetId = c.PostId,
+                PostTitle = c.Post?.Title, // 从导航属性获取帖子标题
+                UserId = c.UserId,
+                UserName = c.User?.Username,
+                AvatarUrl = c.User?.UserProfile?.AvatarUrl,
+                Content = c.Content,
+                CreatedAt = c.CreatedAt,
+                Likes = c.Likes
+            });
+        }
+
+        // 4. 将回复映射到响应模型
+        foreach (var r in replies)
+        {
+            result.Add(new GetCommentResponse
+            {
+                Type = CommentRequest.CommentType.Reply,
+                Id = r.ReplyId,
+                TargetId = r.Comment?.PostId,
+                PostTitle = r.Comment?.Post?.Title, // 通过评论导航属性获取帖子标题
+                UserId = r.UserId,
+                UserName = r.User?.Username,
+                AvatarUrl = r.User?.UserProfile?.AvatarUrl,
+                Content = r.Content,
+                CreatedAt = r.CreatedAt,
+                Likes = 0 // 回复没有点赞字段
+            });
+        }
+        
+        // 5. 按时间排序所有评论和回复，并返回
+        return result.OrderByDescending(x => x.CreatedAt).ToList();
     }
 }

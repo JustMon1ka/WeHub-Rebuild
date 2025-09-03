@@ -52,4 +52,5 @@ public class Post
     public virtual User? User { get; set; }
     public virtual Circle? Circle { get; set; }
     public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
+    public virtual ICollection<Comments> Comments { get; set; } = new List<Comments>();
 }

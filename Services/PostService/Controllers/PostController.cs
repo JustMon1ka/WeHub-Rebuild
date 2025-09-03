@@ -2,6 +2,7 @@
 using DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Models;
 using PostService.DTOs;
 using PostService.Services;
 
@@ -21,54 +22,82 @@ public class PostController : ControllerBase
     }
     
     [HttpGet]
-    public async Task<BaseHttpResponse<List<PostResponse>>> GetPosts([FromQuery] string ids)
+    public async Task<BaseHttpResponse<List<PostResponse>>> GetPosts([FromQuery] string? ids, [FromQuery] long? userId)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(ids))
+            // 检查参数冲突：不能同时提供 ids 和 userId
+            if (!string.IsNullOrWhiteSpace(ids) && userId.HasValue)
             {
-                return BaseHttpResponse<List<PostResponse>>.Fail(400, "参数 ids 不能为空");
+                return BaseHttpResponse<List<PostResponse>>.Fail(400, "不能同时指定 ids 和 userId 参数");
             }
 
-            List<long> idList;
-            try
+            // 如果提供了 ids，则执行原有逻辑
+            if (!string.IsNullOrWhiteSpace(ids))
             {
-                idList = ids
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(id => long.Parse(id.Trim()))
-                    .ToList();
+                List<long> idList;
+                try
+                {
+                    idList = ids
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(id => long.Parse(id.Trim()))
+                        .ToList();
+                }
+                catch (FormatException)
+                {
+                    return BaseHttpResponse<List<PostResponse>>.Fail(400, "参数格式错误，应为逗号分隔的数字列表");
+                }
+
+                var postsByIds = await _postService.GetPostsByIdsAsync(idList);
+
+                if (postsByIds == null || postsByIds.Count == 0)
+                {
+                    return BaseHttpResponse<List<PostResponse>>.Fail(404, "未找到指定的帖子");
+                }
+
+                var responseListByIds = postsByIds.Select(ToPostResponse).ToList();
+                return BaseHttpResponse<List<PostResponse>>.Success(responseListByIds);
             }
-            catch (FormatException)
+            
+
+            // 如果提供了 userId，则执行新逻辑
+            if (userId.HasValue)
             {
-                return BaseHttpResponse<List<PostResponse>>.Fail(400, "参数格式错误，应为逗号分隔的数字列表");
+                var postsByUserId = await _postService.GetPostsByUserIdAsync(userId.Value);
+
+                if (postsByUserId == null || postsByUserId.Count == 0)
+                {
+                    return BaseHttpResponse<List<PostResponse>>.Fail(404, $"未找到用户 ID 为 {userId.Value} 的帖子");
+                }
+
+                var responseListByUserId = postsByUserId.Select(ToPostResponse).ToList();
+                return BaseHttpResponse<List<PostResponse>>.Success(responseListByUserId);
             }
 
-            var posts = await _postService.GetPostsByIdsAsync(idList);
-
-            if (posts == null || posts.Count == 0)
-            {
-                return BaseHttpResponse<List<PostResponse>>.Fail(404, "未找到指定的帖子");
-            }
-
-            var responseList = posts.Select(post => new PostResponse
-            {
-                PostId = post.PostId,
-                UserId = post.UserId ?? 0,
-                Title = post.Title ?? "",
-                Content = post.Content ?? "",
-                Tags = post.TagNames,  // 使用附加的 Tags
-                CreatedAt = post.CreatedAt ?? DateTime.MinValue,
-                Views = post.Views ?? 0,
-                Likes = post.Likes ?? 0
-            }).ToList();
-
-            return BaseHttpResponse<List<PostResponse>>.Success(responseList);
+            // 如果 ids 和 userId 都没有提供
+            return BaseHttpResponse<List<PostResponse>>.Fail(400, "参数 ids 和 userId 至少需要提供一个");
         }
         catch (Exception ex)
         {
             // 记录日志（推荐注入 ILogger<PostController> ）
             return BaseHttpResponse<List<PostResponse>>.Fail(500, $"服务器内部错误：{ex.Message}");
         }
+    }
+    
+    // 辅助方法，用于将 Post 对象映射为 PostResponse 对象，避免代码重复。
+    private PostResponse ToPostResponse(Post post)
+    {
+        return new PostResponse
+        {
+            PostId = post.PostId,
+            UserId = post.UserId ?? 0,
+            Title = post.Title ?? "",
+            Content = post.Content ?? "",
+            Tags = post.TagNames,
+            CreatedAt = post.CreatedAt ?? DateTime.MinValue,
+            Views = post.Views ?? 0,
+            Likes = post.Likes ?? 0
+        };
     }
     
     [HttpDelete]
@@ -254,8 +283,39 @@ public class PostController : ControllerBase
     }
 
     [HttpGet("comment")]
-    public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetComments([FromQuery] long postId)
+    public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetComments(
+        [FromQuery] long? postId, 
+        [FromQuery] long? userId)
     {
-        return await _commentService.GetCommentsAsync(postId);
+        try
+        {
+            // 检查参数冲突：不能同时提供 postId 和 userId
+            if (postId.HasValue && userId.HasValue)
+            {
+                return BaseHttpResponse<List<GetCommentResponse>>.Fail(400, "不能同时指定 postId 和 userId 参数");
+            }
+
+            // 如果 postId 有值，执行原有逻辑
+            if (postId.HasValue)
+            {
+                var commentsByPostId = await _commentService.GetCommentsByPostIdAsync(postId.Value);
+                return commentsByPostId;
+            }
+
+            // 如果 userId 有值，执行新逻辑
+            if (userId.HasValue)
+            {
+                var commentsByUserId = await _commentService.GetCommentsByUserIdAsync(userId.Value);
+                return BaseHttpResponse<List<GetCommentResponse>>.Success(commentsByUserId);
+            }
+
+            // 如果 postId 和 userId 都没有提供
+            return BaseHttpResponse<List<GetCommentResponse>>.Fail(400, "参数 postId 和 userId 至少需要提供一个");
+        }
+        catch (Exception ex)
+        {
+            // 记录日志（推荐注入 ILogger）
+            return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, $"服务器内部错误：{ex.Message}");
+        }
     }
 }

@@ -12,6 +12,7 @@ namespace PostService.Repositories
     {
         Task<List<Post>> GetPostsByIdsAsync(List<long> ids);
         Task<Post?> GetByIdAsync(long postId);
+        Task<List<Post>> GetPostsByUserIdAsync(long userId);
         Task MarkAsDeletedAsync(long postId);
         Task<Post> InsertPostAsync(long userId, long circleId, string title, string content, List<long> tags);
         Task<List<string>> GetTagNamesByPostIdAsync(long postId);
@@ -76,6 +77,14 @@ namespace PostService.Repositories
         {
             await using var context = _contextFactory.CreateDbContext();
             return await context.Posts.FindAsync(postId);
+        }
+        
+        public async Task<List<Post>> GetPostsByUserIdAsync(long userId)
+        {
+            await using var context = _contextFactory.CreateDbContext();
+            return await context.Posts
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task MarkAsDeletedAsync(long postId)

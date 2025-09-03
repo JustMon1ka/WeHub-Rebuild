@@ -40,6 +40,6 @@ namespace Models
         [Column("PROFILE_URL")]
         public string? ProfileUrl { get; set; }
 
-        public User? User { get; set; }
+        public virtual User? User { get; set; }
     }
 }

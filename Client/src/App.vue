@@ -1,64 +1,42 @@
 <!--APP.vue 中的内容会应用于全局，谨慎添加！！！-->
 <script setup lang="ts">
+import { ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
+
 import NavigationBar from '@/modules/core/components/NavigationBar.vue'
 import NavigationBarMobile from '@/modules/core/components/NavigationBarMobile.vue'
 import RecommendBar from '@/modules/core/components/RecommendBar.vue'
-import { RouterView, useRoute } from 'vue-router'
 import PostCreate from '@/modules/postCreate/views/CreatePostView.vue'
-import { RouterView } from 'vue-router'
 import LoginHover from '@/modules/auth/views/LoginHover.vue'
-</script>
 
-<script lang="ts">
-import { ref } from 'vue'
-
-const showNavigationBar = ref(true);
-const showRecommendBar = ref(true);
-const showHoverLogin = ref(false);
-
-export function toggleLoginHover(value: boolean | undefined) {
-  showHoverLogin.value = value !== undefined ? value : !showHoverLogin.value;
-}
+const showNavigationBar = ref(true)
+const showRecommendBar = ref(true)
+const showHoverLogin = ref(false)
 
 const route = useRoute()
-export function toggleNavigationBar(value: boolean | undefined) {
-  showNavigationBar.value = value !== undefined ? value : !showNavigationBar.value;
-}
 
-export function toggleRecommendBar(value: boolean | undefined) {
-  showRecommendBar.value = value !== undefined ? value : !showRecommendBar.value;
-}
+
 </script>
 
 <template>
-<body class="bg-slate-900 text-slate-200 w-screen h-screen md:overflow-hidden overflow-y-auto">
-<!-- 侧边栏固定 -->
-  <NavigationBar id="navigation-pc" class="z-100"/>
+  <div class="bg-slate-900 text-slate-200 w-screen h-screen md:overflow-hidden overflow-y-auto">
+    <LoginHover v-model:show-hover="showHoverLogin" id="login-hover" class="fixed overflow-hidden"/>
+    <div class="w-screen h-screen justify-center flex flex-col-reverse overflow-y-auto md:flex-row md:overflow-hidden">
+      <NavigationBar v-show="showNavigationBar" id="navigation-pc" class="flex-none md:py-5 md:px-5 sr-only md:not-sr-only border-x border-slate-800 z-100"/>
+      <div id="main" class="flex-auto h-dvh overflow-y-auto">
+        <RouterView />
+      </div>
+      <RecommendBar v-show="showRecommendBar" id="recommend-bar" class="flex-none h-24 overflow-hidden md:h-screen px-5 py-5 z-100"/>
+    </div>
 
-  <!-- 主内容 + 推荐栏 的容器，整体往右错开 4rem -->
-  <div class="flex flex-col-reverse md:flex-row w-full h-full pl-64 overflow-hidden">
-    <!-- 主内容区 -->
-    <RouterView
-      id="main"
-      class="flex-auto h-dvh overflow-y-auto px-10"
-    />
+    <!-- 全局悬浮层 -->
+    <teleport to="body">
+      <PostCreate v-if="route.name === 'post-create'" />
+    </teleport>
 
-    <!-- 推荐栏 -->
-    <RecommendBar
-      id="recommend"
-      class="flex-none h-24 md:h-full p-10 z-100"
-    />
+    <!-- 移动端底部导航栏 -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-9999 bg-slate-900 border-t border-slate-800 flex justify-around p-2">
+      <NavigationBarMobile id="navigation-mobile" />
+    </nav>
   </div>
-
-<!--   全局悬浮层：通过 Teleport 挂在 body 外层-->
-  <teleport to="body">
-    <!-- 只有在路由 name 为 post-create 时渲染 -->
-    <PostCreate v-if="route.name === 'post-create'" />
-  </teleport>
-
-  <!-- 移动端底部导航栏 -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-9999 bg-slate-900 border-t border-slate-800 flex justify-around p-2">
-    <NavigationBarMobile id="navigation-mobile" />
-  </nav>
-</body>
 </template>

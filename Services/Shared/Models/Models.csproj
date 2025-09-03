@@ -10,8 +10,4 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.7" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="DTOs\DTOs.csproj" />
-    </ItemGroup>
-
 </Project>

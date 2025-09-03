@@ -14,9 +14,8 @@ namespace PostService.Repositories
         Task UpdateCommentAsync(Comments comment);
         Task UpdateReplyAsync(Reply reply);
         Task<List<Comments>> GetCommentsByPostIdAsync(long postId);
-        Task<List<Reply>> GetRepliesByCommentIdsAsync(IEnumerable<long> commentIds);
-        Task<User?> GetUserByIdAsync(long userId);
-        Task<UserProfile?> GetUserProfileByIdAsync(long userId);
+        Task<List<Comments>> GetCommentsByUserIdAsync(long userId);
+        Task<List<Reply>> GetRepliesByUserIdAsync(long userId);
         Task<bool> UserExistsAsync(long userId);
         Task<bool> PostExistsAsync(long postId);
         Task<bool> CommentExistsAsync(long commentId);
@@ -64,16 +63,41 @@ namespace PostService.Repositories
         }
 
         public async Task<List<Comments>> GetCommentsByPostIdAsync(long postId)
-            => await _db.Comments.Where(c => c.PostId == postId && c.IsDeleted == 0).ToListAsync();
+        {
+            return await _db.Comments
+                .Where(c => c.PostId == postId)
+                .Include(c => c.User) // 加载评论的用户信息
+                    .ThenInclude(u => u.UserProfile) // 进一步加载用户的个人档案
+                .Include(c => c.Replies) // 加载评论的所有回复
+                    .ThenInclude(r => r.User) // 进一步加载回复的用户信息
+                        .ThenInclude(u => u.UserProfile) // 进一步加载用户的个人档案
+                .ToListAsync();
+        }
+        
+        // 新增方法：按用户ID查询所有评论
+        public async Task<List<Comments>> GetCommentsByUserIdAsync(long userId)
+        {
+            return await _db.Comments
+                .Where(c => c.UserId == userId)
+                .Include(c => c.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(c => c.Post) // 加载评论所属的帖子信息
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+        }
 
-        public async Task<List<Reply>> GetRepliesByCommentIdsAsync(IEnumerable<long> commentIds)
-            => await _db.Replies.Where(r => commentIds.Contains(r.CommentId) && r.IsDeleted == 0).ToListAsync();
-
-        public async Task<User?> GetUserByIdAsync(long userId)
-            => await _db.Users.FirstOrDefaultAsync(u => u.UserId == userId);
-
-        public async Task<UserProfile?> GetUserProfileByIdAsync(long userId)
-            => await _db.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+        // 新增方法：按用户ID查询所有回复
+        public async Task<List<Reply>> GetRepliesByUserIdAsync(long userId)
+        {
+            return await _db.Replies
+                .Where(r => r.UserId == userId)
+                .Include(r => r.User)
+                    .ThenInclude(u => u.UserProfile)
+                .Include(r => r.Comment) // 加载回复所属的评论
+                    .ThenInclude(c => c.Post) // 通过评论加载帖子信息
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+        }
         
         public async Task<bool> UserExistsAsync(long userId)
         {

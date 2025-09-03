@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PostService.Models;
+namespace Models;
 
 [Table("REPLY")]
 public class Reply
@@ -19,4 +19,7 @@ public class Reply
     public DateTime CreatedAt { get; set; }
     [Column("IS_DELETED")]
     public int? IsDeleted { get; set; } 
+    
+    public virtual User? User { get; set; }
+    public virtual Comments? Comment { get; set; }
 }
