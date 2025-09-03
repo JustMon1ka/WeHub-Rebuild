@@ -1,6 +1,5 @@
 <template>
   <div class="page-content-wrapper">
-
     <!-- 中间内容 -->
     <div class="center">
       <div class="divider-horizontal"></div>
@@ -66,7 +65,15 @@ import ConservationHeader from '../components/ConservationHeader.vue'
 import ChatInput from '../components/ChatInput.vue'
 import ChatMessage from '../components/ChatMessage.vue'
 import ReportDialog from '../../report/views/ReportDialog.vue'
-import type { conversation, chatHistory, user, message } from '../types'
+import type {
+  conversation,
+  chatHistory,
+  conversation2,
+  conversationList2,
+  user,
+  message,
+} from '../types'
+import { getConversationList } from '../api'
 
 const router = useRouter()
 const searchText = ref('')
