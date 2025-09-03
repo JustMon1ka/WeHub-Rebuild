@@ -45,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReportService.Tests", "Serv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoticeService", "Services\NoticeService\NoticeService.csproj", "{AE6CDA7B-0499-48C8-98AD-5D75E26CC5F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService.Tests", "Services\Tests\NotificationService.Tests\NotificationService.Tests.csproj", "{A316DE1F-6ABA-4C0C-BB0D-0096E8A3AF93}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoticeService.Tests", "Services\Tests\NotificationService.Tests\NoticeService.Tests.csproj", "{A316DE1F-6ABA-4C0C-BB0D-0096E8A3AF93}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
