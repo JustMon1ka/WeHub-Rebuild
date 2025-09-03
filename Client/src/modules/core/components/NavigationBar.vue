@@ -12,7 +12,7 @@
         <li>
           <a
             href="#"
-            class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200"
+            class="flex items-center p-3 rounded-full hover:bg-slate-700/50 transition-colors duration-200"
           >
             <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -29,7 +29,7 @@
         <li>
           <a
             href="#"
-            class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200"
+            class="flex items-center p-3 rounded-full hover:bg-slate-700/50 transition-colors duration-200"
           >
             <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -117,7 +117,7 @@
         <li>
           <a
             href="#"
-            class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200"
+            class="flex items-center p-3 rounded-full hover:bg-slate-700/50 transition-colors duration-200"
           >
             <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -136,7 +136,7 @@
     <div class="mt-auto">
       <a
         href="#"
-        class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200"
+        class="flex items-center p-3 rounded-full hover:bg-slate-700/50 transition-colors duration-200"
       >
         <img
           class="w-10 h-10 rounded-full"
@@ -168,7 +168,7 @@
 <script setup lang="ts">
 const activeClass = 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20'
 const inactiveClass =
-  'flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200'
+  'flex items-center p-3 rounded-full hover:bg-slate-700/50 transition-colors duration-200'
 </script>
 
 <style scoped>
