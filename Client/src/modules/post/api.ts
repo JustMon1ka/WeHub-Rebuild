@@ -1,12 +1,15 @@
 import axios from 'axios';
 import type { PostDetail } from "./types";
 import { unwrap } from "./types";
+import { useAuthState } from './utils/useAuthState';
 import type {
   ToggleLikeRequest,
   BaseResp,
   FavoriteListResp,
   SearchSuggestions,
-  SearchResponse
+  SearchResponse,
+  Comment,
+  CommentRequest
 } from "./types";
 
 axios.defaults.baseURL = 'http://localhost:5000/api/posts';
@@ -54,3 +57,89 @@ export async function getPostDetail(postId: number): Promise<PostDetail> {
   const res = await axios.get(`/api/posts/${postId}`);
   return unwrap<PostDetail>(res.data);
 }
+
+//评论
+export const postService = {
+  // 获取帖子评论
+  async getComments(postId: number): Promise<Comment[]> {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch(`${axios.defaults.baseURL}/api/posts/comments?post_id=${postId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.code === 200) {
+      return data.data;
+    } else {
+      throw new Error(data.msg || '获取评论失败');
+    }
+  },
+
+  // 发表评论
+  async submitComment(commentData: CommentRequest): Promise<any> {
+    const { authToken } = useAuthState();
+    const response = await fetch(`${axios.defaults.baseURL}/api/posts/comment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authToken.value ? `Bearer ${authToken.value}` : ''
+      },
+      body: JSON.stringify(commentData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.code === 200) {
+      return data.data;
+    } else {
+      throw new Error(data.msg || '提交评论失败');
+    }
+  },
+
+  // 点赞/取消点赞
+  async toggleLike(likeData: ToggleLikeRequest): Promise<boolean> {
+    const { authToken } = useAuthState();
+    const response = await fetch(`${axios.defaults.baseURL}/api/posts/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authToken.value ? `Bearer ${authToken.value}` : ''
+      },
+      body: JSON.stringify(likeData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.code === 200;
+  },
+
+  // 删除评论
+  async deleteComment(type: 'comment' | 'reply', targetId: number): Promise<boolean> {
+    const { authToken } = useAuthState();
+    const response = await fetch(`${axios.defaults.baseURL}/api/posts/comment?type=${type}&target_id=${targetId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': authToken.value ? `Bearer ${authToken.value}` : ''
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.code === 200;
+  }
+};
