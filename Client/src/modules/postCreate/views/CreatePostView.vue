@@ -9,19 +9,19 @@
   >
     <div
       v-if="visible"
-      class="fixed top-0 left-[4rem] z-50 h-full w-[700px] max-w-[calc(100%-4rem)] bg-slate-900 border-l border-slate-700 shadow-2xl flex flex-col"
+      class="z-50 h-full bg-slate-900 border-x border-slate-700 shadow-2xl flex flex-col"
       :style="{ left }"
     >
       <!-- 标题栏 -->
-      <header class="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-sm flex items-center justify-between px-6 py-4 border-b border-slate-700">
+      <header class="sticky top-0 z-10 bg-slate-900/75 backdrop-blur-md flex items-center justify-between px-6 py-4 border-b border-slate-700">
         <h2 class="text-xl font-bold text-white">创建新帖子</h2>
         <button @click="close" class="p-2 rounded-full hover:bg-slate-800 transition-colors">
-          <XIcon class="w-5 h-5 text-slate-400 hover:text-white" />
+          <img src="@/assets/close.svg" alt="close" class="w-5 h-5" />
         </button>
       </header>
 
       <!-- 表单区 -->
-      <main class="flex-1 overflow-y-auto p-6 space-y-8">
+      <main class="flex-1 p-6 space-y-8">
         <!-- 社区选择 -->
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-2">选择社区</label>
@@ -146,14 +146,3 @@ function close() {
   setTimeout(() => router.back(), 200)
 }
 </script>
-
-<style scoped>
-/* 滚动条样式 */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #1e293b; }
-::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
-/* 隐藏内置工具栏，包括上传资源按钮和输入框 */
-
-</style>

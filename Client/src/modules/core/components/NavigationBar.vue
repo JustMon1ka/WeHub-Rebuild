@@ -101,7 +101,6 @@ const openPostCreate = () => {
   }
 }
 import { User } from '@/modules/auth/public.ts'
-import { ref } from 'vue'
 
 const logout = ref(false);
 User.afterLoadCallbacks.push(() => {

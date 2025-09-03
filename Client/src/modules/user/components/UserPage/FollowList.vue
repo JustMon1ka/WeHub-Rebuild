@@ -4,7 +4,7 @@ import TabController, { type TabLabel } from '@/modules/user/scripts/TabControll
 import { User } from '@/modules/auth/public.ts'
 import { watch } from 'vue'
 import router from '@/router.ts'
-import { toggleLoginHover } from '@/App.vue'
+import { toggleLoginHover } from '@/router.ts'
 
 const { userId_p, nickName } = defineProps<{
   userId_p: string;
