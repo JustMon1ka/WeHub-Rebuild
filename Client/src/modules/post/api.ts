@@ -1,4 +1,6 @@
 import axios from 'axios';
+import type { PostDetail } from "./types";
+import { unwrap } from "./types";
 import type {
   ToggleLikeRequest,
   BaseResp,
@@ -25,11 +27,9 @@ export async function toggleLike(data: ToggleLikeRequest) {
   return resp.data;
 }
 
-// 收藏/取消收藏（很多后端是“切换收藏”，只要 post_id）
-// 如果你们后端要求 { favorite: boolean }，把第二个参数加上即可
-export async function toggleFavorite(postId: number) {
-  const resp = await axios.post<BaseResp>("/favorite", { post_id: postId });
-  return resp.data;
+// 收藏/取消收藏
+export async function toggleFavorite(data: { type: string; target_id: number; favorite: boolean }) {
+  return axios.post("/api/favorite/toggle", data);
 }
 
 // （可选）获取我的收藏
@@ -48,4 +48,9 @@ export async function getSearchSuggestion(keyword?: string, limits: number = 10)
 export async function getSearch(query?: string, limits?: number){
   const resp = await axios.get<SearchResponse>("/search", {params: {query: query, limits: limits}});
   return resp.data;
+}
+
+export async function getPostDetail(postId: number): Promise<PostDetail> {
+  const res = await axios.get(`/api/posts/${postId}`);
+  return unwrap<PostDetail>(res.data);
 }

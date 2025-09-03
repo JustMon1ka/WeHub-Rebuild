@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createRouter, createWebHistory } from 'vue-router'
 import { User } from './modules/auth/scripts/User.ts'
 import authRouter from './modules/auth/router.ts'
