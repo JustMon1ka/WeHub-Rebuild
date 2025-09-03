@@ -205,7 +205,7 @@ namespace CircleService.Services
         {
             // 生成带时间戳的URL，用于缓存破坏
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            return $"{_options.BaseUrl}/api/resources/uploads/{storedName}?t={timestamp}";
+            return $"{_options.BaseUrl}/api/preview/big/uploads/{storedName}?inline=true&t={timestamp}";
         }
     }
 }
