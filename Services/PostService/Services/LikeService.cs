@@ -6,13 +6,11 @@ namespace PostService.Services
 {
     public class LikeService : ILikeService
     {
-        private readonly ILikeRepository _repository;
-        private readonly IPostRepository _postRepository;
+        private readonly ILikeRepository _likeRepository;
 
-        public LikeService(ILikeRepository repository, IPostRepository postRepository)
+        public LikeService(ILikeRepository likeRepository)
         {
-            _repository = repository;
-            _postRepository = postRepository;
+            _likeRepository = likeRepository;
         }
 
         public async Task ToggleLikeAsync(int userId, LikeRequest request)
@@ -25,20 +23,26 @@ namespace PostService.Services
             };
 
             // 调用仓库处理点赞/取消点赞
-            bool changed = await _repository.ToggleLikeAsync(userId, like);
+            bool changed = await _likeRepository.ToggleLikeAsync(userId, like);
 
             // 如果仓库确认数据有变化（即状态确实切换了），再更新 Post.Likes
             if (changed && like.TargetType == "post")
             {
                 if (like.IsLike)
                 {
-                    await _postRepository.IncrementLikeCountAsync(like.TargetId);
+                    await _likeRepository.IncrementLikeCountAsync(like.TargetId);
                 }
                 else
                 {
-                    await _postRepository.DecrementLikeCountAsync(like.TargetId);
+                    await _likeRepository.DecrementLikeCountAsync(like.TargetId);
                 }
             }
         }
+    }
+
+    public interface ILikeService
+    {
+        Task ToggleLikeAsync(int userId, LikeRequest request);
+        
     }
 }

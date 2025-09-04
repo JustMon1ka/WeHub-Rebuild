@@ -4,11 +4,18 @@ using PostService.Models;
 
 namespace PostService.Repositories
 {
-    public class PostRepository
+    public interface ILikeRepository
+    {
+        Task IncrementLikeCountAsync(long postId);
+        Task DecrementLikeCountAsync(long postId);
+        Task<bool> ToggleLikeAsync(int userId, Like like);
+    }
+    
+    public class LikeRepository: ILikeRepository
     {
         private readonly AppDbContext _context;
 
-        public PostRepository(AppDbContext context)
+        public LikeRepository(AppDbContext context)
         {
             _context = context;
         }
