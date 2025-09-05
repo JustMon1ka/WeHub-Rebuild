@@ -11,6 +11,7 @@ public class CircleServiceTests
 {
     private Mock<ICircleRepository> _mockCircleRepo;
     private Mock<ICircleMemberRepository> _mockMemberRepo;
+    private Mock<IActivityRepository> _mockActivityRepo;
     private Mock<IFileBrowserClient> _mockFileBrowserClient;
     private Services.CircleService _circleService;
 
@@ -20,8 +21,9 @@ public class CircleServiceTests
         // 在每个测试方法运行前，都会执行这个初始化方法
         _mockCircleRepo = new Mock<ICircleRepository>();
         _mockMemberRepo = new Mock<ICircleMemberRepository>();
+        _mockActivityRepo = new Mock<IActivityRepository>();
         _mockFileBrowserClient = new Mock<IFileBrowserClient>();
-        _circleService = new Services.CircleService(_mockCircleRepo.Object, _mockMemberRepo.Object, _mockFileBrowserClient.Object);
+        _circleService = new Services.CircleService(_mockCircleRepo.Object, _mockMemberRepo.Object, _mockActivityRepo.Object, _mockFileBrowserClient.Object);
     }
 
     [TestMethod]

@@ -1,4 +1,5 @@
 using CircleService.DTOs;
+using CircleService.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -31,8 +32,9 @@ public interface ICircleMemberService
     /// <param name="targetUserId">被审批用户的ID</param>
     /// <param name="approverId">审批人（圈主/管理员）的用户ID</param>
     /// <param name="approve">是否通过申请</param>
+    /// <param name="role">指定用户角色（可选，默认为普通成员）</param>
     /// <returns>操作结果的Service层响应</returns>
-    Task<ServiceResponse> ApproveJoinApplicationAsync(int circleId, int targetUserId, int approverId, bool approve);
+    Task<ServiceResponse> ApproveJoinApplicationAsync(int circleId, int targetUserId, int approverId, bool approve, CircleMemberRole? role = null);
 
     /// <summary>
     /// 将成员移出圈子

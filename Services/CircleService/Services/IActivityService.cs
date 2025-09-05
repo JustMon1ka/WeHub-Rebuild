@@ -17,6 +17,13 @@ public interface IActivityService
     Task<IEnumerable<ActivityDto>> GetActivitiesByCircleIdAsync(int circleId);
 
     /// <summary>
+    /// 根据活动ID获取活动详情
+    /// </summary>
+    /// <param name="activityId">活动ID</param>
+    /// <returns>返回活动详情，如果不存在则返回null</returns>
+    Task<ActivityDto?> GetActivityByIdAsync(int activityId);
+
+    /// <summary>
     /// 在指定圈子中创建一个新活动
     /// </summary>
     /// <param name="circleId">圈子ID</param>

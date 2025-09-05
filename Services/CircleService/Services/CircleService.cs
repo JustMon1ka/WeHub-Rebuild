@@ -15,13 +15,14 @@ public class CircleService : ICircleService
 {
     private readonly ICircleRepository _circleRepository;
     private readonly ICircleMemberRepository _memberRepository;
-
+    private readonly IActivityRepository _activityRepository;
     private readonly IFileBrowserClient _fileBrowserClient;
 
-    public CircleService(ICircleRepository circleRepository, ICircleMemberRepository memberRepository, IFileBrowserClient fileBrowserClient)
+    public CircleService(ICircleRepository circleRepository, ICircleMemberRepository memberRepository, IActivityRepository activityRepository, IFileBrowserClient fileBrowserClient)
     {
         _circleRepository = circleRepository;
         _memberRepository = memberRepository;
+        _activityRepository = activityRepository;
         _fileBrowserClient = fileBrowserClient;
     }
 
@@ -218,6 +219,47 @@ public class CircleService : ICircleService
         };
     }
 
+    public async Task<ImageUploadResponseDto?> UploadActivityImageAsync(int activityId, Stream fileStream, string fileName, string contentType)
+    {
+        // 检查活动是否存在
+        var activity = await _activityRepository.GetByIdAsync(activityId);
+        if (activity == null)
+        {
+            return null;
+        }
+
+        // 生成唯一的文件名
+        var fileExtension = Path.GetExtension(fileName);
+        var uniqueFileName = $"activities/{activityId}/cover_{DateTime.UtcNow:yyyyMMddHHmmss}_{GenerateRandomString(8)}{fileExtension}";
+
+        // 上传文件到FileBrowser
+        var response = await _fileBrowserClient.UploadFileAsync(uniqueFileName, contentType, fileStream);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        // 构建图片URL 
+        var imageUrl = $"http://120.26.118.70:5001/api/preview/big/uploads/{uniqueFileName}?inline=true&key={timestamp}";
+
+        // 更新数据库中的活动封面URL
+        activity.ActivityUrl = imageUrl;
+        await _activityRepository.UpdateAsync(activity);
+
+        var previewUrl = $"http://120.26.118.70:5001/api/preview/big/uploads/{uniqueFileName}?inline=true&key={timestamp}";
+
+        return new ImageUploadResponseDto
+        {
+            ImageUrl = previewUrl, // 返回预览URL
+            FileName = fileName,
+            FileSize = fileStream.Length,
+            ContentType = contentType
+        };
+    }
+
     /// <summary>
     /// 生成随机字符串
     /// </summary>
@@ -245,6 +287,29 @@ public class CircleService : ICircleService
             MemberCount = memberCount,
             AvatarUrl = circle.AvatarUrl,
             BannerUrl = circle.BannerUrl
+        };
+    }
+
+    public async Task<PostIdListDto> GetPostIdsByCircleIdAsync(int? circleId = null)
+    {
+        // 如果提供了circleId，检查圈子是否存在
+        if (circleId.HasValue)
+        {
+            var circle = await _circleRepository.GetByIdAsync(circleId.Value);
+            if (circle == null)
+            {
+                throw new ArgumentException($"圈子ID {circleId.Value} 不存在");
+            }
+        }
+
+        // 获取帖子ID列表
+        var postIds = await _circleRepository.GetPostIdsByCircleIdAsync(circleId);
+
+        return new PostIdListDto
+        {
+            CircleId = circleId ?? 0, // 如果没有指定圈子，设为0表示所有圈子
+            PostIds = postIds,
+            TotalCount = postIds.Count()
         };
     }
 } 

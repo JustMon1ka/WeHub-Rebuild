@@ -52,4 +52,11 @@ public class ActivityRepository : IActivityRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<IEnumerable<Activity>> GetActivitiesByTypeAsync(int circleId, ActivityType activityType)
+    {
+        return await _context.Activities
+                             .Where(a => a.CircleId == circleId && a.ActivityType == activityType)
+                             .ToListAsync();
+    }
 } 

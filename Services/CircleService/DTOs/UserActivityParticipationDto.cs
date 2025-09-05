@@ -3,9 +3,9 @@ using CircleService.Models;
 namespace CircleService.DTOs;
 
 /// <summary>
-/// 用于传输活动详细信息的数据传输对象。
+/// 用户活动参与状态DTO
 /// </summary>
-public class ActivityDto
+public class UserActivityParticipationDto
 {
     /// <summary>
     /// 活动ID
@@ -13,24 +13,34 @@ public class ActivityDto
     public int ActivityId { get; set; }
 
     /// <summary>
-    /// 所属圈子的ID
+    /// 圈子ID
     /// </summary>
     public int CircleId { get; set; }
-    
+
     /// <summary>
     /// 活动标题
     /// </summary>
-    public required string Title { get; set; }
+    public required string ActivityTitle { get; set; }
 
     /// <summary>
-    /// 活动详细描述
+    /// 用户ID
     /// </summary>
-    public string? Description { get; set; }
-    
+    public int UserId { get; set; }
+
     /// <summary>
-    /// 活动奖励描述
+    /// 参与状态
     /// </summary>
-    public string? RewardDescription { get; set; }
+    public ParticipantStatus Status { get; set; }
+
+    /// <summary>
+    /// 奖励状态
+    /// </summary>
+    public RewardStatus RewardStatus { get; set; }
+
+    /// <summary>
+    /// 加入时间
+    /// </summary>
+    public DateTime JoinTime { get; set; }
 
     /// <summary>
     /// 活动奖励点数
@@ -43,11 +53,6 @@ public class ActivityDto
     public ActivityType ActivityType { get; set; }
 
     /// <summary>
-    /// 活动封面图片URL
-    /// </summary>
-    public string? ActivityUrl { get; set; }
-
-    /// <summary>
     /// 活动开始时间
     /// </summary>
     public DateTime StartTime { get; set; }
@@ -56,4 +61,4 @@ public class ActivityDto
     /// 活动结束时间
     /// </summary>
     public DateTime EndTime { get; set; }
-} 
+}

@@ -87,8 +87,8 @@ public class ActivityParticipantService : IActivityParticipantService
             return ServiceResponse<RewardDto>.Fail("活动数据异常。");
         }
 
-        // 模拟奖励逻辑：假设奖励就是活动描述里的奖励文字和固定的100积分
-        var pointsToAward = 100; // TODO: 奖励积分应来自活动配置
+        // 使用活动配置的奖励点数
+        var pointsToAward = activity.RewardPoints;
         
         var member = await _memberRepository.GetByIdAsync(activity.CircleId, userId);
         if (member != null)
@@ -102,10 +102,70 @@ public class ActivityParticipantService : IActivityParticipantService
 
         var rewardDto = new RewardDto
         {
-            RewardDescription = activity.Reward ?? "恭喜您完成活动！",
+            RewardDescription = activity.RewardDescription ?? "恭喜您完成活动！",
             PointsAwarded = pointsToAward
         };
 
         return ServiceResponse<RewardDto>.Succeed(rewardDto);
+    }
+
+    public async Task<IEnumerable<UserActivityParticipationDto>> GetUserActivityParticipationsAsync(int userId)
+    {
+        var participations = await _participantRepository.GetByUserIdAsync(userId);
+        var result = new List<UserActivityParticipationDto>();
+
+        foreach (var participation in participations)
+        {
+            var activity = await _activityRepository.GetByIdAsync(participation.ActivityId);
+            if (activity != null)
+            {
+                result.Add(new UserActivityParticipationDto
+                {
+                    ActivityId = participation.ActivityId,
+                    CircleId = activity.CircleId,
+                    ActivityTitle = activity.Title,
+                    UserId = participation.UserId,
+                    Status = participation.Status,
+                    RewardStatus = participation.RewardStatus,
+                    JoinTime = participation.JoinTime,
+                    RewardPoints = activity.RewardPoints,
+                    ActivityType = activity.ActivityType,
+                    StartTime = activity.StartTime,
+                    EndTime = activity.EndTime
+                });
+            }
+        }
+
+        return result;
+    }
+
+    public async Task<UserActivityParticipationDto?> GetUserActivityParticipationAsync(int activityId, int userId)
+    {
+        var participation = await _participantRepository.GetByIdAsync(activityId, userId);
+        if (participation == null)
+        {
+            return null;
+        }
+
+        var activity = await _activityRepository.GetByIdAsync(activityId);
+        if (activity == null)
+        {
+            return null;
+        }
+
+        return new UserActivityParticipationDto
+        {
+            ActivityId = participation.ActivityId,
+            CircleId = activity.CircleId,
+            ActivityTitle = activity.Title,
+            UserId = participation.UserId,
+            Status = participation.Status,
+            RewardStatus = participation.RewardStatus,
+            JoinTime = participation.JoinTime,
+            RewardPoints = activity.RewardPoints,
+            ActivityType = activity.ActivityType,
+            StartTime = activity.StartTime,
+            EndTime = activity.EndTime
+        };
     }
 } 

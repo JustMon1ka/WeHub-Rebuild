@@ -40,4 +40,12 @@ public interface IActivityRepository
     /// </summary>
     /// <param name="id">要删除的活动ID</param>
     Task DeleteAsync(int id);
+
+    /// <summary>
+    /// 根据圈子ID和活动类型异步获取活动列表
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="activityType">活动类型</param>
+    /// <returns>返回匹配的活动列表</returns>
+    Task<IEnumerable<Activity>> GetActivitiesByTypeAsync(int circleId, ActivityType activityType);
 } 

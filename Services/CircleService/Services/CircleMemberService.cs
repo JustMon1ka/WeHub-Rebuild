@@ -61,7 +61,7 @@ public class CircleMemberService : ICircleMemberService
                       .Select(MapToCircleMemberDto);
     }
     
-    public async Task<ServiceResponse> ApproveJoinApplicationAsync(int circleId, int targetUserId, int approverId, bool approve)
+    public async Task<ServiceResponse> ApproveJoinApplicationAsync(int circleId, int targetUserId, int approverId, bool approve, CircleMemberRole? role = null)
     {
         var circle = await _circleRepository.GetByIdAsync(circleId);
         if (circle == null || circle.OwnerId != approverId)
@@ -79,6 +79,11 @@ public class CircleMemberService : ICircleMemberService
         if (approve)
         {
             member.Status = CircleMemberStatus.Approved;
+            // 如果指定了角色，则使用指定角色；否则保持默认角色（普通成员）
+            if (role.HasValue)
+            {
+                member.Role = role.Value;
+            }
             await _memberRepository.UpdateAsync(member);
         }
         else

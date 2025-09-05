@@ -20,6 +20,7 @@ builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
 builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
+builder.Services.AddScoped<IActivityAutoCompleteService, ActivityAutoCompleteService>();
 
 // 3. 配置 FileBrowser 服务
 builder.Services.Configure<FileBrowserOptions>(builder.Configuration.GetSection("FileBrowser"));
