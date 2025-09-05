@@ -1,54 +1,32 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.DependencyInjection;
 using NoticeService.Data;
-using NoticeService.Profiles;
 using NoticeService.Repositories;
 using NoticeService.Services;
-using System.Text;
+using Oracle.EntityFrameworkCore;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 添加服务
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<NoticeDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddAutoMapper(typeof(MappingProfile));
-builder.Services.AddHttpContextAccessor(); // 注册 IHttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAutoMapper(typeof(Program));
 
-// 配置 JWT 认证
-builder.Services.AddAuthentication(options =>
+// Oracle 配置
+builder.Services.AddDbContext<NoticeDbContext>(options =>
+    options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Redis 配置
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-    };
+    var redisConfig = builder.Configuration.GetSection("Redis:ConnectionString").Value;
+    return ConnectionMultiplexer.Connect(redisConfig);
 });
 
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-app.UseAuthentication(); // 添加认证中间件
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

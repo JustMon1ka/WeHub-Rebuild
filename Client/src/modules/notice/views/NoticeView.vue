@@ -16,14 +16,11 @@
           v-for="(text, index) in noticeTypeTexts"
           :key="index"
           :class="{ active: selectedNoticeType === index }"
-          @click="selectedNoticeType = index"
+          @click="onTabChange(index)"
           class="notice-tab-button"
         >
           {{ text }}
-          <span
-            v-if="index !== 0 && getUnreadCountByType(index) > 0"
-            class="unread-notice-type-count"
-          >
+          <span v-if="getUnreadCountByType(index) > 0" class="unread-notice-type-count">
             {{ displayUnreadNoticeCount(getUnreadCountByType(index)) }}
           </span>
         </button>
@@ -54,111 +51,110 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { type notice, type unreadNoticeCount } from '../types'
-import NoticeItem from '../components/NoticeItem.vue'
+const NoticeItem = defineAsyncComponent(() => import('../components/NoticeItem.vue'))
 import { noticeList as noticeData } from '../noticeData'
 import { getUnreadNoticeCount, markNotificationsRead } from '../api'
 
-const selectedNoticeType = ref(0)
+const selectedNoticeType = ref(-1)
 const searchText = ref('')
-const noticeTypeTexts = ['全部消息', '@我', '回复我的', '收到的赞']
-const router = useRouter()
+const noticeTypeTexts = ['@我', '回复我的', '收到的赞']
 const noticeList = ref<notice[]>(noticeData)
 const unreadSummary = ref<unreadNoticeCount | null>(null)
 const loadingUnread = ref(false)
 const unreadError = ref<string | null>(null)
 const readOnce = ref<Set<string>>(new Set())
 
+const route = useRoute()
+const router = useRouter()
+
+const typeToIndex: Record<string, number> = { mention: 0, reply: 1, like: 2 }
+const idxToType: Record<number, string> = { 0: 'mention', 1: 'reply', 2: 'like' }
+
+// 提前声明，避免在路由监听中未定义导致白屏
+function indexToType(idx: number): 'mention' | 'reply' | 'like' | null {
+  if (idx === 0) return 'mention'
+  if (idx === 1) return 'reply'
+  if (idx === 2) return 'like'
+  return null
+}
+
+function optimisticMarkRead(type: 'mention' | 'reply' | 'like') {
+  if (readOnce.value.has(type)) return
+  readOnce.value.add(type)
+  if (unreadSummary.value) {
+    const delta = unreadSummary.value.unreadByType[type] || 0
+    unreadSummary.value.unreadByType[type] = 0
+    unreadSummary.value.totalUnread = Math.max(0, (unreadSummary.value.totalUnread || 0) - delta)
+  }
+}
+
+// 路由 → tab，同步初始与后续变化
+watch(
+  () => route.params.type,
+  (t) => {
+    const mapped = typeToIndex[String(t)] ?? 0 // 无type时默认 mention
+    selectedNoticeType.value = mapped
+    const type = indexToType(mapped) as 'mention' | 'reply' | 'like' | null
+    if (type) {
+      optimisticMarkRead(type)
+      markNotificationsRead(type).catch((e) => console.error('标记已读失败', e))
+    }
+  },
+  { immediate: true }
+)
+
+// tab → 路由
+function onTabChange(index: number) {
+  selectedNoticeType.value = index
+  const t = idxToType[index]
+  if (t) router.replace({ path: `/notice/${t}` })
+}
+
 // 筛选通知
 const selectedNotices = computed(() => {
-  let selectedNoticeList = noticeList.value
-
-  if (selectedNoticeType.value > 0) {
-    const typeMap = [null, 'at', 'comment', 'like']
-    const selectedType = typeMap[selectedNoticeType.value]
-    if (selectedType !== null) {
-      selectedNoticeList = selectedNoticeList.filter((notice) => notice.type === selectedType)
-    }
-  }
+  const typeMap = ['at', 'comment', 'like'] as const
+  const selectedType = typeMap[selectedNoticeType.value]
+  let selectedNoticeList = noticeList.value.filter((n) => n.type === selectedType)
 
   if (searchText.value.trim()) {
     const searchLower = searchText.value.toLowerCase()
     selectedNoticeList = selectedNoticeList.filter(
-      (notice) =>
-        notice.sender.nickname.toLowerCase().includes(searchLower) ||
-        notice.targetPostTitle.toLowerCase().includes(searchLower)
+      (n) =>
+        n.sender.nickname.toLowerCase().includes(searchLower) ||
+        n.targetPostTitle.toLowerCase().includes(searchLower)
     )
   }
-
-  // 对于点赞通知，合并同一个帖子的多个点赞
-  if (selectedNoticeType.value === 3 || selectedNoticeType.value === 0) {
-    // 收到的赞 或 全部消息
+  // 只有在“点赞”页才合并同帖多次点赞
+  if (selectedType === 'like') {
     const likeNoticesByPost = new Map<number, notice[]>()
-
-    // 按帖子ID分组点赞通知
-    selectedNoticeList.forEach((notice) => {
-      if (notice.type === 'like') {
-        if (!likeNoticesByPost.has(notice.targetPostId)) {
-          likeNoticesByPost.set(notice.targetPostId, [])
-        }
-        likeNoticesByPost.get(notice.targetPostId)!.push(notice)
-      }
+    selectedNoticeList.forEach((n) => {
+      if (!likeNoticesByPost.has(n.targetPostId)) likeNoticesByPost.set(n.targetPostId, [])
+      likeNoticesByPost.get(n.targetPostId)!.push(n)
     })
 
-    // 处理每个帖子的点赞通知
-    const processedNotices: notice[] = []
-
-    // 先处理非点赞通知
-    selectedNoticeList.forEach((notice) => {
-      if (notice.type !== 'like') {
-        processedNotices.push(notice)
-      }
-    })
-
-    // 再处理点赞通知
-    likeNoticesByPost.forEach((likes, postId) => {
+    const processed: notice[] = []
+    likeNoticesByPost.forEach((likes) => {
       if (likes.length > 1) {
-        // 如果这个帖子有多个点赞，先按时间排序，找到最新的点赞
-        const sortedLikes = likes.sort((a, b) => {
-          const timeA = new Date(a.time).getTime()
-          const timeB = new Date(b.time).getTime()
-          return timeB - timeA // 降序排列，最新的在前
-        })
-
-        const lastLiker = sortedLikes[0] // 最新的点赞者
-
-        // 创建合并后的通知
-        const mergedNotice: notice = {
+        likes.sort((a, b) => +new Date(b.time) - +new Date(a.time))
+        const lastLiker = likes[0]
+        processed.push({
           ...lastLiker,
           sender: {
             ...lastLiker.sender,
             nickname: `${lastLiker.sender.nickname} 等${likes.length}人`,
           },
-        }
-
-        processedNotices.push(mergedNotice)
+        })
       } else {
-        // 单个点赞，直接添加
-        processedNotices.push(likes[0])
+        processed.push(likes[0])
       }
     })
-
-    // 对处理后的通知按时间排序
-    return processedNotices.sort((a, b) => {
-      const timeA = new Date(a.time).getTime()
-      const timeB = new Date(b.time).getTime()
-      return timeB - timeA // 降序排列，新通知在前
-    })
+    return processed.sort((a, b) => +new Date(b.time) - +new Date(a.time))
   }
 
-  // 对非点赞通知也按时间排序
-  return selectedNoticeList.sort((a, b) => {
-    const timeA = new Date(a.time).getTime()
-    const timeB = new Date(b.time).getTime()
-    return timeB - timeA // 降序排列，新通知在前
-  })
+  return selectedNoticeList.sort((a, b) => +new Date(b.time) - +new Date(a.time))
 })
 
 // 获取点赞数
@@ -186,30 +182,33 @@ const handleShowLikeDetailsClick = (postId: number) => {
 
 // 显示未读通知数量
 const getUnreadCountByType = (index: number) => {
+  const type = indexToType(index)
+  if (type && readOnce.value.has(type)) return 0
   if (!unreadSummary.value) return 0
   const u = unreadSummary.value.unreadByType
-
-  if (index === 1) return u.mention || 0
-  if (index === 2) return u.reply || 0
-  if (index === 3) return u.like || 0
+  if (index === 0) return u.mention || 0
+  if (index === 1) return u.reply || 0
+  if (index === 2) return u.like || 0
   return 0
 }
 
 // 显示未读通知数量
 const displayUnreadNoticeCount = (n: number) => (n > 99 ? '99+' : n)
 
-// 将索引转换为类型
-const indexToType = (idx: number): 'mention' | 'reply' | 'like' | 'repost' | null => {
-  if (idx === 1) return 'mention'
-  if (idx === 2) return 'reply'
-  if (idx === 3) return 'like'
-  return null
-}
-
 onMounted(async () => {
   loadingUnread.value = true
   try {
     unreadSummary.value = await getUnreadNoticeCount()
+    // 若该类型在本地已标记已读，避免接口旧数据回显红点
+    for (const t of ['mention', 'reply', 'like'] as const) {
+      if (readOnce.value.has(t)) {
+        unreadSummary.value.unreadByType[t] = 0
+      }
+    }
+    unreadSummary.value.totalUnread =
+      (unreadSummary.value.unreadByType.mention || 0) +
+      (unreadSummary.value.unreadByType.reply || 0) +
+      (unreadSummary.value.unreadByType.like || 0)
   } catch (err: any) {
     unreadError.value = err?.message ?? '加载未读通知失败'
   } finally {
@@ -223,19 +222,17 @@ watch(
     const t = indexToType(idx)
     if (!t) return
     if (readOnce.value.has(t)) return
+
+    // 先本地乐观清零，立刻隐藏红点
+    readOnce.value.add(t)
+    if (unreadSummary.value) {
+      const delta = unreadSummary.value.unreadByType[t] || 0
+      unreadSummary.value.unreadByType[t] = 0
+      unreadSummary.value.totalUnread = Math.max(0, (unreadSummary.value.totalUnread || 0) - delta)
+    }
+
     try {
       await markNotificationsRead(t)
-      readOnce.value.add(t)
-
-      // 本地即时更新未读计数，立刻隐藏红点
-      if (unreadSummary.value) {
-        const delta = unreadSummary.value.unreadByType[t] || 0
-        unreadSummary.value.unreadByType[t] = 0
-        unreadSummary.value.totalUnread = Math.max(
-          0,
-          (unreadSummary.value.totalUnread || 0) - delta
-        )
-      }
     } catch (e) {
       // 可选：提示失败，不影响继续浏览
       console.error('标记已读失败', e)
@@ -325,6 +322,6 @@ watch(
 .divider-vertical {
   width: 1px;
   background-color: #444c5c;
-  align-self: stretch; /* 让垂直线充满父容器高度并贴合 */
+  align-self: stretch;
 }
 </style>
