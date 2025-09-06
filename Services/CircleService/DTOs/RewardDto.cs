@@ -8,7 +8,7 @@ public class RewardDto
     /// <summary>
     /// 奖励的文字描述
     /// </summary>
-    public string RewardDescription { get; set; }
+    public required string RewardDescription { get; set; }
 
     /// <summary>
     /// 本次奖励获得的积分

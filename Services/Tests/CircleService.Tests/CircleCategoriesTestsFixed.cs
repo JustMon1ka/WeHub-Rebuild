@@ -15,6 +15,7 @@ public class CircleCategoriesTestsFixed
 {
     private Mock<ICircleRepository> _mockCircleRepo = null!;
     private Mock<ICircleMemberRepository> _mockMemberRepo = null!;
+    private Mock<IActivityRepository> _mockActivityRepo = null!;
     private Mock<IFileBrowserClient> _mockFileBrowserClient = null!;
     private Services.CircleService _circleService = null!;
 
@@ -23,8 +24,9 @@ public class CircleCategoriesTestsFixed
     {
         _mockCircleRepo = new Mock<ICircleRepository>();
         _mockMemberRepo = new Mock<ICircleMemberRepository>();
+        _mockActivityRepo = new Mock<IActivityRepository>();
         _mockFileBrowserClient = new Mock<IFileBrowserClient>();
-        _circleService = new Services.CircleService(_mockCircleRepo.Object, _mockMemberRepo.Object, _mockFileBrowserClient.Object);
+        _circleService = new Services.CircleService(_mockCircleRepo.Object, _mockMemberRepo.Object, _mockActivityRepo.Object, _mockFileBrowserClient.Object);
     }
 
     [TestMethod]

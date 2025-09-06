@@ -1,4 +1,5 @@
 using CircleService.DTOs;
+using CircleService.Models;
 using CircleService.Services;
 using DTOs;
 using Microsoft.AspNetCore.Mvc;
@@ -185,13 +186,21 @@ public class CirclesController : ControllerBase
     /// <param name="circleId">圈子ID</param>
     /// <param name="targetUserId">被审批用户的ID</param>
     /// <param name="approve">是否通过申请</param>
+    /// <param name="role">指定用户角色（0=普通成员，1=管理员，可选）</param>
     [HttpPut("{circleId}/applications/{targetUserId}")]
-    public async Task<IActionResult> ApproveApplication(int circleId, int targetUserId, [FromQuery] bool approve)
+    public async Task<IActionResult> ApproveApplication(int circleId, int targetUserId, [FromQuery] bool approve, [FromQuery] int? role = null)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var approverId = 1; // TODO: 实际应从用户认证信息中获取
+        // TODO: 实际应从用户认证信息中获取当前用户ID
+        var approverId = 1; // 临时硬编码，后续需要从JWT Token获取
 
-        var response = await _memberService.ApproveJoinApplicationAsync(circleId, targetUserId, approverId, approve);
+        // 转换角色参数
+        CircleMemberRole? memberRole = null;
+        if (role.HasValue)
+        {
+            memberRole = (CircleMemberRole)role.Value;
+        }
+
+        var response = await _memberService.ApproveJoinApplicationAsync(circleId, targetUserId, approverId, approve, memberRole);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -260,6 +269,29 @@ public class CirclesController : ControllerBase
     {
         var activities = await _activityService.GetActivitiesByCircleIdAsync(circleId);
         return Ok(BaseHttpResponse<object>.Success(activities));
+    }
+
+    /// <summary>
+    /// 获取活动详情
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="activityId">活动ID</param>
+    [HttpGet("{circleId}/activities/{activityId}")]
+    public async Task<IActionResult> GetActivityById(int circleId, int activityId)
+    {
+        var activity = await _activityService.GetActivityByIdAsync(activityId);
+        if (activity == null)
+        {
+            return NotFound(BaseHttpResponse.Fail(404, "活动不存在"));
+        }
+        
+        // 验证活动是否属于指定圈子
+        if (activity.CircleId != circleId)
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "活动不属于指定圈子"));
+        }
+        
+        return Ok(BaseHttpResponse<object>.Success(activity));
     }
 
     /// <summary>
@@ -416,6 +448,92 @@ public class CirclesController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, BaseHttpResponse.Fail(500, $"上传失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// 上传活动封面图片
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="activityId">活动ID</param>
+    /// <param name="file">图片文件</param>
+    [HttpPost("{circleId}/activities/{activityId}/cover")]
+    public async Task<IActionResult> UploadActivityCover(int circleId, int activityId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "请选择要上传的图片文件"));
+        }
+
+        // 验证文件类型
+        var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "只支持 JPG、PNG、GIF 格式的图片"));
+        }
+
+        // 验证文件大小（限制为10MB）
+        if (file.Length > 10 * 1024 * 1024)
+        {
+            return BadRequest(BaseHttpResponse.Fail(400, "活动封面图片文件大小不能超过10MB"));
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream();
+            var result = await _circleService.UploadActivityImageAsync(activityId, stream, file.FileName, file.ContentType);
+            
+            if (result == null)
+            {
+                return NotFound(BaseHttpResponse.Fail(404, $"活动ID {activityId} 不存在或FileBrowser上传失败。请检查：1.活动是否存在 2.FileBrowser服务是否正常 3.网络连接是否正常"));
+            }
+
+            return Ok(BaseHttpResponse<object>.Success(result, "活动封面图片上传成功"));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, BaseHttpResponse.Fail(500, $"上传失败: {ex.Message}"));
+        }
+    }
+
+    // --- 帖子相关接口 ---
+
+    /// <summary>
+    /// 获取指定圈子内的所有帖子ID列表
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    [HttpGet("{circleId}/posts")]
+    public async Task<IActionResult> GetPostIdsByCircleId(int circleId)
+    {
+        try
+        {
+            var result = await _circleService.GetPostIdsByCircleIdAsync(circleId);
+            return Ok(BaseHttpResponse<object>.Success(result, "获取圈子帖子ID列表成功"));
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(BaseHttpResponse.Fail(404, ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, BaseHttpResponse.Fail(500, $"获取圈子帖子ID列表失败: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// 获取所有帖子的ID列表（用于验证数据库连接性和POST表存在性）
+    /// </summary>
+    [HttpGet("posts")]
+    public async Task<IActionResult> GetAllPostIds()
+    {
+        try
+        {
+            var result = await _circleService.GetPostIdsByCircleIdAsync();
+            return Ok(BaseHttpResponse<object>.Success(result, "获取所有帖子ID列表成功"));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, BaseHttpResponse.Fail(500, $"获取所有帖子ID列表失败: {ex.Message}"));
         }
     }
 } 

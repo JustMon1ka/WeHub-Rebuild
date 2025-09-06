@@ -75,4 +75,21 @@ public interface ICircleService
     /// <param name="contentType">文件类型</param>
     /// <returns>返回上传结果</returns>
     Task<ImageUploadResponseDto?> UploadBannerAsync(int circleId, Stream fileStream, string fileName, string contentType);
+
+    /// <summary>
+    /// 异步上传活动封面图片
+    /// </summary>
+    /// <param name="activityId">活动ID</param>
+    /// <param name="fileStream">图片文件流</param>
+    /// <param name="fileName">文件名</param>
+    /// <param name="contentType">文件类型</param>
+    /// <returns>返回上传结果</returns>
+    Task<ImageUploadResponseDto?> UploadActivityImageAsync(int activityId, Stream fileStream, string fileName, string contentType);
+
+    /// <summary>
+    /// 异步获取指定圈子内的所有帖子ID列表
+    /// </summary>
+    /// <param name="circleId">圈子ID（可选，不提供时返回所有帖子的ID）</param>
+    /// <returns>返回帖子ID列表的DTO</returns>
+    Task<PostIdListDto> GetPostIdsByCircleIdAsync(int? circleId = null);
 } 

@@ -22,7 +22,8 @@ namespace CircleService.Tests
             _mockCircleRepository = new Mock<ICircleRepository>();
             _mockFileBrowserClient = new Mock<IFileBrowserClient>();
             var mockMemberRepository = new Mock<ICircleMemberRepository>();
-            _circleService = new CircleService.Services.CircleService(_mockCircleRepository.Object, mockMemberRepository.Object, _mockFileBrowserClient.Object);
+            var mockActivityRepository = new Mock<IActivityRepository>();
+            _circleService = new CircleService.Services.CircleService(_mockCircleRepository.Object, mockMemberRepository.Object, mockActivityRepository.Object, _mockFileBrowserClient.Object);
 
             // 创建测试圈子
             _testCircle = new Circle

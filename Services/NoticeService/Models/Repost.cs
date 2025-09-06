@@ -8,6 +8,5 @@
         public string Comment { get; set; }
         public DateTime CreatedAt { get; set; }
         public int TargetUserId { get; set; }
-        public bool IsRead { get; set; } = false;
     }
 }

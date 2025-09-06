@@ -73,4 +73,5 @@ public class ActivityParticipantsController : ControllerBase
         }
         return Ok(BaseHttpResponse<object>.Success(response.Data, "奖励领取成功。"));
     }
+
 } 

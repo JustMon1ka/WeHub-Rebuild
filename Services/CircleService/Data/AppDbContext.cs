@@ -38,6 +38,11 @@ public class AppDbContext : DbContext
     public DbSet<ActivityParticipant> ActivityParticipants { get; set; }
 
     /// <summary>
+    /// 帖子表
+    /// </summary>
+    public DbSet<Post> Posts { get; set; }
+
+    /// <summary>
     /// 在模型创建时进行额外配置
     /// </summary>
     /// <param name="modelBuilder">模型构建器</param>

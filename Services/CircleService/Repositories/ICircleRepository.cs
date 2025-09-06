@@ -42,4 +42,11 @@ public interface ICircleRepository
     /// </summary>
     /// <param name="id">要删除的圈子ID</param>
     Task DeleteAsync(int id);
+
+    /// <summary>
+    /// 异步获取指定圈子内的所有帖子ID列表
+    /// </summary>
+    /// <param name="circleId">圈子ID（可选，不提供时返回所有帖子的ID）</param>
+    /// <returns>返回帖子ID列表</returns>
+    Task<IEnumerable<int>> GetPostIdsByCircleIdAsync(int? circleId = null);
 } 

@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using NoticeService.DTOs;
 using NoticeService.Services;
+using StackExchange.Redis;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace NoticeService.Controllers
 {
@@ -13,18 +15,21 @@ namespace NoticeService.Controllers
     {
         private readonly INotificationService _notificationService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IConnectionMultiplexer _redis;
 
-        public NotificationsController(INotificationService notificationService, IHttpContextAccessor httpContextAccessor)
+        public NotificationsController(INotificationService notificationService, IHttpContextAccessor httpContextAccessor, IConnectionMultiplexer redis)
         {
             _notificationService = notificationService;
             _httpContextAccessor = httpContextAccessor;
+            _redis = redis;
         }
 
         [HttpGet]
         public async Task<ActionResult<NotificationSummaryDto>> GetNotificationSummary()
         {
             var userId = GetCurrentUserId();
-            var summary = await _notificationService.GetNotificationSummaryAsync(userId);
+            var redisDb = _redis.GetDatabase();
+            var summary = await _notificationService.GetNotificationSummaryAsync(userId, redisDb);
             return Ok(summary);
         }
 
@@ -32,7 +37,8 @@ namespace NoticeService.Controllers
         public async Task<ActionResult> MarkAsRead([FromBody] MarkReadDto dto)
         {
             var userId = GetCurrentUserId();
-            await _notificationService.MarkAsReadAsync(userId, dto.Type);
+            var redisDb = _redis.GetDatabase();
+            await _notificationService.MarkAsReadAsync(userId, dto.Type, redisDb);
             return Ok(new { success = true });
         }
 
@@ -41,34 +47,38 @@ namespace NoticeService.Controllers
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var userId = GetCurrentUserId();
-            var likes = await _notificationService.GetLikesAsync(userId, page, pageSize);
+            var redisDb = _redis.GetDatabase();
+            var likes = await _notificationService.GetLikesAsync(userId, page, pageSize, redisDb);
             return Ok(likes);
         }
 
         [HttpGet("replies")]
-        public async Task<ActionResult<object>> GetReplies(
+        public async Task<ActionResult<List<ReplyNotificationDto>>> GetReplies(
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool unreadOnly = false)
         {
             var userId = GetCurrentUserId();
-            var replies = await _notificationService.GetRepliesAsync(userId, page, pageSize, unreadOnly);
+            var redisDb = _redis.GetDatabase();
+            var replies = await _notificationService.GetRepliesAsync(userId, page, pageSize, unreadOnly, redisDb);
             return Ok(new { total = replies.Count, items = replies });
         }
 
         [HttpGet("reposts")]
-        public async Task<ActionResult<object>> GetReposts(
+        public async Task<ActionResult<List<RepostNotificationDto>>> GetReposts(
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool unreadOnly = false)
         {
             var userId = GetCurrentUserId();
-            var reposts = await _notificationService.GetRepostsAsync(userId, page, pageSize, unreadOnly);
+            var redisDb = _redis.GetDatabase();
+            var reposts = await _notificationService.GetRepostsAsync(userId, page, pageSize, unreadOnly, redisDb);
             return Ok(new { total = reposts.Count, items = reposts });
         }
 
         [HttpGet("mentions")]
-        public async Task<ActionResult<object>> GetMentions(
+        public async Task<ActionResult<List<MentionNotificationDto>>> GetMentions(
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool unreadOnly = false)
         {
             var userId = GetCurrentUserId();
-            var mentions = await _notificationService.GetMentionsAsync(userId, page, pageSize, unreadOnly);
+            var redisDb = _redis.GetDatabase();
+            var mentions = await _notificationService.GetMentionsAsync(userId, page, pageSize, unreadOnly, redisDb);
             return Ok(new { total = mentions.Count, items = mentions });
         }
 

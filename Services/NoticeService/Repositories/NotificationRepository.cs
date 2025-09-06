@@ -2,8 +2,11 @@
 using NoticeService.Data;
 using NoticeService.Models;
 using NoticeService.Repositories;
+using StackExchange.Redis;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NoticeService.Repositories
@@ -14,99 +17,80 @@ namespace NoticeService.Repositories
 
         public NotificationRepository(NoticeDbContext context)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<Dictionary<string, int>> GetUnreadCountsAsync(int userId)
+        public async Task<Dictionary<string, int>> GetUnreadCountsAsync(int userId, IDatabase redis)
         {
-            var replyUnread = await _context.Replies
-                .CountAsync(r => r.TargetUserId == userId && !r.IsRead && !r.IsDeleted);
-            var likeUnread = await _context.Likes
-                .CountAsync(l => l.TargetUserId == userId && !l.IsRead);
-            var repostUnread = await _context.Reposts
-                .CountAsync(rp => rp.TargetUserId == userId && !rp.IsRead);
-            var mentionUnread = await _context.Mentions
-                .CountAsync(m => m.TargetUserId == userId && !m.IsRead);
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+            var types = new[] { "reply", "like", "repost", "mention" };
+            var counts = new Dictionary<string, int>();
 
-            return new Dictionary<string, int>
+            foreach (var type in types)
             {
-                { "reply", replyUnread },
-                { "like", likeUnread },
-                { "repost", repostUnread },
-                { "mention", mentionUnread }
-            };
-        }
-
-        public async Task MarkAsReadAsync(int userId, string type)
-        {
-            switch (type.ToLower())
-            {
-                case "reply":
-                    var replies = await _context.Replies
-                        .Where(r => r.TargetUserId == userId && !r.IsRead && !r.IsDeleted)
-                        .ToListAsync();
-                    replies.ForEach(r => r.IsRead = true);
-                    break;
-                case "like":
-                    var likes = await _context.Likes
-                        .Where(l => l.TargetUserId == userId && !l.IsRead)
-                        .ToListAsync();
-                    likes.ForEach(l => l.IsRead = true);
-                    break;
-                case "repost":
-                    var reposts = await _context.Reposts
-                        .Where(rp => rp.TargetUserId == userId && !rp.IsRead)
-                        .ToListAsync();
-                    reposts.ForEach(rp => rp.IsRead = true);
-                    break;
-                case "mention":
-                    var mentions = await _context.Mentions
-                        .Where(m => m.TargetUserId == userId && !m.IsRead)
-                        .ToListAsync();
-                    mentions.ForEach(m => m.IsRead = true);
-                    break;
-                default:
-                    throw new ArgumentException("无效的通知类型");
+                var key = $"unread-notice:{userId}:{type}";
+                Console.WriteLine($"Calling ListLengthAsync for key: {key}");
+                var count = (int)(await redis.ListLengthAsync(key, CommandFlags.None));
+                counts[type] = count;
             }
-            await _context.SaveChangesAsync();
+
+            return counts;
         }
 
-        public async Task<(List<Like> Unread, (List<Like> Items, int Total) Read)> GetLikesAsync(int userId, int page, int pageSize)
+        public async Task MarkAsReadAsync(int userId, string type, IDatabase redis)
         {
-            // 未读点赞：全量获取，按 target_type 和 target_id 分组
-            var unreadQuery = _context.Likes
-                .Where(l => l.TargetUserId == userId && !l.IsRead);
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+            if (string.IsNullOrEmpty(type)) throw new ArgumentException("Type cannot be null or empty", nameof(type));
+            var key = $"unread-notice:{userId}:{type.ToLower()}";
+            Console.WriteLine($"Calling KeyDeleteAsync for key: {key}");
+            await redis.KeyDeleteAsync(key, CommandFlags.None);
+        }
 
-            var unreadLikes = await unreadQuery
-                .GroupBy(l => new { l.TargetType, l.TargetId })
-                .Select(g => new Like
-                {
-                    TargetType = g.Key.TargetType,
-                    TargetId = g.Key.TargetId,
-                    CreatedAt = g.Max(l => l.CreatedAt), // LastLikedAt
-                    UserId = g.Count(), // LikeCount
-                    LikerIds = g.Select(l => l.UserId).Take(10).ToList() // 点赞者 ID 摘要（最多 10 个）
-                })
-                .OrderByDescending(l => l.CreatedAt)
-                .ToListAsync();
+        public async Task<(List<Like> Unread, (List<Like> Items, int Total) Read)> GetLikesAsync(int userId, int page, int pageSize, IDatabase redis)
+        {
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+            var likeKey = $"unread-notice:{userId}:like";
+            Console.WriteLine($"Calling ListRangeAsync for key: {likeKey}");
+            var unreadLikeIds = (await redis.ListRangeAsync(likeKey, 0, -1, CommandFlags.None))
+                .Select(id => JsonSerializer.Deserialize<(int UserId, string TargetType, int TargetId)>(id))
+                .ToList();
 
-            // 已读点赞：分页获取，分组
-            var readQuery = _context.Likes
-                .Where(l => l.TargetUserId == userId && l.IsRead);
+            var unreadLikes = new List<Like>();
+            if (unreadLikeIds.Any())
+            {
+                var unreadQuery = _context.Likes
+                    .Where(l => unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
 
-            var readTotal = await readQuery
+                unreadLikes = await unreadQuery
+                    .GroupBy(l => new { l.TargetType, l.TargetId })
+                    .Select(g => new Like
+                    {
+                        TargetType = g.Key.TargetType,
+                        TargetId = g.Key.TargetId,
+                        CreatedAt = g.Max(l => l.CreatedAt),
+                        UserId = g.Count(),
+                        LikerIds = g.Select(l => l.UserId).Take(10).ToList()
+                    })
+                    .OrderByDescending(l => l.CreatedAt)
+                    .ToListAsync();
+            }
+
+            var allLikesQuery = _context.Likes
+                .Where(l => !unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
+
+            var readTotal = await allLikesQuery
                 .GroupBy(l => new { l.TargetType, l.TargetId })
                 .CountAsync();
 
-            var readLikes = await readQuery
+            var readLikes = await allLikesQuery
                 .GroupBy(l => new { l.TargetType, l.TargetId })
                 .Select(g => new Like
                 {
                     TargetType = g.Key.TargetType,
                     TargetId = g.Key.TargetId,
-                    CreatedAt = g.Max(l => l.CreatedAt), // LastLikedAt
-                    UserId = g.Count(), // LikeCount
-                    LikerIds = g.Select(l => l.UserId).Take(10).ToList() // 点赞者 ID 摘要
+                    CreatedAt = g.Max(l => l.CreatedAt),
+                    UserId = g.Count(),
+                    LikerIds = g.Select(l => l.UserId).Take(10).ToList()
                 })
                 .OrderByDescending(l => l.CreatedAt)
                 .Skip((page - 1) * pageSize)
@@ -116,12 +100,21 @@ namespace NoticeService.Repositories
             return (unreadLikes, (readLikes, readTotal));
         }
 
-        public async Task<List<Reply>> GetRepliesAsync(int userId, int page, int pageSize, bool unreadOnly)
+        public async Task<List<Reply>> GetRepliesAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis)
         {
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+            var replyKey = $"unread-notice:{userId}:comment";
+            Console.WriteLine($"Calling ListRangeAsync for key: {replyKey}");
+            var unreadReplyIds = (await redis.ListRangeAsync(replyKey, 0, -1, CommandFlags.None))
+                .Select(id => int.Parse(id)).ToList();
+
             var query = _context.Replies
                 .Where(r => r.TargetUserId == userId && !r.IsDeleted);
+
             if (unreadOnly)
-                query = query.Where(r => !r.IsRead);
+                query = query.Where(r => unreadReplyIds.Contains(r.ReplyId));
+            else
+                query = query.Where(r => !unreadReplyIds.Contains(r.ReplyId) || unreadReplyIds.Contains(r.ReplyId));
 
             return await query
                 .OrderByDescending(r => r.CreatedAt)
@@ -130,12 +123,21 @@ namespace NoticeService.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Repost>> GetRepostsAsync(int userId, int page, int pageSize, bool unreadOnly)
+        public async Task<List<Repost>> GetRepostsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis)
         {
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+            var repostKey = $"unread-notice:{userId}:repost";
+            Console.WriteLine($"Calling ListRangeAsync for key: {repostKey}");
+            var unreadRepostIds = (await redis.ListRangeAsync(repostKey, 0, -1, CommandFlags.None))
+                .Select(id => int.Parse(id)).ToList();
+
             var query = _context.Reposts
                 .Where(rp => rp.TargetUserId == userId);
+
             if (unreadOnly)
-                query = query.Where(rp => !rp.IsRead);
+                query = query.Where(rp => unreadRepostIds.Contains(rp.RepostId));
+            else
+                query = query.Where(rp => !unreadRepostIds.Contains(rp.RepostId) || unreadRepostIds.Contains(rp.RepostId));
 
             return await query
                 .OrderByDescending(rp => rp.CreatedAt)
@@ -144,12 +146,23 @@ namespace NoticeService.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Mention>> GetMentionsAsync(int userId, int page, int pageSize, bool unreadOnly)
+        public async Task<List<Mention>> GetMentionsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis)
         {
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+            var mentionKey = $"unread-notice:{userId}:mention";
+            Console.WriteLine($"Calling ListRangeAsync for key: {mentionKey}");
+            var unreadMentionIds = (await redis.ListRangeAsync(mentionKey, 0, -1, CommandFlags.None))
+                .Select(id => JsonSerializer.Deserialize<(int UserId, string TargetType, int TargetId)>(id))
+                .ToList();
+
             var query = _context.Mentions
                 .Where(m => m.TargetUserId == userId);
+
             if (unreadOnly)
-                query = query.Where(m => !m.IsRead);
+                query = query.Where(m => unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId));
+            else
+                query = query.Where(m => !unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId) ||
+                    unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId));
 
             return await query
                 .OrderByDescending(m => m.CreatedAt)
@@ -161,7 +174,7 @@ namespace NoticeService.Repositories
         public async Task<(List<int> Items, int Total)> GetTargetLikersAsync(int userId, string targetType, int targetId, int page, int pageSize)
         {
             var query = _context.Likes
-                .Where(l => l.TargetUserId == userId && l.TargetType == targetType && l.TargetId == targetId);
+                .Where(l => l.TargetType == targetType && l.TargetId == targetId);
 
             var total = await query.CountAsync();
 
