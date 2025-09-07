@@ -7,10 +7,14 @@ export const noticeRouter = createRouter({
     history: createWebHistory(),
     routes: [
         {
-            path: '/notice/:type(mention|reply|like|repost)?',
+            path: '/notice/:type(at|reply|like|repost)?',
             name: 'notice',
             component: NoticeView,
             meta: { title: '通知', navi: true, recommend: true },
+        },
+        {
+            path: '/notice/',
+            redirect: '/notice/at'
         },
         {
             path: '/notice/likeDetails/:postId',

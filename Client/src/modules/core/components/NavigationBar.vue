@@ -68,7 +68,7 @@
         </li>
 
         <li>
-          <RouterLink to="/notice/mention" custom v-slot="{ href, navigate }">
+          <RouterLink to="/notice/at" custom v-slot="{ href, navigate }">
             <a
               :href="href"
               @click="navigate"
@@ -92,15 +92,15 @@
         </li>
 
         <li>
-          <RouterLink to="/message" custom v-slot="{ href, navigate, isActive }">
+          <RouterLink to="/message" custom v-slot="{ href, navigate }">
             <a
               :href="href"
               @click="navigate"
               :class="[
                 'flex items-center p-3 rounded-full transition-colors duration-200',
-                isActive ? activeClass : inactiveClass,
+                isMessageActive ? activeClass : inactiveClass,
               ]"
-              :aria-current="isActive ? 'page' : undefined"
+              :aria-current="isMessageActive ? 'page' : undefined"
             >
               <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -171,6 +171,7 @@ import { computed } from 'vue'
 
 const route = useRoute()
 const isNoticeActive = computed(() => route.path.startsWith('/notice'))
+const isMessageActive = computed(() => route.path.startsWith('/message'))
 
 const activeClass = 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20'
 const inactiveClass =

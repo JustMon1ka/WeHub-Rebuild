@@ -2,16 +2,27 @@
   <div class="conversation-item" :class="{ selected: props.selected }">
     <div class="avatar">
       <img
-        :src="props.conversation.contactUser.avatar"
-        :alt="props.conversation.contactUser.nickname"
+        :src="
+          props.conversation.contactUser?.avatar ||
+          'https://placehold.co/100x100/facc15/78350f?text=U'
+        "
+        :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
       />
+      <!-- 未读消息红点 - 放在头像右上角 -->
+      <div v-if="props.conversation.UnreadCount > 0" class="unread-count">
+        {{ displayUnreadCount(props.conversation.UnreadCount) }}
+      </div>
     </div>
     <div class="content">
       <div class="header">
-        <span class="nickname">{{ props.conversation.contactUser.nickname }}</span>
+        <span class="nickname">{{
+          props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`
+        }}</span>
         <span class="time">{{ diffime }}</span>
       </div>
-      <div class="newest-message">{{ props.conversation.newestMessage }}</div>
+      <div class="newest-message">
+        {{ props.conversation.newestMessage || props.conversation.lastMessage?.Content || ' ' }}
+      </div>
     </div>
   </div>
 </template>
@@ -25,7 +36,16 @@ const props = defineProps<{
   selected?: boolean
 }>()
 
-const diffime = formatTime(props.conversation.time)
+const diffime = formatTime(
+  props.conversation.time || props.conversation.lastMessage?.SendAt || new Date().toISOString()
+)
+
+// 显示未读消息数量，与NoticeView.vue保持一致
+function displayUnreadCount(count: number): string {
+  if (count <= 0) return ''
+  if (count <= 99) return count.toString()
+  return '99+'
+}
 </script>
 
 <style scoped>
@@ -36,6 +56,7 @@ const diffime = formatTime(props.conversation.time)
   padding: 8px 0;
   cursor: pointer;
   transition: background 0.2s;
+  position: relative;
 }
 
 .conversation-item:hover {
@@ -51,6 +72,7 @@ const diffime = formatTime(props.conversation.time)
   align-items: center;
   padding-left: 8px;
   padding-right: 8px;
+  position: relative;
 }
 
 .avatar img {
@@ -66,7 +88,7 @@ const diffime = formatTime(props.conversation.time)
   min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .header {
@@ -95,5 +117,24 @@ const diffime = formatTime(props.conversation.time)
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: left;
+  min-height: 18px; /* 确保即使内容为空也占据一定高度 */
+}
+
+.unread-count {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transform: translate(15%, -25%);
 }
 </style>

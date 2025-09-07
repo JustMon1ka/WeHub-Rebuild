@@ -43,6 +43,7 @@
         <div class="post-comment-content">
           <span v-if="notice.type === 'comment'"> "{{ notice.newCommentContent }}"</span>
           <span v-else-if="notice.type === 'at'"> "{{ notice.atContent }}"</span>
+          <span v-else-if="notice.type === 'repost'"> "{{ notice.repostContent }}"</span>
         </div>
 
         <div class="other-info">
@@ -144,7 +145,7 @@ const getNoticeContent = (notice: notice) => {
     case 'follow':
       return '关注了你'
     default:
-      return '通知了你'
+      return '转发了你的帖子'
   }
 }
 

@@ -9,6 +9,12 @@ export const messageRouter = createRouter({
             name: 'message',
             component: MessageView,
             meta: { title: '私信', navi: true, recommend: false }
+        },
+        {
+            path: '/message/:userId',
+            name: 'message-user',
+            component: MessageView,
+            meta: { title: '私信', navi: true, recommend: false }
         }
     ]
 })
