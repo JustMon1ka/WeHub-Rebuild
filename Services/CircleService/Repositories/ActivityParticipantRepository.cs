@@ -31,6 +31,13 @@ public class ActivityParticipantRepository : IActivityParticipantRepository
                              .ToListAsync();
     }
 
+    public async Task<IEnumerable<ActivityParticipant>> GetByActivityIdAsync(int activityId)
+    {
+        return await _context.ActivityParticipants
+                             .Where(ap => ap.ActivityId == activityId)
+                             .ToListAsync();
+    }
+
     public async Task AddAsync(ActivityParticipant participant)
     {
         await _context.ActivityParticipants.AddAsync(participant);

@@ -14,6 +14,7 @@ public class ActivityServiceTests
     private Mock<IActivityRepository> _mockActivityRepository;
     private Mock<ICircleRepository> _mockCircleRepository;
     private Mock<ICircleMemberRepository> _mockMemberRepository;
+    private Mock<IActivityParticipantRepository> _mockParticipantRepository;
     private ActivityService _activityService;
 
     [TestInitialize]
@@ -22,10 +23,12 @@ public class ActivityServiceTests
         _mockActivityRepository = new Mock<IActivityRepository>();
         _mockCircleRepository = new Mock<ICircleRepository>();
         _mockMemberRepository = new Mock<ICircleMemberRepository>();
+        _mockParticipantRepository = new Mock<IActivityParticipantRepository>();
         _activityService = new ActivityService(
             _mockActivityRepository.Object,
             _mockCircleRepository.Object,
-            _mockMemberRepository.Object
+            _mockMemberRepository.Object,
+            _mockParticipantRepository.Object
         );
     }
 
@@ -125,6 +128,8 @@ public class ActivityServiceTests
         };
 
         _mockActivityRepository.Setup(repo => repo.GetByIdAsync(activityId)).ReturnsAsync(activity);
+        _mockParticipantRepository.Setup(repo => repo.GetByActivityIdAsync(activityId))
+            .ReturnsAsync(new List<ActivityParticipant>()); // 模拟没有参与者
 
         // Act
         var result = await _activityService.GetActivityByIdAsync(activityId);
@@ -135,5 +140,6 @@ public class ActivityServiceTests
         Assert.AreEqual("Test Activity", result.Title);
         Assert.AreEqual(100, result.RewardPoints);
         Assert.AreEqual(ActivityType.Manual, result.ActivityType);
+        Assert.AreEqual(0, result.ParticipantCount); // 验证参与人数
     }
 }

@@ -48,4 +48,11 @@ public interface ICircleMemberRepository
     /// <param name="circleIds">圈子ID的集合</param>
     /// <returns>一个字典，其中键是圈子ID，值是对应的成员数量</returns>
     Task<Dictionary<int, int>> GetMemberCountsByCircleIdsAsync(IEnumerable<int> circleIds);
+
+    /// <summary>
+    /// 根据圈子ID异步获取该圈子的所有申请记录（包括待审批和已处理）
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <returns>返回该圈子的所有申请记录列表</returns>
+    Task<IEnumerable<CircleMember>> GetAllApplicationsByCircleIdAsync(int circleId);
 } 

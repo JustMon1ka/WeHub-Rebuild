@@ -58,4 +58,16 @@ public class CircleMember
     /// </summary>
     [Column("POINTS")]
     public int Points { get; set; } = 0;
+
+    /// <summary>
+    /// 申请加入时间
+    /// </summary>
+    [Column("APPLY_TIME")]
+    public DateTime ApplyTime { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 审批处理时间（仅当状态为Approved时有值）
+    /// </summary>
+    [Column("PROCESSED_TIME")]
+    public DateTime? ProcessedTime { get; set; }
 } 
