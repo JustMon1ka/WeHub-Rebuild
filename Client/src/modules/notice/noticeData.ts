@@ -220,6 +220,58 @@ const rawNoticeList = [
         targetPostTitle: '',
         targetPostTitleImage: ''
     },
+    // 新增：转发通知
+    {
+        type: 'repost',
+        sender: {
+            id: 37,
+            nickname: 'content_curator',
+            avatar: 'https://placehold.co/100x100/8b5cf6/5b21b6?text=C',
+            url: '/user/content_curator'
+        },
+        time: '2024-01-15 02:45',
+        isRead: false,
+        objectType: 'post',
+        targetPostId: 132,
+        targetPostTitle: '前端性能优化的最佳实践总结，包含图片懒加载、代码分割等技巧',
+        targetPostTitleImage: 'https://placehold.co/400x200/10b981/ffffff?text=Performance+Tips',
+        repostContent: '这篇关于前端性能优化的文章写得很好，分享给大家学习！'
+    },
+    {
+        type: 'repost',
+        sender: {
+            id: 38,
+            nickname: 'tech_sharer',
+            avatar: 'https://placehold.co/100x100/f59e0b/92400e?text=T',
+            url: '/user/tech_sharer'
+        },
+        time: '2024-01-15 02:20',
+        isRead: false,
+        objectType: 'post',
+        targetPostId: 133,
+        targetPostTitle: 'CSS Grid 布局完全指南，从基础到高级应用',
+        targetPostTitleImage: 'https://placehold.co/400x200/8b5cf6/ffffff?text=CSS+Grid',
+        repostContent: 'CSS Grid 真的很强大，这个教程讲解得很详细，推荐学习！'
+    },
+    {
+        type: 'repost',
+        sender: {
+            id: 39,
+            nickname: 'web_architect',
+            avatar: 'https://placehold.co/100x100/ef4444/991b1b?text=W',
+            url: '/user/web_architect'
+        },
+        time: '2024-01-15 02:00',
+        isRead: false,
+        objectType: 'comment',
+        targetPostId: 134,
+        targetPostTitle: '',
+        targetPostTitleImage: '',
+        targetCommentId: 1008,
+        targetCommentContent: '微前端架构确实能解决大型应用的维护问题',
+        targetCommentAuthor: 'architect_pro',
+        repostContent: '这个观点很有见地，微前端确实是未来的趋势'
+    },
     {
         type: 'comment',
         sender: {

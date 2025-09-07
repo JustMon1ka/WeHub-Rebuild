@@ -1,10 +1,10 @@
 export function formatTime(timeStr: string) {
     const now = new Date();
     const newestMessageTime = new Date(timeStr);
-    console.log("newestMessageTime:", newestMessageTime.getTime());
-    console.log("now:", now.getTime());
+    //console.log("newestMessageTime:", newestMessageTime.getTime());
+    //console.log("now:", now.getTime());
     const diffms = now.getTime() - newestMessageTime.getTime();
-    console.log("diffms:", diffms);
+    //console.log("diffms:", diffms);
     const diffSecond = Math.floor(diffms / 1000);
     const diffMinute = Math.floor(diffSecond / 60);
     const diffHour = Math.floor(diffMinute / 60);

@@ -37,17 +37,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { message } from '../types'
+import type { messageDisplay } from '../types'
 import ContextMenu, { type MenuItem } from './ContextMenu.vue'
 
 const props = defineProps<{
-  message: message
+  message: messageDisplay
   isSelf: boolean
   myUserId: number
 }>()
 
 const emit = defineEmits<{
-  (e: 'messageAction', action: string, message: message): void
+  (e: 'messageAction', action: string, message: messageDisplay): void
 }>()
 
 const contextMenuVisible = ref(false)

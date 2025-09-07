@@ -66,6 +66,8 @@ const likeUsers = computed(() => {
   display: flex;
   flex-direction: row;
   justify-content: center;
+  margin: 20px 0; /* 添加上下边距 */
+  height: calc(100vh - 40px); /* 减去上下边距的高度 */
 }
 
 .center {
