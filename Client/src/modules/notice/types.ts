@@ -7,14 +7,6 @@ export type BaseResp<T = unknown> = {
     data: T;
 };
 
-// 通知类型
-export const noticeType = {
-    like: 0, // 点赞
-    comment: 1, // 评论
-    at: 2, // @
-    repost: 3, // 转发
-} as const;
-export type noticeType = typeof noticeType[keyof typeof noticeType];
 
 // 未读通知数量 
 export type unreadNoticeCount = BaseResp<{
@@ -46,18 +38,19 @@ export type likeNoticeResponse = BaseResp<{
 }>
 
 
-// 回复通知响应
-export interface replyNoticeItem {
-    replyId: number // 回复id
-    replyPoster: number // 回复者用户id
-    contentPreview: string // 回复内容预览
+// 评论通知响应
+export interface commentNoticeItem {
+    commentId: number // 评论ID
+    userId: number // 评论者用户ID
+    postId: number // 所属帖子ID
+    contentPreview: string // 评论内容摘要（前50字符）
     createdAt: string // 创建时间
 }
 
 
-export type replyNoticeResponse = BaseResp<{
-    total: number // 回复总数
-    items: replyNoticeItem[]
+export type commentNoticeResponse = BaseResp<{
+    total: number // 评论总数
+    items: commentNoticeItem[]
 }>
 
 
@@ -101,6 +94,20 @@ export type likeNoticeListById = BaseResp<{
     items: number[] // 点赞者用户id列表
 }>
 
+// 获取指定目标的点赞者列表参数
+export interface getLikersByTargetParams {
+    targetType: 'post' | 'comment'
+    targetId: number
+    page?: number
+    pageSize?: number
+}
+
+// 获取指定目标的点赞者列表响应
+export type getLikersByTargetResponse = BaseResp<{
+    total: number // 点赞者总数
+    items: number[] // 分页的点赞者用户ID列表
+}>
+
 export function unwrap<T>(payload: BaseResp<T>): T {
     // 兼容BaseResp包装结构
     // 如果没有data字段，就当作T直接返回
@@ -109,73 +116,79 @@ export function unwrap<T>(payload: BaseResp<T>): T {
     return payload?.data ?? payload;
 }
 
-// 通知
-export interface baseNoticeInfo {
-    noticeId: number; // 通知id
-    sender: user; // 发送者
-    time: string; // 发送时间
-    isRead: boolean; // 是否已读
-    objectType: 'post' | 'comment' | 'user'; // 目标对象类型  
-};
 
-export interface targetPostInfo {
-    targetPostId: number; // 目标帖子id
-    targetPostTitle: string; // 目标帖子简介 
-    targetPostTitleImage: string; // 目标帖子简介图片
+// 帖子详细信息
+export interface postDetail {
+    postId: number; // 帖子ID
+    userId: number; // 用户ID
+    title: string; // 帖子标题
+    content: string; // 帖子内容
+    tags: string[]; // 标签
+    createdAt: string; // 创建时间
+    views: number; // 浏览次数
+    likes: number; // 点赞数
+    circleId: number; // 圈子ID
 }
 
-export interface targetCommentInfo {
-    targetCommentId: number; // 目标评论id
-    targetCommentContent: string; // 目标评论内容
-    targetCommentAuthor: string; // 目标评论作者
+// 帖子详细信息响应
+export type postDetailResponse = BaseResp<postDetail>;
+
+// 评论详细信息
+export interface commentDetail {
+    commentId: number; // 评论ID
+    userId: number; // 用户ID
+    postId: number; // 所属帖子ID
+    content: string; // 评论内容
+    createdAt: string; // 创建时间
+    likes: number; // 点赞数
+    parentCommentId?: number; // 父评论ID（回复评论时使用）
 }
 
-// 点赞通知
-export interface likeNoticeInfo extends baseNoticeInfo, targetPostInfo {
-    type: 'like';
-    // 当 objectType 为 'comment' 时，以下字段为必需
-    targetCommentId?: number;
-    targetCommentContent?: string;
-    targetCommentAuthor?: string;
+// 评论详细信息响应
+export type commentDetailResponse = BaseResp<commentDetail>;
+
+// 通知基础信息
+export interface baseNotice {
+    noticeId: number;
+    type: 'comment' | 'repost' | 'at' | 'like';
+    sender: {
+        id: number;
+        nickname: string;
+        avatar: string;
+        url: string;
+    };
+    time: string;
+    isRead: boolean;
+    objectType: 'post' | 'comment' | 'user';
+    targetPostId: number;
+    targetPostTitle: string;
+    targetPostTitleImage: string;
 }
 
 // 评论通知
-export interface commentNoticeInfo extends baseNoticeInfo, targetPostInfo {
+export interface commentNotice extends baseNotice {
     type: 'comment';
-    newCommentContent: string; // 新评论/回复内容
-    // 当 objectType 为 'comment' 时，以下字段为必需
-    targetCommentId?: number;
-    targetCommentContent?: string;
-    targetCommentAuthor?: string;
-}
-
-// @通知
-export interface atNoticeInfo extends baseNoticeInfo, targetPostInfo {
-    type: 'at';
-    atContent: string; // @内容
-    // 当 objectType 为 'comment' 时，以下字段为必需
-    targetCommentId?: number;
-    targetCommentContent?: string;
-    targetCommentAuthor?: string;
-}
-
-// 关注通知
-export interface followNoticeInfo extends baseNoticeInfo, targetPostInfo {
-    type: 'follow';
-    objectType: 'user';
+    newCommentContent: string;
 }
 
 // 转发通知
-export interface repostNoticeInfo extends baseNoticeInfo, targetPostInfo {
+export interface repostNotice extends baseNotice {
     type: 'repost';
-    repostContent: string; // 转发内容
-    // 当 objectType 为 'comment' 时，以下字段为必需
-    targetCommentId?: number;
-    targetCommentContent?: string;
-    targetCommentAuthor?: string;
+    repostContent: string;
+}
+
+// @通知
+export interface atNotice extends baseNotice {
+    type: 'at';
+    atContent: string;
+}
+
+// 点赞通知
+export interface likeNotice extends baseNotice {
+    type: 'like';
 }
 
 // 通知联合类型
-export type notice = likeNoticeInfo | commentNoticeInfo | atNoticeInfo | followNoticeInfo | repostNoticeInfo;
+export type notice = commentNotice | repostNotice | atNotice | likeNotice;
 
 export type noticeList = notice[];

@@ -14,10 +14,10 @@ export const noticeRouter = createRouter({
         },
         {
             path: '/notice/',
-            redirect: '/notice/at'
+            redirect: '/notice/like'
         },
         {
-            path: '/notice/likeDetails/:postId',
+            path: '/notice/likeDetails/:targetType(post|comment)/:targetId',
             name: 'likeDetails',
             component: LikeDetailsView,
             meta: { title: '点赞详情', navi: true, recommend: true },

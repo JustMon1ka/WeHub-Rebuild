@@ -12,12 +12,13 @@
       <div class="notice-left">
         <span class="icon">{{ getNoticeIcon(notice.type) }}</span>
         <img
-          class="user-avatar"
+          class="user-avatar clickable-avatar"
           v-if="notice.sender.avatar"
           :src="notice.sender.avatar"
           :alt="notice.sender.nickname"
+          @click="handleAvatarClick"
         />
-        <span v-else>
+        <span v-else class="clickable-avatar" @click="handleAvatarClick">
           {{ notice.sender.nickname.charAt(0).toUpperCase() }}
         </span>
       </div>
@@ -59,20 +60,22 @@
       </div>
       <!-- 帖子/评论内容 -->
       <div class="notice-target">
-        <span v-if="notice.objectType === 'post' && notice.targetPostTitleImage">
+        <span
+          v-if="notice.objectType === 'post' && notice.targetPostTitleImage"
+          class="clickable-post"
+          @click="handlePostClick"
+        >
           <img class="target-post-image" :src="notice.targetPostTitleImage" alt="帖子封面" />
         </span>
         <span
-          class="post-or-comment-title"
-          v-else-if="notice.objectType === 'post' && !notice.targetCommentContent"
+          class="post-or-comment-title clickable-post"
+          v-else-if="notice.objectType === 'post'"
+          @click="handlePostClick"
         >
           "{{ notice.targetPostTitle }}"
         </span>
-        <span
-          class="post-or-comment-title"
-          v-else-if="notice.objectType === 'comment' && notice.targetCommentContent"
-        >
-          "{{ notice.targetCommentContent }}"
+        <span class="post-or-comment-title" v-else-if="notice.objectType === 'comment'">
+          "相关评论"
         </span>
       </div>
     </div>
@@ -92,10 +95,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, defineAsyncComponent } from 'vue'
 import { type notice } from '../types'
 import { formatTime } from '../../core/utils/time'
-import ReplyCommentInput from './ReplyCommentInput.vue'
+
+const ReplyCommentInput = defineAsyncComponent(() => import('./ReplyCommentInput.vue'))
 
 interface Props {
   notice: notice
@@ -105,11 +109,11 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-  showLikeDetails: [postId: number]
+  showLikeDetails: [params: { targetType: 'post' | 'comment'; targetId: number }]
 }>()
 const diffime = formatTime(props.notice.time)
 const showCommentInput = ref(false)
-const currentUserAvatar = ref('https://placehold.co/100x100/facc15/78350f?text=F')
+const currentUserAvatar = ref('') // 将从用户信息中获取
 
 const getNoticeIcon = (type: string) => {
   switch (type) {
@@ -142,25 +146,48 @@ const getNoticeContent = (notice: notice) => {
       }
     case 'at':
       return '提到了你'
-    case 'follow':
-      return '关注了你'
-    default:
+    case 'repost':
       return '转发了你的帖子'
+    default:
+      return '通知'
   }
 }
 
 // 点击人数
 const handleLikeCountClick = () => {
   if (props.notice.type === 'like' && props.likeCount && props.likeCount > 0) {
-    emit('showLikeDetails', props.notice.targetPostId)
+    // 传递目标类型和目标ID
+    emit('showLikeDetails', {
+      targetType: props.notice.objectType as 'post' | 'comment',
+      targetId: props.notice.targetPostId,
+    })
   }
 }
 
 // 点击整个通知项
 const handleItemClick = () => {
   if (props.notice.type === 'like' && props.likeCount && props.likeCount > 0) {
-    emit('showLikeDetails', props.notice.targetPostId)
+    // 传递目标类型和目标ID
+    emit('showLikeDetails', {
+      targetType: props.notice.objectType as 'post' | 'comment',
+      targetId: props.notice.targetPostId,
+    })
   }
+}
+
+// 点击用户头像
+const handleAvatarClick = (event: Event) => {
+  event.stopPropagation() // 阻止事件冒泡，避免触发通知项的点击事件
+  // 跳转到用户主页
+  window.open(props.notice.sender.url, '_blank')
+}
+
+// 点击帖子内容
+const handlePostClick = (event: Event) => {
+  event.stopPropagation() // 阻止事件冒泡，避免触发通知项的点击事件
+  // 跳转到帖子详情页
+  const postUrl = `/post/${props.notice.targetPostId}`
+  window.open(postUrl, '_blank')
 }
 
 // 点击回复按钮
@@ -227,6 +254,24 @@ const handleCancelComment = () => {
   width: 48px;
   height: 48px;
   border-radius: 100%;
+}
+
+.clickable-avatar {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-avatar:hover {
+  opacity: 0.8;
+}
+
+.clickable-post {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-post:hover {
+  opacity: 0.8;
 }
 
 .notice-content {

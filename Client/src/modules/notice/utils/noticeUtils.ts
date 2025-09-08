@@ -9,9 +9,9 @@ export type UnreadSummaryData = unreadNoticeCount['data']
  * @returns 对应的通知类型或null
  */
 export function indexToType(idx: number): 'at' | 'reply' | 'like' | 'repost' | null {
-    if (idx === 0) return 'at'
+    if (idx === 0) return 'like'
     if (idx === 1) return 'reply'
-    if (idx === 2) return 'like'
+    if (idx === 2) return 'at'
     if (idx === 3) return 'repost'
     return null
 }
@@ -73,9 +73,9 @@ export function getUnreadCountByType(
     if (type && readOnce.has(type)) return 0
     if (!unreadSummary) return 0
     const u = unreadSummary.unreadByType
-    if (index === 0) return u.at || 0
+    if (index === 0) return u.like || 0
     if (index === 1) return u.reply || 0
-    if (index === 2) return u.like || 0
+    if (index === 2) return u.at || 0
     if (index === 3) return u.repost || 0
     return 0
 }

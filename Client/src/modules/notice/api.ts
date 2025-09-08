@@ -2,14 +2,19 @@ import axios from 'axios'
 import type {
     unreadNoticeCount,
     likeNoticeResponse,
-    replyNoticeResponse,
+    commentNoticeResponse,
     repostNoticeResponse,
     atNoticeResponse,
     likeNoticeListById,
     BaseResp,
-    markReadResponse
+    markReadResponse,
+    postDetailResponse,
+    commentDetailResponse,
+    getLikersByTargetParams,
+    getLikersByTargetResponse
 } from './types'
 import { unwrap } from './types'
+import { getUserDetail } from '../message/api'
 
 // 设置baseURL
 axios.defaults.baseURL = 'http://127.0.0.1:4523/m1/7050705-6770801-default/api'
@@ -34,9 +39,9 @@ export async function getLikeNotices(params?: { page?: number; pageSize?: number
     })
     return data
 }
-export async function getReplyNotices(params?: { page?: number; pageSize?: number; unreadOnly?: boolean }): Promise<replyNoticeResponse> {
+export async function getCommentNotices(params?: { page?: number; pageSize?: number; unreadOnly?: boolean }): Promise<commentNoticeResponse> {
     const { page = 1, pageSize = 20, unreadOnly = false } = params ?? {}
-    const { data } = await axios.get<replyNoticeResponse>('/notifications/replies', {
+    const { data } = await axios.get<commentNoticeResponse>('/notifications/comments', {
         params: { page, pageSize, unreadOnly },
     })
     return data
@@ -55,6 +60,27 @@ export async function getAtNotices(params?: { page?: number; pageSize?: number; 
     const { page = 1, pageSize = 20, unreadOnly = false } = params ?? {}
     const { data } = await axios.get<atNoticeResponse>('/notifications/mentions', {
         params: { page, pageSize, unreadOnly },
+    })
+    return data
+}
+
+// 根据帖子ID获取帖子详细信息
+export async function getPostDetail(postId: number): Promise<postDetailResponse> {
+    const { data } = await axios.get<postDetailResponse>(`/posts/${postId}`)
+    return data
+}
+
+// 根据评论ID获取评论详细信息
+export async function getCommentDetail(commentId: number): Promise<commentDetailResponse> {
+    const { data } = await axios.get<commentDetailResponse>(`/comments/${commentId}`)
+    return data
+}
+
+// 获取指定目标的点赞者用户ID列表
+export async function getLikersByTarget(params: getLikersByTargetParams): Promise<getLikersByTargetResponse> {
+    const { targetType, targetId, page = 1, pageSize = 20 } = params
+    const { data } = await axios.get<getLikersByTargetResponse>('/notifications/likes/target', {
+        params: { targetType, targetId, page, pageSize }
     })
     return data
 }
