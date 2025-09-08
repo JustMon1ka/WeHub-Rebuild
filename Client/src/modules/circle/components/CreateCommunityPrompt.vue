@@ -23,10 +23,11 @@ const goToCreatePage = () => {
 
 <style scoped>
 .sidebar-card {
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid #334155; /* slate-700 */
 }
 
 .create-community-card {
@@ -35,14 +36,14 @@ const goToCreatePage = () => {
 }
 
 .create-community-card h3 {
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   margin-bottom: 8px;
   font-size: 18px;
   font-weight: 600;
 }
 
 .create-community-card p {
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   margin-bottom: 20px;
   line-height: 1.5;
   font-size: 14px;
@@ -63,12 +64,12 @@ const goToCreatePage = () => {
 }
 
 .btn-primary {
-  background: #1677ff;
+  background: #0ea5e9; /* sky-500 */
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #0958d9;
+  background: #0284c7; /* sky-600 */
 }
 
 .btn-large {

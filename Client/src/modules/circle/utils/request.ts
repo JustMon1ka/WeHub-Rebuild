@@ -2,22 +2,31 @@
 import axios from 'axios'
 
 const service = axios.create({
-  baseURL: 'http://120.26.118.70:5001',
+  baseURL: '',
   timeout: 5000,
-  headers: {
-    Cookie: 'auth=auth',
-  },
+  withCredentials: true,
 })
 
 service.interceptors.request.use(
   (config) => {
-    Object.assign(config.headers, {
-      Cookie:
-        'auth=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJsb2NhbGUiOiJ6aC1jbiIsInZpZXdNb2RlIjoibW9zYWljIiwic2luZ2xlQ2xpY2siOmZhbHNlLCJwZXJtIjp7ImFkbWluIjp0cnVlLCJleGVjdXRlIjp0cnVlLCJjcmVhdGUiOnRydWUsInJlbmFtZSI6dHJ1ZSwibW9kaWZ5Ijp0cnVlLCJkZWxldGUiOnRydWUsInNoYXJlIjp0cnVlLCJkb3dubG9hZCI6dHJ1ZX0sImNvbW1hbmRzIjpbImJhc2giLCJscyIsInNoIiwid2dldCIsImNobW9kIiwicm0iLCJta2RpciIsInB3ZCJdLCJsb2NrUGFzc3dvcmQiOmZhbHNlLCJoaWRlRG90ZmlsZXMiOmZhbHNlLCJkYXRlRm9ybWF0IjpmYWxzZSwidXNlcm5hbWUiOiJhZG1pbiJ9LCJpc3MiOiJGaWxlIEJyb3dzZXIiLCJleHAiOjE3NTY4OTUyMjYsImlhdCI6MTc1Njg4ODAyNn0.peafDWEB1Ep2qxHFhLj07KGndpk0tb2S3zvqV-m4O3I',
-    })
+    config.headers['Content-Type'] = 'application/json'
+    console.log('发送请求:', config.method?.toUpperCase(), config.url)
+    console.log('请求数据:', config.data)
     return config
   },
   (error) => Promise.reject(error),
+)
+
+service.interceptors.response.use(
+  (response) => {
+    console.log('✅ 响应成功:', response.status, response.config.url)
+    return response
+  },
+  (error) => {
+    console.error('❌ 响应错误:', error.response?.status, error.config?.url)
+    console.error('📋 错误详情:', error.response?.data)
+    return Promise.reject(error)
+  },
 )
 
 export default service

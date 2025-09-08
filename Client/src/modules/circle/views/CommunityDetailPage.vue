@@ -24,10 +24,13 @@
           <div class="community-header-section">
             <!-- 背景横幅 -->
             <div class="community-banner">
-              {{ imageSrc }}
-              <img :src="imageSrc" alt="" />
+              <img
+                :src="
+                  processedBannerUrl || 'https://placehold.co/800x192/f0f2f5/86909c?text=暂无横幅'
+                "
+                alt="社区横幅"
+              />
             </div>
-
             <!-- 头像和操作按钮 -->
             <div class="community-info-section">
               <div class="community-header-content">
@@ -41,6 +44,14 @@
                 />
                 <div class="community-header-actions">
                   <button class="btn btn-primary" @click="handleCreatePost">创建帖子</button>
+                  <!-- 创建活动按钮 -->
+                  <button
+                    v-if="canManageActivities"
+                    class="btn btn-primary"
+                    @click="showCreateActivity = true"
+                  >
+                    创建活动
+                  </button>
                   <button class="btn btn-icon" @click="handleNotification">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -106,10 +117,19 @@
             >
               精华
             </a>
+            <!-- 新增活动 tab -->
+            <a
+              href="#"
+              class="tab-link"
+              :class="{ active: activeTab === 'activities' }"
+              @click.prevent="changeTab('activities')"
+            >
+              活动
+            </a>
           </div>
 
           <!-- 帖子列表 -->
-          <div class="posts-list">
+          <div v-if="activeTab !== 'activities'" class="posts-list">
             <!-- 置顶帖子 -->
             <article class="post-item pinned-post">
               <div class="post-vote-section">
@@ -190,6 +210,16 @@
               </div>
             </article>
           </div>
+
+          <!-- 活动列表 -->
+          <div v-if="activeTab === 'activities'" class="activities-container">
+            <ActivityList
+              ref="activityListRef"
+              :circle-id="communityData.id"
+              :can-create-activity="canManageActivities"
+              @stats-updated="handleActivityStatsUpdated"
+            />
+          </div>
         </div>
       </main>
 
@@ -258,9 +288,46 @@
               </li>
             </ul>
           </div>
+          <!-- 活动统计卡片 -->
+          <div v-if="activeTab === 'activities'" class="sidebar-card">
+            <h2 class="sidebar-title">活动统计</h2>
+            <div class="activity-stats">
+              <div
+                class="stat-item clickable"
+                @click="handleStatClick('all')"
+                :class="{ active: currentActivityFilter === 'all' }"
+              >
+                <span class="stat-number">{{ activityStats.total }}</span>
+                <span class="stat-label">总活动数</span>
+              </div>
+              <div
+                class="stat-item clickable"
+                @click="handleStatClick('active')"
+                :class="{ active: currentActivityFilter === 'active' }"
+              >
+                <span class="stat-number">{{ activityStats.active }}</span>
+                <span class="stat-label">进行中</span>
+              </div>
+              <div
+                class="stat-item clickable"
+                @click="handleStatClick('participated')"
+                :class="{ active: currentActivityFilter === 'participated' }"
+              >
+                <span class="stat-number">{{ activityStats.participated }}</span>
+                <span class="stat-label">我参与的</span>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
     </div>
+    <!-- 创建活动弹窗 -->
+    <CreateActivity
+      v-if="showCreateActivity"
+      :circle-id="communityData.id"
+      @close="showCreateActivity = false"
+      @saved="handleActivityCreated"
+    />
   </div>
 </template>
 
@@ -268,13 +335,17 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
-import { CircleAPI, getSpuPage } from '../api.ts'
+import { CircleAPI, getSpuPage, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
+import ActivityList from '../components/ActivityList.vue'
+import ActivityParticipation from '../components/ActivityParticipation.vue'
+import CreateActivity from '../components/CreateActivity.vue'
 
 const imageSrc = ref<string>('')
 
 const fetchImage = async () => {
-  const url = 'http://120.26.118.70:5001/api/preview/big/uploads/circles/81/avatar_20250901142455_1eXD0VQr.png?inline=true&key=1756736695790'
+  const url =
+    'http://120.26.118.70:5001/api/preview/big/uploads/circles/81/avatar_20250901142455_1eXD0VQr.png?inline=true&key=1756736695790'
   imageSrc.value = await getSpuPage(encodeURIComponent(url))
 }
 
@@ -314,14 +385,28 @@ interface Moderator {
   avatar: string
 }
 
+interface ActivityStats {
+  total: number
+  active: number
+  participated: number
+}
+
 // 路由和状态
 const route = useRoute()
 const router = useRouter()
 const communityStore = useCommunityStore()
-const activeTab = ref<'hot' | 'latest' | 'featured'>('hot')
+const activeTab = ref<'hot' | 'latest' | 'featured' | 'activities'>('hot')
 const isLoading = ref(false)
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// 新增活动相关状态
+const showCreateActivity = ref(false)
+const activityStats = ref<ActivityStats>({
+  total: 0,
+  active: 0,
+  participated: 0,
+})
 
 // 添加图片URL状态管理
 const processedAvatarUrl = ref<string>('')
@@ -348,21 +433,21 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
   }
 }
 
-// 处理图片URL
+//  processImageUrls 函数
 const processImageUrls = async (): Promise<void> => {
   console.log('开始处理图片URL...')
 
   // 处理头像
   if (communityData.value.avatarUrl) {
     console.log('原始头像URL:', communityData.value.avatarUrl)
-    processedAvatarUrl.value = await getAuthenticatedImageUrl(communityData.value.avatarUrl)
+    processedAvatarUrl.value = await getProxiedImageUrl(communityData.value.avatarUrl)
     console.log('处理后头像URL:', processedAvatarUrl.value)
   }
 
   // 处理横幅
   if (communityData.value.bannerUrl) {
     console.log('原始横幅URL:', communityData.value.bannerUrl)
-    processedBannerUrl.value = await getAuthenticatedImageUrl(communityData.value.bannerUrl)
+    processedBannerUrl.value = await getProxiedImageUrl(communityData.value.bannerUrl)
     console.log('处理后横幅URL:', processedBannerUrl.value)
   }
 }
@@ -408,6 +493,15 @@ const moderators = ref<Moderator[]>([
 // 计算属性
 const filteredPosts = computed(() => {
   return posts.value.filter((post) => post.category === activeTab.value)
+})
+
+// 计算用户是否可以管理活动（圈主或管理员）
+const canManageActivities = computed(() => {
+  const currentUserId = 2 // 与后端硬编码保持一致
+  return (
+    communityData.value.ownerId === currentUserId ||
+    moderators.value.some((mod) => mod.id === currentUserId)
+  )
 })
 
 // 加载社区数据
@@ -516,7 +610,7 @@ const loadCommunityData = async (): Promise<void> => {
       }
     }
 
-    // 在这里添加图片处理
+    // 图片处理
     await processImageUrls()
   } catch (err) {
     console.error('加载社区数据失败:', err)
@@ -539,7 +633,7 @@ const loadCommunityData = async (): Promise<void> => {
 }
 
 // 方法
-const changeTab = (tab: 'hot' | 'latest' | 'featured'): void => {
+const changeTab = (tab: 'hot' | 'latest' | 'featured' | 'activities'): void => {
   activeTab.value = tab
 }
 
@@ -620,6 +714,63 @@ const handlePostClick = (postId: number): void => {
   console.log(`点击帖子 ${postId}`)
 }
 
+// 新增活动相关方法
+const handleActivityCreated = (activity: any): void => {
+  console.log('新活动已创建:', activity)
+  showCreateActivity.value = false
+  // 刷新活动统计
+  loadActivityStats()
+}
+
+// 加载活动统计数据
+const loadActivityStats = async (): Promise<void> => {
+  try {
+    // 这里可以调用获取活动统计的API
+    // 暂时使用模拟数据
+    activityStats.value = {
+      total: 5,
+      active: 2,
+      participated: 3,
+    }
+  } catch (error) {
+    console.error('获取活动统计失败:', error)
+  }
+}
+
+// 添加 ActivityList 引用
+const activityListRef = ref()
+
+// 添加当前活动筛选状态
+const currentActivityFilter = ref<'all' | 'active' | 'participated'>('all')
+
+// 修改 activityStats 的更新逻辑
+const handleActivityStatsUpdated = (stats: ActivityStats) => {
+  activityStats.value = stats
+}
+
+// 处理统计点击
+const handleStatClick = (filter: 'all' | 'active' | 'participated') => {
+  currentActivityFilter.value = filter
+
+  // 调用 ActivityList 组件的筛选方法
+  if (activityListRef.value) {
+    activityListRef.value.setActiveFilter(filter)
+  }
+}
+
+// 监听活动tab切换，重置筛选状态
+watch(
+  () => activeTab.value,
+  (newTab) => {
+    if (newTab === 'activities') {
+      currentActivityFilter.value = 'all'
+      if (activityListRef.value) {
+        activityListRef.value.setActiveFilter('all')
+      }
+    }
+  },
+)
+
 // 监听路由变化
 watch(
   () => route.params.id,
@@ -630,9 +781,17 @@ watch(
   },
 )
 
+// 监听活动标签页切换，加载统计数据
+watch(activeTab, (newTab) => {
+  if (newTab === 'activities') {
+    loadActivityStats()
+  }
+})
+
 // 生命周期
 onMounted(() => {
   loadCommunityData()
+  loadActivityStats()
   fetchImage()
 })
 </script>
@@ -645,6 +804,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr 300px;
   gap: 24px;
+  background: #0f172a; /* slate-900 */
 }
 
 /* 加载和错误状态 */
@@ -652,16 +812,16 @@ onMounted(() => {
 .error-state {
   text-align: center;
   padding: 60px 20px;
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1677ff;
+  border: 3px solid #334155; /* slate-700 */
+  border-top: 3px solid #0ea5e9; /* sky-500 */
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -678,15 +838,15 @@ onMounted(() => {
 
 .loading-state p,
 .error-state p {
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   margin-bottom: 16px;
 }
 
 /* 主内容区 */
 .main-content {
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
   overflow: hidden;
 }
 
@@ -696,7 +856,7 @@ onMounted(() => {
 
 .community-banner {
   height: 192px;
-  background: #f7f8fa;
+  background: #334155; /* slate-700 */
   overflow: hidden;
 }
 
@@ -708,7 +868,7 @@ onMounted(() => {
 
 .community-info-section {
   padding: 0 24px;
-  background: #fff;
+  background: #1e293b; /* slate-800 */
 }
 
 .community-header-content {
@@ -722,8 +882,8 @@ onMounted(() => {
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  border: 4px solid #fff;
-  background: #f7f8fa;
+  border: 4px solid #1e293b; /* slate-800 */
+  background: #334155; /* slate-700 */
 }
 
 .community-header-actions {
@@ -749,29 +909,29 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: #1677ff;
+  background: #0ea5e9; /* sky-500 */
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #0958d9;
+  background: #0284c7; /* sky-600 */
 }
 
 .btn-secondary {
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #4e5969;
+  border: 1px solid #475569; /* slate-600 */
+  background: #1e293b; /* slate-800 */
+  color: #cbd5e1; /* slate-300 */
 }
 
 .btn-secondary:hover:not(:disabled) {
-  border-color: #1677ff;
-  color: #1677ff;
+  border-color: #0ea5e9; /* sky-500 */
+  color: #0ea5e9; /* sky-500 */
 }
 
 .btn-icon {
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #4e5969;
+  border: 1px solid #475569; /* slate-600 */
+  background: #1e293b; /* slate-800 */
+  color: #cbd5e1; /* slate-300 */
   padding: 10px;
   width: 40px;
   height: 40px;
@@ -781,8 +941,8 @@ onMounted(() => {
 }
 
 .btn-icon:hover:not(:disabled) {
-  border-color: #1677ff;
-  color: #1677ff;
+  border-color: #0ea5e9; /* sky-500 */
+  color: #0ea5e9; /* sky-500 */
 }
 
 .btn-icon svg {
@@ -799,25 +959,25 @@ onMounted(() => {
   font-size: 24px;
   font-weight: 700;
   margin: 0 0 4px 0;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .community-member-count {
   font-size: 14px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   margin: 0;
 }
 
 .content-tabs {
   display: flex;
-  border-bottom: 1px solid #e4e6ea;
+  border-bottom: 1px solid #334155; /* slate-700 */
 }
 
 .tab-link {
   flex: 1;
   text-align: center;
   padding: 16px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   text-decoration: none;
   border-bottom: 2px solid transparent;
   font-weight: 500;
@@ -825,13 +985,13 @@ onMounted(() => {
 }
 
 .tab-link.active {
-  color: #1677ff;
-  border-bottom-color: #1677ff;
+  color: #38bdf8; /* sky-400 */
+  border-bottom-color: #38bdf8; /* sky-400 */
 }
 
 .tab-link:hover {
-  color: #1677ff;
-  background: #f7f8fa;
+  color: #38bdf8; /* sky-400 */
+  background: #334155; /* slate-700 */
 }
 
 .posts-list {
@@ -841,7 +1001,7 @@ onMounted(() => {
 .empty-posts {
   text-align: center;
   padding: 60px 20px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
 }
 
 .empty-icon {
@@ -850,7 +1010,7 @@ onMounted(() => {
 }
 
 .empty-posts h3 {
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   margin-bottom: 8px;
   font-size: 20px;
 }
@@ -866,11 +1026,11 @@ onMounted(() => {
   gap: 16px;
   transition: background-color 0.2s;
   cursor: pointer;
-  border-bottom: 1px solid #f2f3f5;
+  border-bottom: 1px solid #334155; /* slate-700 */
 }
 
 .post-item:hover {
-  background: #f7f8fa;
+  background: #334155; /* slate-700 */
 }
 
 .post-item:last-child {
@@ -878,8 +1038,8 @@ onMounted(() => {
 }
 
 .pinned-post {
-  background: #fff7e6;
-  border-bottom: 1px solid #ffe58f;
+  background: #1f2937; /* gray-800 */
+  border-bottom: 1px solid #374151; /* gray-700 */
 }
 
 .post-vote-section {
@@ -895,7 +1055,7 @@ onMounted(() => {
 .pin-icon {
   width: 24px;
   height: 24px;
-  color: #d48806;
+  color: #fbbf24; /* amber-400 */
   margin: 0 auto;
 }
 
@@ -904,7 +1064,7 @@ onMounted(() => {
   border-radius: 4px;
   background: none;
   border: none;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   cursor: pointer;
   transition: all 0.2s;
   width: 32px;
@@ -915,18 +1075,18 @@ onMounted(() => {
 }
 
 .vote-btn:hover {
-  background: #f2f3f5;
-  color: #1677ff;
+  background: #334155; /* slate-700 */
+  color: #38bdf8; /* sky-400 */
 }
 
 .vote-btn.active.vote-up {
-  color: #1677ff;
-  background: #f0f8ff;
+  color: #38bdf8; /* sky-400 */
+  background: #0c4a6e; /* sky-900 */
 }
 
 .vote-btn.active.vote-down {
-  color: #ff4d4f;
-  background: #fff2f0;
+  color: #f87171; /* red-400 */
+  background: #7f1d1d; /* red-900 */
 }
 
 .vote-btn svg {
@@ -938,7 +1098,7 @@ onMounted(() => {
   font-weight: 700;
   font-size: 14px;
   margin: 4px 0;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .post-content {
@@ -949,7 +1109,7 @@ onMounted(() => {
 .post-title {
   font-weight: 600;
   font-size: 18px;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   text-decoration: none;
   display: block;
   margin-bottom: 8px;
@@ -957,12 +1117,12 @@ onMounted(() => {
 }
 
 .post-title:hover {
-  color: #1677ff;
+  color: #38bdf8; /* sky-400 */
 }
 
 .post-excerpt {
   margin: 8px 0;
-  color: #4e5969;
+  color: #cbd5e1; /* slate-300 */
   font-size: 14px;
   line-height: 1.5;
   display: -webkit-box;
@@ -976,14 +1136,14 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   font-size: 12px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   margin-top: 8px;
   flex-wrap: wrap;
 }
 
 .username {
   font-weight: 600;
-  color: #1677ff;
+  color: #38bdf8; /* sky-400 */
 }
 
 /* 右侧边栏 */
@@ -994,22 +1154,22 @@ onMounted(() => {
 }
 
 .sidebar-card {
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
   padding: 20px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
 }
 
 .sidebar-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   margin-bottom: 16px;
 }
 
 .community-description {
   font-size: 14px;
-  color: #4e5969;
+  color: #cbd5e1; /* slate-300 */
   line-height: 1.5;
   margin-bottom: 0;
 }
@@ -1017,7 +1177,7 @@ onMounted(() => {
 .sidebar-divider {
   border: none;
   height: 1px;
-  background: #e4e6ea;
+  background: #334155; /* slate-700 */
   margin: 16px 0;
 }
 
@@ -1032,20 +1192,20 @@ onMounted(() => {
   align-items: center;
   font-size: 14px;
   margin: 8px 0;
-  color: #4e5969;
+  color: #cbd5e1; /* slate-300 */
 }
 
 .detail-icon {
   width: 20px;
   height: 20px;
   margin-right: 8px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   flex-shrink: 0;
 }
 
 .empty-moderators {
   text-align: center;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   font-size: 14px;
 }
 
@@ -1078,13 +1238,61 @@ onMounted(() => {
   font-weight: 600;
   font-size: 14px;
   margin: 0;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .moderator-handle {
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   font-size: 12px;
   margin: 0;
+}
+
+/* 新增：活动统计样式 */
+.activity-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  text-align: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #38bdf8; /* sky-400 */
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #64748b; /* slate-500 */
+}
+
+.stat-item.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.stat-item.clickable:hover {
+  background: #0c4a6e; /* sky-900 */
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.1);
+}
+
+.stat-item.clickable.active {
+  background: #0ea5e9; /* sky-500 */
+  color: #fff;
+}
+
+.stat-item.clickable.active .stat-number,
+.stat-item.clickable.active .stat-label {
+  color: #fff;
 }
 
 /* 响应式设计 */
@@ -1122,6 +1330,11 @@ onMounted(() => {
     flex-direction: row;
     width: auto;
     justify-content: flex-start;
+  }
+
+  .activities-container {
+    padding: 24px;
+    min-height: 400px;
   }
 }
 </style>

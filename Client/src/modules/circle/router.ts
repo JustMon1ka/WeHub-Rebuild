@@ -2,6 +2,7 @@
 import CommunityPage from './views/CommunityPage.vue'
 import CommunityDetailPage from './views/CommunityDetailPage.vue'
 import CreateCommunity from './components/CreateCommunity.vue'
+import ActivityList from './components/ActivityList.vue'
 
 export default {
   getRoutes() {
@@ -30,6 +31,16 @@ export default {
         name: 'create-community',
         component: CreateCommunity,
         meta: { title: '创建社区', navi: false, recommend: false },
+      },
+      // 圈子活动路由
+      {
+        path: '/circles/:id/activities',
+        name: 'CircleActivities',
+        component: ActivityList,
+        props: (route) => ({
+          circleId: parseInt(route.params.id),
+          canCreateActivity: true, // 这里可以根据用户权限动态设置
+        }),
       },
     ]
   },

@@ -1,4 +1,6 @@
 // src/services/api.ts
+import request from './utils/request'
+
 // 使用相对路径，通过 Vite 代理转发到后端
 const API_BASE_URL = ''
 
@@ -20,6 +22,33 @@ export const getSpuPage = async (params: string) => {
   })
   const blob = await response.blob()
   return URL.createObjectURL(blob)
+}
+
+// 在 api.ts 中添加这个函数
+export const getProxiedImageUrl = async (originalUrl: string): Promise<string> => {
+  if (!originalUrl) return ''
+
+  try {
+    // 使用你提供的代理接口
+    const encodedUrl = encodeURIComponent(originalUrl)
+    const proxyUrl = `${API_BASE_URL}/api/Files/proxy?u=${encodedUrl}`
+
+    const response = await fetch(proxyUrl, {
+      method: 'GET',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      console.error('代理请求失败:', response.status)
+      return originalUrl // 如果代理失败，返回原始URL
+    }
+
+    const blob = await response.blob()
+    return URL.createObjectURL(blob)
+  } catch (error) {
+    console.error('获取代理图片失败:', error)
+    return originalUrl
+  }
 }
 
 export class CircleAPI {
@@ -546,6 +575,40 @@ interface FileBrowserAuthResponse {
   token: string
 }
 
+interface Activity {
+  id: number
+  title: string
+  description: string
+  startTime: string
+  endTime: string
+  location?: string
+  maxParticipants?: number
+  currentParticipants: number
+  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
+  createdBy: number
+  circleId: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface CreateActivityRequest {
+  title: string
+  description: string
+  startTime: string
+  endTime: string
+  location?: string
+  maxParticipants?: number
+}
+
+interface UpdateActivityRequest {
+  title?: string
+  description?: string
+  startTime?: string
+  endTime?: string
+  location?: string
+  maxParticipants?: number
+}
+
 export class FileBrowserAPI {
   private static baseURL = 'http://120.26.118.70:5001'
   private static sessionEstablished = false
@@ -650,4 +713,259 @@ export class CircleImageAPI {
     // 默认情况
     return `http://120.26.118.70:5001/files/uploads/${imageUrl}`
   }
+}
+
+// 活动相关API接口
+export const activityApi = {
+  // 获取圈子的所有活动
+  getActivitiesByCircleId: async (circleId: number): Promise<ApiResponse<Activity[]>> => {
+    const response = await request.get(`/api/Circles/${circleId}/activities`)
+    return response.data
+  },
+
+  // 创建活动
+  createActivity: async (
+    circleId: number,
+    data: CreateActivityRequest,
+  ): Promise<ApiResponse<Activity>> => {
+    const response = await request.post(`/api/Circles/${circleId}/activities`, data)
+    return response.data
+  },
+
+  // 更新活动
+  updateActivity: async (
+    circleId: number,
+    activityId: number,
+    data: UpdateActivityRequest,
+  ): Promise<ApiResponse<Activity>> => {
+    const response = await request.put(`/api/Circles/${circleId}/activities/${activityId}`, data)
+    return response.data
+  },
+
+  // 删除活动
+  deleteActivity: async (circleId: number, activityId: number): Promise<ApiResponse<null>> => {
+    const response = await request.delete(`/api/Circles/${circleId}/activities/${activityId}`)
+    return response.data
+  },
+
+  // 报名参加活动
+  joinActivity: async (circleId: number, activityId: number): Promise<ApiResponse<null>> => {
+    try {
+      console.log('报名活动请求:', { circleId, activityId })
+      const response = await request.post(`/api/activities/${activityId}/participants/join`, {})
+      return response.data
+    } catch (error: any) {
+      console.error('报名活动API调用失败:', {
+        circleId,
+        activityId,
+        error: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+      })
+
+      // 处理已报名活动的情况
+      if (error.response?.status === 400 && error.response?.data?.msg?.includes('已参加')) {
+        return {
+          success: true,
+          data: null,
+          alreadyJoined: true,
+          message: error.response.data.msg,
+        }
+      }
+
+      throw error
+    }
+  },
+
+  // 提交参与心得（完成活动）
+  submitParticipationNote: async (
+    circleId: number,
+    activityId: number,
+    data: {
+      content: string
+      contact?: string
+    },
+  ): Promise<any> => {
+    try {
+      console.log('=== 开始一键完成活动流程 ===')
+
+      // 第一步：报名参加活动
+      console.log('第一步：报名参加活动')
+      try {
+        const joinUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/join`
+        const joinResponse = await fetch(joinUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+          credentials: 'include',
+        })
+
+        console.log('报名响应状态:', joinResponse.status)
+        const joinResponseText = await joinResponse.text()
+        console.log('报名响应内容:', joinResponseText)
+
+        if (
+          !joinResponse.ok &&
+          !joinResponseText.includes('已参加') &&
+          !joinResponseText.includes('已经申请')
+        ) {
+          throw new Error(`报名失败: ${joinResponseText}`)
+        }
+        console.log('✅ 报名成功')
+      } catch (joinError: any) {
+        if (!joinError.message.includes('已参加') && !joinError.message.includes('已经申请')) {
+          throw new Error(`报名活动失败: ${joinError.message}`)
+        }
+        console.log('✅ 用户已报名，继续下一步')
+      }
+
+      // 第二步：提交心得完成活动
+      console.log('第二步：提交心得完成活动')
+      const completeUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/complete`
+      const completeResponse = await fetch(completeUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      })
+
+      console.log('完成活动响应状态:', completeResponse.status)
+      const completeResponseText = await completeResponse.text()
+      console.log('完成活动响应内容:', completeResponseText)
+
+      if (!completeResponse.ok) {
+        throw new Error(`完成活动失败: ${completeResponseText}`)
+      }
+      console.log('✅ 活动完成成功')
+
+      // 第三步：自动领取奖励
+      console.log('第三步：自动领取奖励')
+      try {
+        const rewardUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/claim-reward`
+        const rewardResponse = await fetch(rewardUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+          credentials: 'include',
+        })
+
+        console.log('领取奖励响应状态:', rewardResponse.status)
+        const rewardResponseText = await rewardResponse.text()
+        console.log('领取奖励响应内容:', rewardResponseText)
+
+        if (rewardResponse.ok) {
+          console.log('✅ 奖励领取成功')
+          return {
+            success: true,
+            message: '心得提交成功，活动完成，奖励已到账！',
+            completed: true,
+            rewardClaimed: true,
+            data: rewardResponseText ? JSON.parse(rewardResponseText) : null,
+          }
+        } else {
+          // 奖励领取失败，但活动已完成
+          console.log('⚠️ 奖励领取失败，但活动已完成')
+          return {
+            success: true,
+            message: '心得提交成功，活动已完成！',
+            completed: true,
+            rewardClaimed: false,
+            rewardError: rewardResponseText,
+          }
+        }
+      } catch (rewardError: any) {
+        console.log('⚠️ 奖励领取出错:', rewardError)
+        // 即使奖励领取失败，活动也算完成了
+        return {
+          success: true,
+          message: '心得提交成功，活动已完成！',
+          completed: true,
+          rewardClaimed: false,
+          rewardError: rewardError.message,
+        }
+      }
+    } catch (error: any) {
+      console.error('=== 活动流程失败 ===', error)
+      throw error
+    }
+  },
+
+  // 获取用户参与状态
+  getUserParticipationStatus: async (
+    circleId: number,
+    activityId: number,
+  ): Promise<ApiResponse<ActivityParticipant | null>> => {
+    try {
+      // 当前用户ID（与后端硬编码保持一致）
+      const currentUserId = 2
+
+      const response = await request.get(
+        `/api/activity-participants/activity/${activityId}/user/${currentUserId}`,
+      )
+      return response.data
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // 404表示用户未参与该活动
+        return { success: true, data: null }
+      }
+      console.error('获取参与状态失败:', error)
+      throw error
+    }
+  },
+
+  // 上传活动图片
+  uploadActivityImage: async (circleId: number, activityId: number, file: File): Promise<any> => {
+    try {
+      console.log('=== 开始上传活动图片 ===')
+      console.log('圈子ID:', circleId)
+      console.log('活动ID:', activityId)
+      console.log('文件信息:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      })
+
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const url = `${API_BASE_URL}/api/activities/${activityId}/image`
+      console.log('请求URL:', url)
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      })
+
+      console.log('响应状态:', response.status)
+
+      const responseText = await response.text()
+      console.log('原始响应:', responseText)
+
+      if (!response.ok) {
+        throw new Error(`上传失败: HTTP ${response.status} - ${responseText}`)
+      }
+
+      let result
+      try {
+        result = responseText ? JSON.parse(responseText) : { success: true }
+      } catch (parseError) {
+        console.error('JSON解析失败:', parseError)
+        throw new Error(`响应格式错误: ${responseText}`)
+      }
+
+      console.log('解析后的结果:', result)
+      return result
+    } catch (error: any) {
+      console.error('=== 活动图片上传失败 ===')
+      console.error('错误详情:', error)
+      throw error
+    }
+  },
 }

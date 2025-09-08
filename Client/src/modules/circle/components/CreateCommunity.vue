@@ -517,15 +517,17 @@ const handleSubmit = async (): Promise<void> => {
   flex-direction: column;
   gap: 24px;
   min-height: 100vh;
+  background: #0f172a; /* slate-900 */
 }
 
 .create-community-content {
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   overflow: visible;
   width: 100%;
   flex: 1;
+  border: 1px solid #334155; /* slate-700 */
 }
 
 /* 页面头部 */
@@ -534,14 +536,14 @@ const handleSubmit = async (): Promise<void> => {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #e4e6ea;
-  background: #fafbfc;
+  border-bottom: 1px solid #334155; /* slate-700 */
+  background: #0f172a; /* slate-900 */
 }
 
 .back-btn {
   background: none;
   border: none;
-  color: #4e5969;
+  color: #94a3b8; /* slate-400 */
   font-size: 16px;
   cursor: pointer;
   padding: 8px 12px;
@@ -550,13 +552,13 @@ const handleSubmit = async (): Promise<void> => {
 }
 
 .back-btn:hover {
-  background: #f2f3f5;
+  background: #334155; /* slate-700 */
 }
 
 .page-title {
   font-size: 24px;
   font-weight: 600;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   margin: 0;
 }
 
@@ -568,6 +570,12 @@ const handleSubmit = async (): Promise<void> => {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  background: #0ea5e9; /* sky-500 */
+  color: #fff;
+}
+
+.create-btn:hover:not(:disabled) {
+  background: #0284c7; /* sky-600 */
 }
 
 .create-btn:disabled {
@@ -580,6 +588,7 @@ const handleSubmit = async (): Promise<void> => {
   padding: 24px;
   max-height: none;
   overflow: visible;
+  background: #1e293b; /* slate-800 */
 }
 
 .form-section {
@@ -589,14 +598,14 @@ const handleSubmit = async (): Promise<void> => {
 .form-label {
   display: block;
   font-weight: 500;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   margin-bottom: 8px;
   font-size: 16px;
 }
 
 .form-label.required::after {
   content: ' *';
-  color: #f53f3f;
+  color: #f87171; /* red-400 */
 }
 
 .form-input,
@@ -604,29 +613,31 @@ const handleSubmit = async (): Promise<void> => {
 .form-select {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
   border-radius: 8px;
   font-size: 14px;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  background: #0f172a; /* slate-900 */
+  color: #e2e8f0; /* slate-200 */
 }
 
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {
   outline: none;
-  border-color: #1677ff;
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+  border-color: #0ea5e9; /* sky-500 */
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
 }
 
 .form-input.error,
 .form-textarea.error,
 .form-select.error {
-  border-color: #f53f3f;
+  border-color: #f87171; /* red-400 */
 }
 
 .form-select:disabled {
-  background-color: #f7f8fa;
+  background-color: #334155; /* slate-700 */
   cursor: not-allowed;
 }
 
@@ -638,13 +649,13 @@ const handleSubmit = async (): Promise<void> => {
 .form-help {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
 }
 
 .error-message {
   margin: 4px 0 0 0;
   font-size: 12px;
-  color: #f53f3f;
+  color: #f87171; /* red-400 */
 }
 
 /* 上传组件样式 */
@@ -658,11 +669,12 @@ const handleSubmit = async (): Promise<void> => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 2px dashed #e4e6ea;
+  border: 2px dashed #334155; /* slate-700 */
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: #fafbfc;
+  background: #0f172a; /* slate-900 */
+  color: #94a3b8; /* slate-400 */
 }
 
 .upload-placeholder {
@@ -677,8 +689,8 @@ const handleSubmit = async (): Promise<void> => {
 
 .upload-placeholder:hover,
 .banner-placeholder:hover {
-  border-color: #1677ff;
-  background: #f0f8ff;
+  border-color: #0ea5e9; /* sky-500 */
+  background: #0c4a6e; /* sky-900 */
 }
 
 .upload-icon {
@@ -697,7 +709,7 @@ const handleSubmit = async (): Promise<void> => {
   height: 120px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
 }
 
 .banner-image {
@@ -705,7 +717,7 @@ const handleSubmit = async (): Promise<void> => {
   height: 160px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
 }
 
 .remove-image {
@@ -715,7 +727,7 @@ const handleSubmit = async (): Promise<void> => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #f53f3f;
+  background: #ef4444; /* red-500 */
   color: white;
   border: none;
   cursor: pointer;
@@ -746,11 +758,11 @@ const handleSubmit = async (): Promise<void> => {
 
 .checkbox-text {
   font-weight: 500;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .checkbox-help {
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   font-size: 12px;
   margin-left: auto;
 }
@@ -765,9 +777,10 @@ const handleSubmit = async (): Promise<void> => {
   gap: 12px;
   align-items: flex-start;
   padding: 16px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
   border-radius: 8px;
   margin-bottom: 16px;
+  background: #0f172a; /* slate-900 */
 }
 
 .rule-inputs {
@@ -779,15 +792,17 @@ const handleSubmit = async (): Promise<void> => {
 
 .rule-title {
   font-weight: 500;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .rule-content {
   font-size: 14px;
   min-height: 60px;
+  color: #e2e8f0; /* slate-200 */
 }
 
 .remove-rule-btn {
-  background: #f53f3f;
+  background: #ef4444; /* red-500 */
   color: white;
   border: none;
   padding: 6px 12px;
@@ -817,22 +832,22 @@ const handleSubmit = async (): Promise<void> => {
 }
 
 .btn-primary {
-  background: #1677ff;
+  background: #0ea5e9; /* sky-500 */
   color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #0958d9;
+  background: #0284c7; /* sky-600 */
 }
 
 .btn-outline {
   background: transparent;
-  color: #1677ff;
-  border: 1px solid #1677ff;
+  color: #0ea5e9; /* sky-500 */
+  border: 1px solid #0ea5e9; /* sky-500 */
 }
 
 .btn-outline:hover {
-  background: #1677ff;
+  background: #0ea5e9; /* sky-500 */
   color: #fff;
 }
 
@@ -844,16 +859,17 @@ const handleSubmit = async (): Promise<void> => {
 }
 
 .sidebar-card {
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid #334155; /* slate-700 */
 }
 
 .sidebar-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   margin-bottom: 16px;
 }
 
@@ -865,7 +881,7 @@ const handleSubmit = async (): Promise<void> => {
 
 .guide-list li {
   padding: 8px 0;
-  color: #4e5969;
+  color: #cbd5e1; /* slate-300 */
   font-size: 14px;
   line-height: 1.5;
   position: relative;
@@ -874,7 +890,7 @@ const handleSubmit = async (): Promise<void> => {
 
 .guide-list li::before {
   content: '•';
-  color: #1677ff;
+  color: #38bdf8; /* sky-400 */
   font-weight: bold;
   position: absolute;
   left: 0;
