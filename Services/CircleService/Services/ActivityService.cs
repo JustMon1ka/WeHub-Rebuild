@@ -15,12 +15,14 @@ public class ActivityService : IActivityService
     private readonly IActivityRepository _activityRepository;
     private readonly ICircleRepository _circleRepository;
     private readonly ICircleMemberRepository _memberRepository;
+    private readonly IActivityParticipantRepository _participantRepository;
 
-    public ActivityService(IActivityRepository activityRepository, ICircleRepository circleRepository, ICircleMemberRepository memberRepository)
+    public ActivityService(IActivityRepository activityRepository, ICircleRepository circleRepository, ICircleMemberRepository memberRepository, IActivityParticipantRepository participantRepository)
     {
         _activityRepository = activityRepository;
         _circleRepository = circleRepository;
         _memberRepository = memberRepository;
+        _participantRepository = participantRepository;
     }
 
     public async Task<IEnumerable<ActivityDto>> GetActivitiesByCircleIdAsync(int circleId)
@@ -32,7 +34,7 @@ public class ActivityService : IActivityService
     public async Task<ActivityDto?> GetActivityByIdAsync(int activityId)
     {
         var activity = await _activityRepository.GetByIdAsync(activityId);
-        return activity != null ? MapToActivityDto(activity) : null;
+        return activity != null ? await MapToActivityDtoAsync(activity) : null;
     }
 
     public async Task<ServiceResponse<ActivityDto>> CreateActivityAsync(int circleId, CreateActivityDto createActivityDto, int creatorId)
@@ -130,6 +132,28 @@ public class ActivityService : IActivityService
         return ServiceResponse.Succeed();
     }
     
+    private async Task<ActivityDto> MapToActivityDtoAsync(Activity activity)
+    {
+        // 获取活动参与人数
+        var participants = await _participantRepository.GetByActivityIdAsync(activity.ActivityId);
+        var participantCount = participants.Count();
+
+        return new ActivityDto
+        {
+            ActivityId = activity.ActivityId,
+            CircleId = activity.CircleId,
+            Title = activity.Title,
+            Description = activity.Description,
+            RewardDescription = activity.RewardDescription,
+            RewardPoints = activity.RewardPoints,
+            ActivityType = activity.ActivityType,
+            ActivityUrl = activity.ActivityUrl,
+            StartTime = activity.StartTime,
+            EndTime = activity.EndTime,
+            ParticipantCount = participantCount
+        };
+    }
+
     private ActivityDto MapToActivityDto(Activity activity)
     {
         return new ActivityDto
@@ -143,7 +167,8 @@ public class ActivityService : IActivityService
             ActivityType = activity.ActivityType,
             ActivityUrl = activity.ActivityUrl,
             StartTime = activity.StartTime,
-            EndTime = activity.EndTime
+            EndTime = activity.EndTime,
+            ParticipantCount = 0 // 默认值，用于不需要参与人数的场景
         };
     }
 } 

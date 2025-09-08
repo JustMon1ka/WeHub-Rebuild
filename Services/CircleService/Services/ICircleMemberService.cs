@@ -22,8 +22,9 @@ public interface ICircleMemberService
     /// 获取一个圈子的所有成员
     /// </summary>
     /// <param name="circleId">圈子ID</param>
+    /// <param name="sortByPoints">是否按积分降序排序</param>
     /// <returns>返回成员信息DTO的列表</returns>
-    Task<IEnumerable<CircleMemberDto>> GetCircleMembersAsync(int circleId);
+    Task<IEnumerable<CircleMemberDto>> GetCircleMembersAsync(int circleId, bool sortByPoints = false);
     
     /// <summary>
     /// 审批用户的入圈申请
@@ -67,4 +68,12 @@ public interface ICircleMemberService
     /// <param name="userId">执行退出操作的用户ID</param>
     /// <returns>操作结果的Service层响应</returns>
     Task<ServiceResponse> LeaveCircleAsync(int circleId, int userId);
+
+    /// <summary>
+    /// 获取圈子的申请列表（待审批和已处理）
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="requesterId">请求者ID（用于权限验证）</param>
+    /// <returns>返回申请列表，包含待审批和已处理的申请</returns>
+    Task<ApplicationListDto?> GetApplicationsAsync(int circleId, int requesterId);
 } 

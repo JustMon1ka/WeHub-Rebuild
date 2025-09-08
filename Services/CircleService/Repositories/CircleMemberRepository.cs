@@ -63,4 +63,12 @@ public class CircleMemberRepository : ICircleMemberRepository
                              .Select(g => new { CircleId = g.Key, MemberCount = g.Count() })
                              .ToDictionaryAsync(x => x.CircleId, x => x.MemberCount);
     }
+
+    public async Task<IEnumerable<CircleMember>> GetAllApplicationsByCircleIdAsync(int circleId)
+    {
+        return await _context.CircleMembers
+                             .Where(cm => cm.CircleId == circleId)
+                             .OrderByDescending(cm => cm.ApplyTime)
+                             .ToListAsync();
+    }
 } 

@@ -56,4 +56,9 @@ public class ActivityDto
     /// 活动结束时间
     /// </summary>
     public DateTime EndTime { get; set; }
+
+    /// <summary>
+    /// 活动参与总人数
+    /// </summary>
+    public int ParticipantCount { get; set; }
 } 

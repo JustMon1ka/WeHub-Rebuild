@@ -173,10 +173,11 @@ public class CirclesController : ControllerBase
     /// 获取一个圈子的所有成员
     /// </summary>
     /// <param name="circleId">圈子ID</param>
+    /// <param name="sortByPoints">是否按积分排序 (0=不排序, 1=按积分降序排序)</param>
     [HttpGet("{circleId}/members")]
-    public async Task<IActionResult> GetMembers(int circleId)
+    public async Task<IActionResult> GetMembers(int circleId, [FromQuery] int sortByPoints = 0)
     {
-        var members = await _memberService.GetCircleMembersAsync(circleId);
+        var members = await _memberService.GetCircleMembersAsync(circleId, sortByPoints == 1);
         return Ok(BaseHttpResponse<object>.Success(members));
     }
     
@@ -206,6 +207,25 @@ public class CirclesController : ControllerBase
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
         }
         return Ok(BaseHttpResponse<object>.Success(null, "审批操作成功。"));
+    }
+
+    /// <summary>
+    /// 获取圈子的申请列表（待审批和已处理）
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    [HttpGet("{circleId}/applications")]
+    public async Task<IActionResult> GetApplications(int circleId)
+    {
+        // TODO: 实际应从用户认证信息中获取当前用户ID
+        var requesterId = 1; // 临时硬编码，后续需要从JWT Token获取
+
+        var applications = await _memberService.GetApplicationsAsync(circleId, requesterId);
+        if (applications == null)
+        {
+            return NotFound(BaseHttpResponse.Fail(404, "圈子不存在或权限不足"));
+        }
+
+        return Ok(BaseHttpResponse<object>.Success(applications, "获取申请列表成功"));
     }
 
     /// <summary>

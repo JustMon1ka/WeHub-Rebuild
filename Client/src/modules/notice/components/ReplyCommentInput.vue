@@ -1,12 +1,7 @@
 <template>
   <div class="comment-input-wrapper" v-if="visible">
     <div class="comment-input-container">
-      <img
-        v-if="useAvater"
-        :src="useAvater"
-        :alt="'用户头像'"
-        class="user-avater"
-      />
+      <img v-if="useAvater" :src="useAvater" :alt="'用户头像'" class="user-avater" />
     </div>
 
     <div class="comment-input-section">
@@ -23,36 +18,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from "vue";
+import { ref, watch, onMounted, nextTick } from 'vue'
 
 interface Rrops {
-  visible: boolean;
-  placeholder: string;
-  useAvater: string;
-  replyToUserId: number;
+  visible: boolean
+  placeholder: string
+  useAvater: string
+  replyToUserId: number
 }
 
 interface Emits {
-  (e: "submit", comment: string): void;
-  (e: "cancel"): void;
+  (e: 'submit', comment: string): void
+  (e: 'cancel'): void
 }
 
-const props = defineProps<Rrops>();
-const emits = defineEmits<Emits>();
+const props = defineProps<Rrops>()
+const emits = defineEmits<Emits>()
 
-const commentText = ref("");
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const commentText = ref('')
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 watch(
   () => props.visible,
   (visible) => {
     if (visible) {
       nextTick(() => {
-        textareaRef.value?.focus();
-      });
+        textareaRef.value?.focus()
+      })
     }
   }
-);
+)
 </script>
 
 <style scoped>

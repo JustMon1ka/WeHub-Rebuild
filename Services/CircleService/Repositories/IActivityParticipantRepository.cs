@@ -25,6 +25,13 @@ public interface IActivityParticipantRepository
     Task<IEnumerable<ActivityParticipant>> GetByUserIdAsync(int userId);
 
     /// <summary>
+    /// 根据活动ID异步获取该活动的所有参与记录
+    /// </summary>
+    /// <param name="activityId">活动ID</param>
+    /// <returns>返回该活动的所有参与记录列表</returns>
+    Task<IEnumerable<ActivityParticipant>> GetByActivityIdAsync(int activityId);
+
+    /// <summary>
     /// 异步添加一个新的参与记录
     /// </summary>
     /// <param name="participant">要添加的参与记录实体</param>

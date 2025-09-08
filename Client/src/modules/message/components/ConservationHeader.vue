@@ -1,17 +1,23 @@
 <template>
   <div class="avatar">
-    <img :src="props.conversation.contactUser.avatar"
-         :alt="props.conversation.contactUser.nickname"/>
-    <div class="nickname">{{ props.conversation.contactUser.nickname }}</div>
+    <img
+      :src="
+        props.conversation.contactUser?.avatar ||
+        'https://placehold.co/100x100/facc15/78350f?text=U'
+      "
+      :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
+    />
+    <div class="nickname">
+      {{ props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}` }}
+    </div>
   </div>
-
 </template>
 
 <script setup lang="ts">
 import type { conversation } from '../types'
 
 const props = defineProps<{
-     conversation: conversation
+  conversation: conversation
 }>()
 </script>
 

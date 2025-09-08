@@ -250,4 +250,85 @@ public class CircleMemberServiceTests
                   cm.UserId == targetUserId
         )), Times.Once);
     }
+
+    [TestMethod]
+    public async Task GetApplicationsAsync_CircleNotFound_ShouldReturnNull()
+    {
+        // Arrange
+        var circleId = 1;
+        var requesterId = 1;
+        _mockCircleRepository.Setup(repo => repo.GetByIdAsync(circleId)).ReturnsAsync((Circle)null);
+
+        // Act
+        var result = await _memberService.GetApplicationsAsync(circleId, requesterId);
+
+        // Assert
+        Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task GetApplicationsAsync_NotOwner_ShouldReturnNull()
+    {
+        // Arrange
+        var circleId = 1;
+        var requesterId = 2; // 不是圈主
+        var circle = new Circle { CircleId = circleId, Name = "Test Circle", OwnerId = 1 }; // 圈主是用户1
+        _mockCircleRepository.Setup(repo => repo.GetByIdAsync(circleId)).ReturnsAsync(circle);
+
+        // Act
+        var result = await _memberService.GetApplicationsAsync(circleId, requesterId);
+
+        // Assert
+        Assert.IsNull(result);
+    }
+
+    [TestMethod]
+    public async Task GetApplicationsAsync_ValidRequest_ShouldReturnApplications()
+    {
+        // Arrange
+        var circleId = 1;
+        var requesterId = 1; // 圈主
+        var circle = new Circle { CircleId = circleId, Name = "Test Circle", OwnerId = requesterId };
+        
+        var applications = new List<CircleMember>
+        {
+            new CircleMember
+            {
+                CircleId = circleId,
+                UserId = 2,
+                Status = CircleMemberStatus.Pending,
+                ApplyTime = DateTime.UtcNow.AddHours(-1)
+            },
+            new CircleMember
+            {
+                CircleId = circleId,
+                UserId = 3,
+                Status = CircleMemberStatus.Approved,
+                ApplyTime = DateTime.UtcNow.AddHours(-2),
+                ProcessedTime = DateTime.UtcNow.AddHours(-1),
+                Role = CircleMemberRole.Member
+            }
+        };
+
+        _mockCircleRepository.Setup(repo => repo.GetByIdAsync(circleId)).ReturnsAsync(circle);
+        _mockMemberRepository.Setup(repo => repo.GetAllApplicationsByCircleIdAsync(circleId))
+            .ReturnsAsync(applications);
+
+        // Act
+        var result = await _memberService.GetApplicationsAsync(circleId, requesterId);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(1, result.PendingApplications.Count());
+        Assert.AreEqual(1, result.ProcessedApplications.Count());
+        
+        var pendingApp = result.PendingApplications.First();
+        Assert.AreEqual(2, pendingApp.UserId);
+        Assert.AreEqual(CircleMemberStatus.Pending, pendingApp.Status);
+        
+        var processedApp = result.ProcessedApplications.First();
+        Assert.AreEqual(3, processedApp.UserId);
+        Assert.AreEqual(CircleMemberStatus.Approved, processedApp.Status);
+        Assert.AreEqual(CircleMemberRole.Member, processedApp.Role);
+    }
 }
