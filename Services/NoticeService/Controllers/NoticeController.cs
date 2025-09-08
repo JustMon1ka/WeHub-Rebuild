@@ -82,6 +82,16 @@ namespace NoticeService.Controllers
             return Ok(new { total = mentions.Count, items = mentions });
         }
 
+        [HttpGet("comments")]
+        public async Task<ActionResult<object>> GetComments(
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool unreadOnly = false)
+        {
+            var userId = GetCurrentUserId();
+            var redisDb = _redis.GetDatabase();
+            var comments = await _notificationService.GetCommentsAsync(userId, page, pageSize, unreadOnly, redisDb);
+            return Ok(new { total = comments.Count, items = comments });
+        }
+
         [HttpGet("likes/target")]
         public async Task<ActionResult<TargetLikerDto>> GetTargetLikers(
             [FromQuery] string targetType, [FromQuery] int targetId,

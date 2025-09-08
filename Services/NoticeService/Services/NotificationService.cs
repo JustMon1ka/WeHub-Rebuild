@@ -71,6 +71,12 @@ namespace NoticeService.Services
             Console.WriteLine($"Calling GetRepliesAsync for userId: {userId}, page: {page}, pageSize: {pageSize}, unreadOnly: {unreadOnly}");
             var replies = await _repository.GetRepliesAsync(userId, page, pageSize, unreadOnly, redis);
             Console.WriteLine($"GetRepliesAsync returned {replies.Count} replies");
+            if (unreadOnly && replies.Any())
+            {
+                var key = $"unread-notice:{userId}:comment";
+                Console.WriteLine($"Auto marking replies as read, deleting key: {key}");
+                await redis.KeyDeleteAsync(key, CommandFlags.None);
+            }
             return _mapper.Map<List<ReplyNotificationDto>>(replies);
         }
 
@@ -104,6 +110,15 @@ namespace NoticeService.Services
                 Total = total,
                 Items = likerIds
             };
+        }
+
+        public async Task<List<CommentNotificationDto>> GetCommentsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis)
+        {
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+            Console.WriteLine($"Calling GetCommentsAsync for userId: {userId}, page: {page}, pageSize: {pageSize}, unreadOnly: {unreadOnly}");
+            var comments = await _repository.GetCommentsAsync(userId, page, pageSize, unreadOnly, redis);
+            Console.WriteLine($"GetCommentsAsync returned {comments.Count} comments");
+            return _mapper.Map<List<CommentNotificationDto>>(comments);
         }
     }
 }

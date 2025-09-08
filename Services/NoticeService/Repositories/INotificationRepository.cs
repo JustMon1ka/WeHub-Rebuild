@@ -14,5 +14,6 @@ namespace NoticeService.Repositories
         Task<List<Repost>> GetRepostsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis);
         Task<List<Mention>> GetMentionsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis);
         Task<(List<int> Items, int Total)> GetTargetLikersAsync(int userId, string targetType, int targetId, int page, int pageSize);
+        Task<List<Comment>> GetCommentsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis);
     }
 }

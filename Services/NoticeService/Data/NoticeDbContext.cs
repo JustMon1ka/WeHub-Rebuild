@@ -11,6 +11,7 @@ namespace NoticeService.Data
         public DbSet<Like> Likes { get; set; }
         public DbSet<Repost> Reposts { get; set; }
         public DbSet<Mention> Mentions { get; set; }
+        public DbSet<Comment> Comments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +34,10 @@ namespace NoticeService.Data
                 .HasKey(m => new { m.UserId, m.TargetType, m.TargetId });
             modelBuilder.Entity<Mention>()
                 .HasIndex(m => new { m.TargetUserId, m.CreatedAt });
+            modelBuilder.Entity<Comment>()
+                .HasKey(c => c.CommentId);
+            modelBuilder.Entity<Comment>()
+                .HasIndex(c => new { c.TargetUserId, c.IsDeleted, c.CreatedAt });
         }
     }
 }
