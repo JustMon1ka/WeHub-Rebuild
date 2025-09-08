@@ -450,12 +450,13 @@ const getButtonClass = (community: Community): string => {
   display: grid;
   grid-template-columns: 1fr 300px;
   gap: 24px;
+  background: #0f172a; /* slate-900 */
 }
 
 .main-content {
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
   padding: 24px;
 }
 
@@ -467,12 +468,12 @@ const getButtonClass = (community: Community): string => {
   font-size: 28px;
   font-weight: 700;
   margin: 0 0 8px 0;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .page-subtitle {
   font-size: 16px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   margin: 0;
 }
 
@@ -491,15 +492,17 @@ const getButtonClass = (community: Community): string => {
 .search-input {
   width: 100%;
   padding: 12px 48px 12px 16px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid #475569; /* slate-600 */
   border-radius: 8px;
   font-size: 14px;
   transition: border-color 0.2s;
+  background: #0f172a; /* slate-900 */
+  color: #e2e8f0; /* slate-200 */
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #1677ff;
+  border-color: #0ea5e9; /* sky-500 */
 }
 
 .search-btn {
@@ -509,7 +512,7 @@ const getButtonClass = (community: Community): string => {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   cursor: pointer;
 }
 
@@ -520,13 +523,13 @@ const getButtonClass = (community: Community): string => {
 
 .content-tabs {
   display: flex;
-  border-bottom: 1px solid #e4e6ea;
+  border-bottom: 1px solid #334155; /* slate-700 */
   margin-bottom: 24px;
 }
 
 .tab-link {
   padding: 16px 24px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   text-decoration: none;
   border-bottom: 2px solid transparent;
   font-weight: 500;
@@ -534,12 +537,12 @@ const getButtonClass = (community: Community): string => {
 }
 
 .tab-link.active {
-  color: #1677ff;
-  border-bottom-color: #1677ff;
+  color: #38bdf8; /* sky-400 */
+  border-bottom-color: #38bdf8; /* sky-400 */
 }
 
 .tab-link:hover {
-  color: #1677ff;
+  color: #38bdf8; /* sky-400 */
 }
 
 .loading-state,
@@ -551,8 +554,8 @@ const getButtonClass = (community: Community): string => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1677ff;
+  border: 3px solid #334155; /* slate-700 */
+  border-top: 3px solid #0ea5e9; /* sky-500 */
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -577,7 +580,7 @@ const getButtonClass = (community: Community): string => {
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
 }
 
 .empty-icon {
@@ -586,22 +589,23 @@ const getButtonClass = (community: Community): string => {
 }
 
 .community-card {
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
-  background: #fff;
+  background: #0f172a; /* slate-900 */
 }
 
 .community-card:hover {
-  border-color: #1677ff;
-  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.1);
+  border-color: #0ea5e9; /* sky-500 */
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
 }
 
 .community-banner {
   height: 120px;
   overflow: hidden;
+  background: #334155; /* slate-700 */
 }
 
 .community-banner img {
@@ -625,6 +629,7 @@ const getButtonClass = (community: Community): string => {
   height: 48px;
   border-radius: 50%;
   margin-right: 12px;
+  background: #475569; /* slate-600 */
 }
 
 .community-meta {
@@ -635,18 +640,18 @@ const getButtonClass = (community: Community): string => {
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 4px 0;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .community-members {
   font-size: 12px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   margin: 0;
 }
 
 .community-description {
   font-size: 14px;
-  color: #4e5969;
+  color: #cbd5e1; /* slate-300 */
   line-height: 1.4;
   margin-bottom: 12px;
   display: -webkit-box;
@@ -663,15 +668,15 @@ const getButtonClass = (community: Community): string => {
 
 .community-tag {
   padding: 4px 8px;
-  background: #f2f3f5;
-  color: #4e5969;
+  background: #334155; /* slate-700 */
+  color: #cbd5e1; /* slate-300 */
   font-size: 12px;
   border-radius: 4px;
 }
 
 .community-tag.private {
-  background: #fff2f0;
-  color: #ff4d4f;
+  background: #7f1d1d; /* red-900 */
+  color: #f87171; /* red-400 */
 }
 
 .community-actions {
@@ -700,23 +705,23 @@ const getButtonClass = (community: Community): string => {
 }
 
 .btn-primary {
-  background: #1677ff;
+  background: #0ea5e9; /* sky-500 */
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #0958d9;
+  background: #0284c7; /* sky-600 */
 }
 
 .btn-secondary {
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #4e5969;
+  border: 1px solid #475569; /* slate-600 */
+  background: #1e293b; /* slate-800 */
+  color: #cbd5e1; /* slate-300 */
 }
 
 .btn-secondary:hover:not(:disabled) {
-  border-color: #1677ff;
-  color: #1677ff;
+  border-color: #0ea5e9; /* sky-500 */
+  color: #0ea5e9; /* sky-500 */
 }
 
 .right-sidebar {
@@ -726,16 +731,16 @@ const getButtonClass = (community: Community): string => {
 }
 
 .sidebar-card {
-  background: #fff;
+  background: #1e293b; /* slate-800 */
   border-radius: 12px;
   padding: 20px;
-  border: 1px solid #e4e6ea;
+  border: 1px solid #334155; /* slate-700 */
 }
 
 .sidebar-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
   margin-bottom: 16px;
 }
 
@@ -759,39 +764,39 @@ const getButtonClass = (community: Community): string => {
 }
 
 .popular-info:hover {
-  background: #f7f8fa;
+  background: #334155; /* slate-700 */
 }
 
 .popular-name {
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 4px 0;
-  color: #1d2129;
+  color: #f1f5f9; /* slate-100 */
 }
 
 .popular-members {
   font-size: 12px;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   margin: 0;
 }
 
 .category-link {
   display: block;
   padding: 8px 12px;
-  color: #4e5969;
+  color: #cbd5e1; /* slate-300 */
   text-decoration: none;
   border-radius: 6px;
   transition: all 0.2s;
 }
 
 .category-link:hover {
-  background: #f7f8fa;
-  color: #1677ff;
+  background: #334155; /* slate-700 */
+  color: #38bdf8; /* sky-400 */
 }
 
 .empty-popular {
   text-align: center;
-  color: #86909c;
+  color: #64748b; /* slate-500 */
   font-size: 14px;
 }
 
