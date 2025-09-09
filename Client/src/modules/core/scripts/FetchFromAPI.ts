@@ -20,7 +20,7 @@ export default async function fetchFromAPI(url: string, method: string, data: st
     body: data ? data : undefined,
   });
   const resultData = await result.json();
-  if (!result.ok || resultData.code !== 200) {
+  if (!result.ok) {
     throw new Error(resultData.msg);
   }
   return resultData;
