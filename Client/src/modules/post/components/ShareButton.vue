@@ -10,6 +10,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { getPostDetail } from "../../post/api";
 import { stashOriginalPost } from "../../post/utils/sharePayload";
+import { sharePost } from "../../post/api";
 
 const props = defineProps<{ postId: number }>();
 
@@ -20,15 +21,13 @@ async function onShare() {
   if (pending.value) return;
   pending.value = true;
   try {
-    // 1) 拉取原帖信息
+    // 拉取原帖（可以保留，方便发帖页展示原帖）
     const post = await getPostDetail(props.postId);
-
-    // 2) 放到 sessionStorage，供发帖页读取
     stashOriginalPost(post);
 
-    // 3) 跳转发帖页，并用 query 告知“分享模式 + 原帖ID”
+    // 跳转发帖页，带上 shareFrom 参数
     router.push({
-      name: "PostCreate",               // 确保你的发帖路由名就是 PostCreate（下一步会检查）
+      name: "PostCreate",
       query: { shareFrom: String(props.postId) }
     });
   } catch (e) {
@@ -38,6 +37,7 @@ async function onShare() {
     pending.value = false;
   }
 }
+
 </script>
 
 <style scoped>

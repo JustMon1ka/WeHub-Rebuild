@@ -81,6 +81,7 @@ import CommunitySelect from '../components/CommunitySelect.vue'
 import RichTextEditor from '../components/RichTextEditor.vue'
 import TagInput from '../components/TagInput.vue'
 import {addTags, publishPost} from '../public'
+import { sharePost } from "../../post/api";
 
 const router = useRouter()
 const route = useRoute()
@@ -110,34 +111,46 @@ onBeforeUnmount(() => {
 })
 
 async function publish() {
+  // 0. 判断是否是分享模式
+    const shareFrom = route.query.shareFrom as string | undefined
   try {
-    // 1. 先处理标签
+    // 1. 先处理标签（仅普通发帖需要）
     // 假设 TagInput 的 v-model 绑定的就是标签名数组（string[]）
     // 如果 TagInput 输出的是 id，需要先改成 names
-    const tagNames = tags.value // 如果不是字符串数组，要先转换
-
     let finalTagIds: number[] = []
-    if (tagNames.length > 0) {
-      // 调用添加标签 API（返回值里应该有所有标签的 id）
-      const tagRes = await addTags(tagNames)
-      // 确保 finalTagIds 里都是 number
-      finalTagIds = tagRes.data.map((t: any) => t.tagId)
+    if (!shareFrom) {
+      const tagNames = tags.value // 如果不是字符串数组，要先转换
+
+      if (tagNames.length > 0) {
+        // 调用添加标签 API（返回值里应该有所有标签的 id）
+        const tagRes = await addTags(tagNames)
+        // 确保 finalTagIds 里都是 number
+        finalTagIds = tagRes.data.map((t: any) => t.tagId)
+      }
     }
 
-    // 2. 调用发布帖子 API
-    const payload = {
-      circleId: circleId.value,
-      title: title.value,
-      content: content.value,
-      tags: finalTagIds
+    // 2. 根据模式调用 API
+    if (shareFrom) {
+      // 分享模式 → 调用分享接口
+      const res = await sharePost(Number(shareFrom), content.value)
+      alert('分享成功，ID: ' + res.postId) // 注意根据实际返回字段调整
+    } else {
+      // 普通发帖 → 调用发布帖子 API
+      const payload = {
+        circleId: circleId.value,
+        title: title.value,
+        content: content.value,
+        tags: finalTagIds
+      }
+      const res = await publishPost(payload)
+      alert('发布成功，ID: ' + res.postId) // 注意根据实际返回字段调整
     }
-    const res = await publishPost(payload)
 
-    alert('发布成功，ID: ' + res.postId) // 注意根据实际返回字段调整
+    // 3. 关闭弹窗 / 返回
     close()
   } catch (err) {
     console.error(err)
-    alert('发布失败，请重试')
+    alert(shareFrom ? '分享失败，请重试' : '发布失败，请重试')
   }
 }
 
@@ -145,4 +158,5 @@ function close() {
   visible.value = false
   setTimeout(() => router.back(), 200)
 }
+
 </script>

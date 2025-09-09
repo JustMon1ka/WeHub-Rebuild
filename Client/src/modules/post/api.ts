@@ -143,3 +143,16 @@ export const postService = {
     return data.code === 200;
   }
 };
+
+export interface ShareResponse {
+  postId: number
+  createdAt: string
+}
+
+export async function sharePost(targetId: number, comment: string): Promise<ShareResponse> {
+  const res = await axios.post("/api/posts/share", {
+    targetId,
+    comment
+  })
+  return unwrap(res.data) as ShareResponse
+}

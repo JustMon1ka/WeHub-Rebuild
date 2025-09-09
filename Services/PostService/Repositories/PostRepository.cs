@@ -37,6 +37,7 @@ namespace PostService.Repositories
         {
             _contextFactory = contextFactory;
         }
+        
 
         public async Task<List<Post>> GetPostsByIdsAsync(List<long> ids)
         {
@@ -49,13 +50,13 @@ namespace PostService.Repositories
 
             // 一次性查询所有 PostTag + TagName
             var postTags = await (from pt in context.PostTags
-                join t in context.Tags on pt.TagId equals t.TagId
-                where ids.Contains(pt.PostId)
-                select new
-                {
-                    pt.PostId,
-                    t.TagName
-                }).ToListAsync();
+                                  join t in context.Tags on pt.TagId equals t.TagId
+                                  where ids.Contains(pt.PostId)
+                                  select new
+                                  {
+                                      pt.PostId,
+                                      t.TagName
+                                  }).ToListAsync();
 
             // 用 Dictionary 分组映射
             var tagLookup = postTags
