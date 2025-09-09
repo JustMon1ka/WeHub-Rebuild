@@ -378,7 +378,7 @@ public class PostController : ControllerBase
             // 发布新帖（内容就是 marker + 用户的附加评论）
             var newPost = await _postService.PublishPostAsync(
                 userId,
-                request.CircleId ?? original.CircleId ?? 100000L,
+                request.CircleId ?? original.CircleId,
                 $"转发：{original.Title}",
                 marker + "\n\n" + (request.Comment ?? ""),
                 new List<long>() // 不带标签
