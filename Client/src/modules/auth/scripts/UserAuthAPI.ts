@@ -1,3 +1,5 @@
+import { GATEWAY } from '@/modules/core/public.ts'
+
 interface registerData {
   "username": string,
   "password": string,
@@ -16,7 +18,7 @@ interface codeVerifyData {
   "code": string,
 }
 
-const BASE_URL = 'http://localhost:5001';
+const BASE_URL : string = `${GATEWAY}/api/auth`;
 
 async function fetchFromAPI(url: string, method: string, data: string | undefined = undefined, token: string | null = null) {
   const result =  await fetch(url, {
@@ -36,27 +38,27 @@ async function fetchFromAPI(url: string, method: string, data: string | undefine
 }
 
 async function registerAPI(userData: registerData) {
-  return await fetchFromAPI(`${BASE_URL}/api/auth/register`, 'POST', JSON.stringify(userData));
+  return await fetchFromAPI(`${BASE_URL}/register`, 'POST', JSON.stringify(userData));
 }
 
 async function loginAPI(userData: loginData) {
-  return await fetchFromAPI(`${BASE_URL}/api/auth/login`, 'POST', JSON.stringify(userData));
+  return await fetchFromAPI(`${BASE_URL}/login`, 'POST', JSON.stringify(userData));
 }
 
 async function refreshTokenAPI(token: string) {
-  return await fetchFromAPI(`${BASE_URL}/api/auth/refresh-token`, 'GET', undefined, token);
+  return await fetchFromAPI(`${BASE_URL}/refresh-token`, 'GET', undefined, token);
 }
 
 async function meAPI(token: string) {
-  return await fetchFromAPI(`${BASE_URL}/api/auth/me`, 'GET', undefined, token);
+  return await fetchFromAPI(`${BASE_URL}/me`, 'GET', undefined, token);
 }
 
 async function sendCodeAPI(email: string) {
-  return await fetchFromAPI(`${BASE_URL}/api/auth/send-code-email`, 'POST', JSON.stringify({ email: email }));
+  return await fetchFromAPI(`${BASE_URL}/send-code-email`, 'POST', JSON.stringify({ email: email }));
 }
 
 async function verifyCodeAPI(data: codeVerifyData) {
-  return await fetchFromAPI(`${BASE_URL}/api/auth/login-email-code`, 'POST', JSON.stringify(data));
+  return await fetchFromAPI(`${BASE_URL}/login-email-code`, 'POST', JSON.stringify(data));
 }
 
 export { registerAPI, loginAPI, refreshTokenAPI , meAPI, sendCodeAPI, verifyCodeAPI , type registerData, type loginData };

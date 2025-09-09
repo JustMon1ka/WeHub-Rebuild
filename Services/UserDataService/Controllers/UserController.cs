@@ -9,7 +9,7 @@ using DTOs;
 namespace UserDataService.Controllers
 {
     [ApiController]
-    [Route("api/users")]
+    [Route("api/user_data")]
     public class UserController : ControllerBase
     {
         private readonly IUserDataService _userService;

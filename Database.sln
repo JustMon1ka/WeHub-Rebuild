@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalRService.Tests", "Ser
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TagService.Test", "Services\Tests\TagService.Test\TagService.Test.csproj", "{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "Gateway\Gateway.csproj", "{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -118,6 +120,10 @@ Global
 		{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{12D73B52-A2BC-468B-9F8D-0DCFCB5C3028} = {1D4447C9-B73F-4590-AB1D-F9C9834FE738}
