@@ -1,4 +1,4 @@
-import fetchFromAPI from '@/modules/user/scripts/FetchFromAPI.ts'
+import { fetchFromAPI, GATEWAY } from '@/modules/core/public.ts'
 
 interface userReadOnlyData {
   userId: string,
@@ -27,22 +27,22 @@ interface userProfileData{
 
 interface UserData extends userAuthData, userProfileData, userReadOnlyData {}
 
-const BASE_URL = 'http://localhost:5002';
+const BASE_URL : string = `${GATEWAY}/api/user_data`;
 
 async function getUserDataAPI(userId: string){
-  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}`, 'GET');
+  return await fetchFromAPI(`${BASE_URL}/${userId}`, 'GET');
 }
 
 async function setUserAuthDataAPI(userId: string, userData: userAuthData) {
-  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}/user`, 'PUT', JSON.stringify(userData));
+  return await fetchFromAPI(`${BASE_URL}/${userId}/user`, 'PUT', JSON.stringify(userData));
 }
 
 async function setUserProfileAPI(userId: string, userProfileData: userProfileData) {
-  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}/profile`, 'PUT', JSON.stringify(userProfileData));
+  return await fetchFromAPI(`${BASE_URL}/${userId}/profile`, 'PUT', JSON.stringify(userProfileData));
 }
 
 async function deleteUserAPI(userId: string) {
-  return await fetchFromAPI(`${BASE_URL}/api/users/${userId}/delete`, 'DELETE');
+  return await fetchFromAPI(`${BASE_URL}/${userId}/delete`, 'DELETE');
 }
 
 

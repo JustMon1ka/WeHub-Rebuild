@@ -22,8 +22,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserDataService.Tests", "Se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserTagService", "Services\UserTagService\UserTagService.csproj", "{AA772898-3481-4882-8F0A-7A799A775DBE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserTagService.Tests", "UserTagService.Tests\UserTagService.Tests.csproj", "{DFACE89C-2850-4AFA-B8C1-11D68BD2A6BB}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MediaService", "Services\MediaService\MediaService.csproj", "{C292C06B-DCED-4B88-9163-69C15E5CD37D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostService", "Services\PostService\PostService.csproj", "{F7882A1E-18A4-4F98-BE06-E3D1F4CFD487}"
@@ -43,6 +41,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalRService.Tests", "Services\Tests\SignalRService.Tests\SignalRService.Tests.csproj", "{4945CF66-1AFE-4881-A17F-9E084AC3091D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TagService.Test", "Services\Tests\TagService.Test\TagService.Test.csproj", "{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gateway", "Gateway\Gateway.csproj", "{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserTagService.Tests", "Services\Tests\UserTagService.Tests\UserTagService.Tests.csproj", "{4ED42944-CC4F-4697-B41A-D8650581B9AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,10 +76,6 @@ Global
 		{AA772898-3481-4882-8F0A-7A799A775DBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA772898-3481-4882-8F0A-7A799A775DBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA772898-3481-4882-8F0A-7A799A775DBE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DFACE89C-2850-4AFA-B8C1-11D68BD2A6BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DFACE89C-2850-4AFA-B8C1-11D68BD2A6BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DFACE89C-2850-4AFA-B8C1-11D68BD2A6BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DFACE89C-2850-4AFA-B8C1-11D68BD2A6BB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C292C06B-DCED-4B88-9163-69C15E5CD37D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C292C06B-DCED-4B88-9163-69C15E5CD37D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C292C06B-DCED-4B88-9163-69C15E5CD37D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -118,6 +116,14 @@ Global
 		{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7CDE52B-45BB-435E-A6C7-F3C86EB9E587}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{12D73B52-A2BC-468B-9F8D-0DCFCB5C3028} = {1D4447C9-B73F-4590-AB1D-F9C9834FE738}

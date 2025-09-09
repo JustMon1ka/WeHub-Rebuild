@@ -8,7 +8,7 @@ using DTOs; // BaseHttpResponse
 namespace UserTagService.Controllers;
 
 [ApiController]
-[Route("api/users/{id}/tags")]
+[Route("api/user_tags/{id}")]
 [Authorize(AuthenticationSchemes = "Bearer")]
 public class UserTagsController : ControllerBase
 {
