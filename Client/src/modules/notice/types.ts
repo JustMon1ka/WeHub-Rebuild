@@ -12,6 +12,7 @@ export type BaseResp<T = unknown> = {
 export type unreadNoticeCount = BaseResp<{
     totalUnread: number // 总未读数
     unreadByType: {
+        comment: number  // 评论
         reply: number  // 回复
         like: number  // 点赞
         repost: number  // 转发
@@ -51,6 +52,20 @@ export interface commentNoticeItem {
 export type commentNoticeResponse = BaseResp<{
     total: number // 评论总数
     items: commentNoticeItem[]
+}>
+
+// 回复通知响应
+export interface replyNoticeItem {
+    replyId: number // 回复ID
+    replyPoster: number // 回复者用户ID
+    commentId: number // 被回复的评论ID
+    contentPreview: string // 回复内容摘要（前50字符）
+    createdAt: string // 创建时间
+}
+
+export type replyNoticeResponse = BaseResp<{
+    total: number // 回复总数
+    items: replyNoticeItem[]
 }>
 
 
@@ -150,7 +165,7 @@ export type commentDetailResponse = BaseResp<commentDetail>;
 // 通知基础信息
 export interface baseNotice {
     noticeId: number;
-    type: 'comment' | 'repost' | 'at' | 'like';
+    type: 'comment' | 'reply' | 'repost' | 'at' | 'like';
     sender: {
         id: number;
         nickname: string;
@@ -171,6 +186,12 @@ export interface commentNotice extends baseNotice {
     newCommentContent: string;
 }
 
+// 回复通知
+export interface replyNotice extends baseNotice {
+    type: 'reply';
+    replyContent: string;
+}
+
 // 转发通知
 export interface repostNotice extends baseNotice {
     type: 'repost';
@@ -189,6 +210,6 @@ export interface likeNotice extends baseNotice {
 }
 
 // 通知联合类型
-export type notice = commentNotice | repostNotice | atNotice | likeNotice;
+export type notice = commentNotice | replyNotice | repostNotice | atNotice | likeNotice;
 
 export type noticeList = notice[];

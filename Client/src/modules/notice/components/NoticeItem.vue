@@ -41,25 +41,40 @@
           </span>
           <span class="action">{{ getNoticeContent(notice) }}</span>
         </div>
-        <div class="post-comment-content">
+
+        <div class="post-comment-content" v-if="notice.type !== 'like'">
           <span v-if="notice.type === 'comment'"> "{{ notice.newCommentContent }}"</span>
+          <span v-else-if="notice.type === 'reply'"> "{{ notice.replyContent }}"</span>
           <span v-else-if="notice.type === 'at'"> "{{ notice.atContent }}"</span>
           <span v-else-if="notice.type === 'repost'"> "{{ notice.repostContent }}"</span>
         </div>
 
         <div class="other-info">
-          <span class="notice-time">{{ diffime }}</span>
+          <span class="notice-time">{{ difftime }}</span>
           <span
             class="reply"
-            v-if="notice.type === 'comment' || notice.type === 'at'"
+            v-if="notice.type === 'comment' || notice.type === 'reply' || notice.type === 'at'"
             @click="handleReplyClick"
             >回复</span
           >
-          <span class="like" v-if="notice.type === 'comment' || notice.type === 'at'">点赞</span>
+          <span
+            class="like"
+            v-if="notice.type === 'comment' || notice.type === 'reply' || notice.type === 'at'"
+            >点赞</span
+          >
         </div>
       </div>
+
       <!-- 帖子/评论内容 -->
-      <div class="notice-target">
+      <div class="notice-target" v-if="notice.type === 'like'">
+        <span v-if="notice.targetPostTitleImage" class="clickable-post" @click="handlePostClick">
+          <img class="target-post-image" :src="notice.targetPostTitleImage" alt="帖子封面" />
+        </span>
+        <span v-else class="post-or-comment-title clickable-post" @click="handlePostClick">
+          "{{ notice.targetPostTitle }}"
+        </span>
+      </div>
+      <div class="notice-target" v-else>
         <span
           v-if="notice.objectType === 'post' && notice.targetPostTitleImage"
           class="clickable-post"
@@ -74,8 +89,12 @@
         >
           "{{ notice.targetPostTitle }}"
         </span>
-        <span class="post-or-comment-title" v-else-if="notice.objectType === 'comment'">
-          "相关评论"
+        <span
+          class="post-or-comment-title clickable-post"
+          v-else-if="notice.objectType === 'comment'"
+          @click="handlePostClick"
+        >
+          "{{ notice.targetPostTitle }}"
         </span>
       </div>
     </div>
@@ -111,7 +130,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   showLikeDetails: [params: { targetType: 'post' | 'comment'; targetId: number }]
 }>()
-const diffime = formatTime(props.notice.time)
+const difftime = formatTime(props.notice.time)
 const showCommentInput = ref(false)
 const currentUserAvatar = ref('') // 将从用户信息中获取
 
@@ -121,6 +140,8 @@ const getNoticeIcon = (type: string) => {
       return '👍'
     case 'comment':
       return '💬'
+    case 'reply':
+      return '↩️'
     case 'at':
       return '@'
     case 'follow':
@@ -142,8 +163,10 @@ const getNoticeContent = (notice: notice) => {
       if (notice.objectType === 'comment') {
         return '回复了你的评论'
       } else {
-        return '回复了你的帖子'
+        return '评论了你的帖子'
       }
+    case 'reply':
+      return '回复了你的评论'
     case 'at':
       return '提到了你'
     case 'repost':

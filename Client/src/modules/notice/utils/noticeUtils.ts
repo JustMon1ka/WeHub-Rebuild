@@ -8,11 +8,12 @@ export type UnreadSummaryData = unreadNoticeCount['data']
  * @param idx 索引值
  * @returns 对应的通知类型或null
  */
-export function indexToType(idx: number): 'at' | 'reply' | 'like' | 'repost' | null {
+export function indexToType(idx: number): 'at' | 'comment' | 'reply' | 'like' | 'repost' | null {
     if (idx === 0) return 'like'
-    if (idx === 1) return 'reply'
-    if (idx === 2) return 'at'
-    if (idx === 3) return 'repost'
+    if (idx === 1) return 'comment'
+    if (idx === 2) return 'reply'
+    if (idx === 3) return 'at'
+    if (idx === 4) return 'repost'
     return null
 }
 
@@ -23,7 +24,7 @@ export function indexToType(idx: number): 'at' | 'reply' | 'like' | 'repost' | n
  * @param unreadSummary 未读通知摘要
  */
 export function optimisticMarkRead(
-    type: 'at' | 'reply' | 'like' | 'repost',
+    type: 'at' | 'comment' | 'reply' | 'like' | 'repost',
     readOnce: Set<string>,
     unreadSummary: UnreadSummaryData | null
 ) {
@@ -74,8 +75,9 @@ export function getUnreadCountByType(
     if (!unreadSummary) return 0
     const u = unreadSummary.unreadByType
     if (index === 0) return u.like || 0
-    if (index === 1) return u.reply || 0
-    if (index === 2) return u.at || 0
-    if (index === 3) return u.repost || 0
+    if (index === 1) return u.comment || 0
+    if (index === 2) return u.reply || 0
+    if (index === 3) return u.at || 0
+    if (index === 4) return u.repost || 0
     return 0
 }

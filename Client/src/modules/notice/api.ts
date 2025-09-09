@@ -3,6 +3,7 @@ import type {
     unreadNoticeCount,
     likeNoticeResponse,
     commentNoticeResponse,
+    replyNoticeResponse,
     repostNoticeResponse,
     atNoticeResponse,
     likeNoticeListById,
@@ -27,7 +28,7 @@ export async function getUnreadNoticeCount(): Promise<unreadNoticeCount> {
 }
 
 // 标记通知已读
-export async function markNotificationsRead(type: 'reply' | 'like' | 'repost' | 'at'): Promise<markReadResponse> {
+export async function markNotificationsRead(type: 'comment' | 'reply' | 'like' | 'repost' | 'at'): Promise<markReadResponse> {
     const { data } = await axios.post<markReadResponse>('/notifications/read', { type })
     return data
 }
@@ -39,9 +40,17 @@ export async function getLikeNotices(params?: { page?: number; pageSize?: number
     })
     return data
 }
+
 export async function getCommentNotices(params?: { page?: number; pageSize?: number; unreadOnly?: boolean }): Promise<commentNoticeResponse> {
     const { page = 1, pageSize = 20, unreadOnly = false } = params ?? {}
     const { data } = await axios.get<commentNoticeResponse>('/notifications/comments', {
+        params: { page, pageSize, unreadOnly },
+    })
+    return data
+}
+export async function getReplyNotices(params?: { page?: number; pageSize?: number; unreadOnly?: boolean }): Promise<replyNoticeResponse> {
+    const { page = 1, pageSize = 20, unreadOnly = false } = params ?? {}
+    const { data } = await axios.get<replyNoticeResponse>('/notifications/replies', {
         params: { page, pageSize, unreadOnly },
     })
     return data
