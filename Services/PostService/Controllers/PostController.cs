@@ -282,7 +282,7 @@ public class PostController : ControllerBase
         return await _commentService.DeleteCommentOrReplyAsync(userId, id, type);
     }
 
-    [HttpGet("comment")]
+    [HttpGet("comments")]
     public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetComments(
         [FromQuery] long? postId, 
         [FromQuery] long? userId)
@@ -316,6 +316,37 @@ public class PostController : ControllerBase
         {
             // 记录日志（推荐注入 ILogger）
             return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, $"服务器内部错误：{ex.Message}");
+        }
+    }
+
+    [HttpGet("comment")]
+    public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetComment([FromQuery] string ids,
+        [FromQuery] CommentRequest.CommentType type)
+    {
+        if (string.IsNullOrEmpty(ids))
+        {
+            return BaseHttpResponse<List<GetCommentResponse>>.Fail(400, "Ids parameter is required.");
+        }
+
+        try
+        {
+            // 将逗号分隔的字符串转换为 long 列表
+            var idList = ids.Split(',')
+                .Select(id => long.Parse(id.Trim()))
+                .ToList();
+
+            var comments = await _commentService.GetCommentsByIdsAsync(idList, type);
+
+            return BaseHttpResponse<List<GetCommentResponse>>.Success(comments);
+        }
+        catch (FormatException)
+        {
+            return BaseHttpResponse<List<GetCommentResponse>>.Fail(400, "Invalid id format.");
+        }
+        catch (Exception ex)
+        {
+            // 记录异常日志
+            return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, "An error occurred.");
         }
     }
 }

@@ -1,6 +1,6 @@
 // 点赞请求体（按你们后端 LikeRequest）
 export type ToggleLikeRequest = {
-  type: "post";       // 如果后续要点赞评论，可传 'comment'
+  type: 'post' | 'comment' | 'reply';       // 如果后续要点赞评论，可传 'comment'
   target_id: number;
   like: boolean;      // true=点赞，false=取消点赞
 };
@@ -66,4 +66,42 @@ export function unwrap<T>(payload: BaseResp<T>): T {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
   return payload?.data ?? payload;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  username: string;
+  avatar: string;
+}
+
+export interface Comment {
+  type: 'comment' | 'reply';
+  comment_id?: number;
+  reply_id?: number;
+  user_id: number;
+  created_at: string;
+  content: string;
+  likes: number;
+  user?: User; // 前端扩展字段
+}
+
+export interface Post {
+  post_id: number;
+  user_id: number;
+  title: string;
+  content: string;
+  tags: string[];
+  created_at: string;
+  views: number;
+  likes: number;
+  comment_count: number;
+  user?: User; // 前端扩展字段
+  comments?: Comment[]; // 前端扩展字段
+}
+
+export interface CommentRequest {
+  type: 'comment' | 'reply';
+  target_id?: number;
+  content: string;
 }

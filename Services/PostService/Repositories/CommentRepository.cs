@@ -13,12 +13,16 @@ namespace PostService.Repositories
         Task<Reply> AddReplyAsync(Reply reply);
         Task UpdateCommentAsync(Comments comment);
         Task UpdateReplyAsync(Reply reply);
+        Task<long?> GetUserIdByPostIdAsync(long postId);
+        Task<long?> GetUserIdByCommentIdAsync(long commentId);
         Task<List<Comments>> GetCommentsByPostIdAsync(long postId);
         Task<List<Comments>> GetCommentsByUserIdAsync(long userId);
         Task<List<Reply>> GetRepliesByUserIdAsync(long userId);
         Task<bool> UserExistsAsync(long userId);
         Task<bool> PostExistsAsync(long postId);
         Task<bool> CommentExistsAsync(long commentId);
+        Task<List<Comments>> GetCommentsByIdsAsync(List<long> ids);
+        Task<List<Reply>> GetRepliesByIdsAsync(List<long> ids);
     }
 
     public class CommentRepository : ICommentRepository
@@ -60,6 +64,22 @@ namespace PostService.Repositories
         {
             _db.Replies.Update(reply);
             await _db.SaveChangesAsync();
+        }
+
+        public async Task<long?> GetUserIdByPostIdAsync(long postId)
+        {
+            return await _db.Posts
+                .Where(p => p.PostId == postId)
+                .Select(p => p.UserId)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<long?> GetUserIdByCommentIdAsync(long commentId)
+        {
+            return await _db.Comments
+                .Where(c => c.CommentId == commentId)
+                .Select(c => c.UserId)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<List<Comments>> GetCommentsByPostIdAsync(long postId)
@@ -112,6 +132,23 @@ namespace PostService.Repositories
         public async Task<bool> CommentExistsAsync(long commentId)
         {
             return await _db.Comments.CountAsync(c => c.CommentId == commentId && c.IsDeleted == 0) > 0;
+        }
+
+        public async Task<List<Comments>> GetCommentsByIdsAsync(List<long> ids)
+        {
+            return await _db.Comments
+                .Include(c => c.User)
+                .Include(c => c.Post)
+                .Where(c => ids.Contains(c.CommentId) && c.IsDeleted == 0)
+                .ToListAsync();
+        }
+
+        public async Task<List<Reply>> GetRepliesByIdsAsync(List<long> ids)
+        {
+            return await _db.Replies
+                .Include(r => r.User)
+                .Where(r => ids.Contains(r.ReplyId) && r.IsDeleted == 0)
+                .ToListAsync();
         }
     }
 }
