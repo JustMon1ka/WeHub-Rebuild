@@ -1,8 +1,7 @@
-﻿import { createRouter, createWebHistory } from 'vue-router'
-
-export const authRouter = createRouter({
-    history: createWebHistory(),
-    routes: [
+﻿
+export default {
+  getRoutes() {
+    return [
       {
         path: '/register',
         name: 'Register',
@@ -13,22 +12,21 @@ export const authRouter = createRouter({
       {
         path: '/login',
         name: 'Login',
-        component: () =>  import('@/modules/auth/views/LoginView.vue'),
+        component: () => import('@/modules/auth/views/LoginView.vue'),
         meta: { title: 'Login', navi: false, recommend: false, requireLogin: false }
       },
       {
         path: '/password_reset',
         name: 'PasswordReset',
-        component: () =>  import ('@/modules/auth/views/PasswordResetView.vue'),
+        component: () => import ('@/modules/auth/views/PasswordResetView.vue'),
         meta: { title: 'Reset Your Password', navi: false, recommend: false, requireLogin: false }
       },
       {
         path: '/privacy',
         name: 'Privacy',
-        component: () =>  import ('@/modules/auth/views/PrivacyView.vue'),
+        component: () => import ('@/modules/auth/views/PrivacyView.vue'),
         meta: { title: 'Privacy', navi: false, recommend: false, requireLogin: false }
       }
     ]
-})
-
-export default authRouter;
+  }
+}

@@ -23,4 +23,8 @@
       <ProjectReference Include="..\Shared\Models\Models.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Remove="appsettings.json" />
+    </ItemGroup>
+
 </Project>
