@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PostService.Data;
 using PostService.Models;
+using System.Threading.Tasks;
 
 namespace PostService.Repositories
 {
@@ -19,6 +20,7 @@ namespace PostService.Repositories
         {
             _context = context;
         }
+
 
         // ✅ 点赞数 +1
         public async Task IncrementLikeCountAsync(long postId)

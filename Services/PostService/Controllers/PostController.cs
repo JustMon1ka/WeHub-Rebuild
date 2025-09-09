@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Models;
 using PostService.DTOs;
 using PostService.Services;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace PostService.Controllers;
 
@@ -14,13 +15,15 @@ public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
+    private readonly IDistributedCache _redis;
 
-    public PostController(IPostService postService, ICommentService commentService)
+    public PostController(IPostService postService, ICommentService commentService, IDistributedCache redis)
     {
         _postService = postService;
         _commentService = commentService;
+        _redis = redis;
     }
-    
+
     [HttpGet]
     public async Task<BaseHttpResponse<List<PostResponse>>> GetPosts([FromQuery] string? ids, [FromQuery] long? userId)
     {
@@ -58,7 +61,7 @@ public class PostController : ControllerBase
                 var responseListByIds = postsByIds.Select(ToPostResponse).ToList();
                 return BaseHttpResponse<List<PostResponse>>.Success(responseListByIds);
             }
-            
+
 
             // 如果提供了 userId，则执行新逻辑
             if (userId.HasValue)
@@ -83,7 +86,7 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<PostResponse>>.Fail(500, $"服务器内部错误：{ex.Message}");
         }
     }
-    
+
     // 辅助方法，用于将 Post 对象映射为 PostResponse 对象，避免代码重复。
     private PostResponse ToPostResponse(Post post)
     {
@@ -99,7 +102,7 @@ public class PostController : ControllerBase
             Likes = post.Likes ?? 0
         };
     }
-    
+
     [HttpDelete]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<BaseHttpResponse<object?>> DeletePost([FromQuery] long post_id)
@@ -138,9 +141,10 @@ public class PostController : ControllerBase
             return BaseHttpResponse<object?>.Fail(500, "服务器内部错误：" + ex.Message);
         }
     }
-    
+
     [HttpGet("{post_id}")]
-    public async Task<BaseHttpResponse<PostResponse>> GetPost([FromRoute] long post_id){
+    public async Task<BaseHttpResponse<PostResponse>> GetPost([FromRoute] long post_id)
+    {
         try
         {
             var post = await _postService.GetPostByIdAsync(post_id);
@@ -189,7 +193,7 @@ public class PostController : ControllerBase
             }
 
             long userId = long.Parse(userIdClaim.Value);
-            
+
             // 如果未填 CircleId，用 100000 作为默认值
             long circleId = postPublishRequest.CircleId ?? 100000;
 
@@ -234,7 +238,7 @@ public class PostController : ControllerBase
     {
         // 设置默认值
         int effectiveLimits = limits ?? 10;
-        
+
         // 简单参数验证
         if (effectiveLimits <= 0)
         {
@@ -284,7 +288,7 @@ public class PostController : ControllerBase
 
     [HttpGet("comments")]
     public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetComments(
-        [FromQuery] long? postId, 
+        [FromQuery] long? postId,
         [FromQuery] long? userId)
     {
         try
@@ -349,4 +353,50 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, "An error occurred.");
         }
     }
+    
+    [HttpPost("share")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<PostPublishResponse>> SharePost([FromBody] ShareRequest request)
+    {
+        try
+        {
+            // 从 token 中取 userId（转发人）
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return BaseHttpResponse<PostPublishResponse>.Fail(401, "未认证的用户");
+
+            long userId = long.Parse(userIdClaim.Value);
+
+            // 获取被分享的原帖
+            var original = await _postService.GetPostByIdAsync(request.TargetId);
+            if (original == null || original.IsDeleted == 1)
+                return BaseHttpResponse<PostPublishResponse>.Fail(404, "原帖不存在");
+
+            // 生成特殊标记文本
+            string marker = $"<type:repost,targetId:{original.PostId},title:{original.Title}>";
+
+            // 发布新帖（内容就是 marker + 用户的附加评论）
+            var newPost = await _postService.PublishPostAsync(
+                userId,
+                request.CircleId ?? original.CircleId ?? 100000L,
+                $"转发：{original.Title}",
+                marker + "\n\n" + (request.Comment ?? ""),
+                new List<long>() // 不带标签
+            );
+
+            //把通知写入 Redis
+            string message = $"type:repost,targetId:{original.PostId}";
+            await _redis.SetStringAsync(original.UserId.ToString(), message);
+            return BaseHttpResponse<PostPublishResponse>.Success(new PostPublishResponse
+         {
+                PostId = newPost.PostId,
+                CreatedAt = newPost.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""
+            });
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<PostPublishResponse>.Fail(500, "转发失败: " + ex.Message);
+        }
+    }
+
 }
