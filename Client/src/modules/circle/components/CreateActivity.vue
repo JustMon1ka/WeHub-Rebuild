@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
-    style="transform: translateY(50px)"
-  >
+  <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[9999]">
     <div class="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
       <div class="create-activity-container">
         <!-- 页面头部 -->
@@ -421,15 +418,23 @@ const handleSubmit = async () => {
 
     if (form.value.imageFile && result.data) {
       try {
-        await activityApi.uploadActivityImage(
+        console.log('开始上传活动图片...')
+        const uploadResult = await activityApi.uploadActivityImage(
           props.circleId,
           result.data.activityId,
           form.value.imageFile,
         )
-        console.log('活动图片上传成功')
+        console.log('活动图片上传成功:', uploadResult)
+
+        // 可以添加成功提示
+        // alert('活动创建成功，图片上传成功！')
       } catch (imageError) {
-        console.error('图片上传失败:', imageError)
-        // 图片上传失败不影响活动创建
+        console.error('图片上传失败详情:', imageError)
+        console.error('图片上传错误响应:', imageError.response?.data)
+
+        // 给用户明确的错误提示
+        const errorMsg = imageError.response?.data?.message || imageError.message || '图片上传失败'
+        alert(`活动创建成功，但图片上传失败: ${errorMsg}`)
       }
     }
 

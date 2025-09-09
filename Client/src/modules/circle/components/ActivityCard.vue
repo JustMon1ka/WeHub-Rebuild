@@ -18,21 +18,6 @@
       <h3 class="activity-title">{{ activity.title }}</h3>
     </div>
 
-    <!-- 默认活动卡片图片 -->
-    <div v-if="!activity.imageUrl" class="default-card-image">
-      <div class="default-card-content">
-        <svg class="w-12 h-12 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-          ></path>
-        </svg>
-        <p class="text-slate-500 text-sm mt-2">{{ activity.title }}</p>
-      </div>
-    </div>
-
     <!-- 卡片主体 -->
     <div class="card-body">
       <!-- 活动描述 -->
@@ -104,20 +89,20 @@ import { activityApi } from '../api'
 // 定义响应式变量
 const loading = ref(false)
 
-// 在 ActivityCard.vue 中添加 circleId 作为 prop
 interface Props {
   activity: Activity
   canManage?: boolean
   participantStatus?: any
-  circleId: number // 添加这个 prop
+  circleId: number
 }
 
 interface Emits {
   (e: 'edit', activity: Activity): void
   (e: 'delete', activity: Activity): void
   (e: 'statusChanged'): void
-  (e: 'join-activity', activity: Activity): void // 新增
+  (e: 'join-activity', activity: Activity): void
 }
+
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
@@ -169,7 +154,7 @@ const formatDateTime = (dateStr: string) => {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 
-// 处理参加活动 - 修改为触发事件而不是调用API
+// 处理参加活动
 const handleJoinActivity = async () => {
   console.log('ActivityCard: 触发参加活动事件')
 
@@ -179,7 +164,6 @@ const handleJoinActivity = async () => {
     return
   }
 
-  // 不调用API，直接触发事件让父组件处理
   emit('join-activity', props.activity)
 }
 
@@ -207,7 +191,6 @@ const handleCompleteActivity = async () => {
     console.error('响应数据:', error.response?.data)
     console.error('请求URL:', error.config?.url)
 
-    // 显示具体错误信息
     let errorMessage = '完成活动失败'
     if (error.response?.data?.msg) {
       errorMessage = error.response.data.msg
@@ -246,7 +229,6 @@ const handleClaimReward = async () => {
     console.error('响应数据:', error.response?.data)
     console.error('请求URL:', error.config?.url)
 
-    // 显示具体错误信息
     let errorMessage = '领取奖励失败'
     if (error.response?.data?.msg) {
       errorMessage = error.response.data.msg
@@ -513,19 +495,5 @@ const handleClaimReward = async () => {
   100% {
     transform: rotate(360deg);
   }
-}
-
-.default-card-image {
-  height: 200px;
-  background: linear-gradient(135deg, #1e293b, #334155); /* slate-800 to slate-700 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.default-card-content {
-  text-align: center;
-  opacity: 0.7;
 }
 </style>

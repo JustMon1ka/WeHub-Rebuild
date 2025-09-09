@@ -98,7 +98,7 @@
             <div class="community-banner">
               <img
                 :src="
-                  getImageUrl(community.bannerUrl) ||
+                  processedImages[community.id]?.banner ||
                   `https://placehold.co/300x120/1677ff/ffffff?text=${encodeURIComponent(community.name)}`
                 "
                 :alt="`${community.name} banner`"
@@ -110,7 +110,7 @@
                 <img
                   class="community-avatar"
                   :src="
-                    getImageUrl(community.avatarUrl) ||
+                    processedImages[community.id]?.avatar ||
                     `https://placehold.co/60x60/1677ff/ffffff?text=${encodeURIComponent(community.name[0] || 'C')}`
                   "
                   :alt="`${community.name} avatar`"
@@ -195,12 +195,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
-import { CircleAPI } from '../api.ts'
+import { CircleAPI, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
-
-const getImageUrl = (imageUrl: string): string => {
-  return CircleAPI.getImageProxyUrl(imageUrl)
-}
+import request from '../utils/request.ts'
 
 // 类型定义
 interface Community {
@@ -235,6 +232,57 @@ const joinedCommunities = ref<Community[]>([])
 
 // 当前用户ID（与后端硬编码保持一致）
 const currentUserId = 2
+
+const processedImages = ref<Record<number, { avatar: string; banner: string }>>({})
+
+// 添加图片处理函数（和详情页完全一样）
+const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
+  if (!imageUrl) return ''
+
+  try {
+    // 提取相对路径部分（去掉域名）
+    const imagePath = imageUrl.replace('http://120.26.118.70:5001', '')
+
+    // 这里就是 request.get() 的使用！自动携带Cookie
+    const response = await request.get(imagePath, {
+      responseType: 'blob',
+    })
+
+    // 将返回的blob转换为可显示的URL
+    return URL.createObjectURL(response.data)
+  } catch (error) {
+    console.error('获取图片失败:', error)
+    return ''
+  }
+}
+
+// 添加处理图片URLs的函数（和详情页完全一样）
+const processImageUrls = async (community: Community): Promise<void> => {
+  console.log('开始处理图片URL for community:', community.id)
+
+  const processedAvatar = ref<string>('')
+  const processedBanner = ref<string>('')
+
+  // 处理头像
+  if (community.avatarUrl) {
+    console.log('原始头像URL:', community.avatarUrl)
+    processedAvatar.value = await getProxiedImageUrl(community.avatarUrl)
+    console.log('处理后头像URL:', processedAvatar.value)
+  }
+
+  // 处理横幅
+  if (community.bannerUrl) {
+    console.log('原始横幅URL:', community.bannerUrl)
+    processedBanner.value = await getProxiedImageUrl(community.bannerUrl)
+    console.log('处理后横幅URL:', processedBanner.value)
+  }
+
+  // 存储处理后的图片URL
+  processedImages.value[community.id] = {
+    avatar: processedAvatar.value,
+    banner: processedBanner.value,
+  }
+}
 
 // 计算属性
 const filteredCommunities = computed(() => {
@@ -294,7 +342,7 @@ const loadAllCommunities = async (): Promise<void> => {
             isLoading: false,
             createdAt: item.createdAt || new Date().toISOString(),
             ownerId: item.ownerId,
-            // 兼容多种命名方式
+            // 兼容多种命名方式 - 和详情页完全一样
             avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
             bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
           }
@@ -307,6 +355,9 @@ const loadAllCommunities = async (): Promise<void> => {
             community.isJoined = false
           }
 
+          // 处理图片URL - 和详情页完全一样的方式
+          await processImageUrls(community)
+
           return community
         }),
       )
@@ -316,6 +367,7 @@ const loadAllCommunities = async (): Promise<void> => {
       allCommunities.value = communities
 
       console.log('处理后的所有社区列表:', allCommunities.value)
+      console.log('处理后的图片映射:', processedImages.value)
     } else {
       throw new Error('社区列表数据格式错误')
     }
@@ -333,21 +385,30 @@ const loadJoinedCommunities = async (): Promise<void> => {
     console.log('已加入社区响应:', response)
 
     if (response && response.code === 200 && Array.isArray(response.data)) {
-      const communities = response.data.map((item: any) => ({
-        id: item.circleId || item.id,
-        name: item.name || '未知社区',
-        description: item.description || '',
-        memberCount: item.memberCount || 0,
-        category: item.categories || item.category || '通用',
-        isPrivate: item.isPrivate || false,
-        isJoined: true,
-        isLoading: false,
-        createdAt: item.createdAt || new Date().toISOString(),
-        ownerId: item.ownerId,
-        // 兼容多种命名方式
-        avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
-        bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
-      }))
+      const communities = await Promise.all(
+        response.data.map(async (item: any) => {
+          const community: Community = {
+            id: item.circleId || item.id,
+            name: item.name || '未知社区',
+            description: item.description || '',
+            memberCount: item.memberCount || 0,
+            category: item.categories || item.category || '通用',
+            isPrivate: item.isPrivate || false,
+            isJoined: true,
+            isLoading: false,
+            createdAt: item.createdAt || new Date().toISOString(),
+            ownerId: item.ownerId,
+            // 兼容多种命名方式 - 和详情页完全一样
+            avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
+            bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
+          }
+
+          // 处理图片URL - 和详情页完全一样的方式
+          await processImageUrls(community)
+
+          return community
+        }),
+      )
 
       // 使用store管理状态
       communityStore.setJoinedCommunities(communities)
@@ -571,9 +632,9 @@ const getButtonClass = (community: Community): string => {
 }
 
 .communities-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  display: flex; /* 改为flex布局 */
+  flex-direction: column; /* 垂直排列 */
+  gap: 20px; /* 保持间距 */
 }
 
 .empty-communities {
@@ -589,12 +650,15 @@ const getButtonClass = (community: Community): string => {
 }
 
 .community-card {
-  border: 1px solid #334155; /* slate-700 */
+  border: 1px solid #334155;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
-  background: #0f172a; /* slate-900 */
+  background: #0f172a;
+  display: flex; /* 改为水平flex布局 */
+  align-items: stretch; /* 让内容高度一致 */
+  width: 100%; /* 占满容器宽度 */
 }
 
 .community-card:hover {
@@ -603,19 +667,29 @@ const getButtonClass = (community: Community): string => {
 }
 
 .community-banner {
-  height: 120px;
+  width: 200px; /* 固定横幅宽度 */
+  height: 140px; /* 稍微增加高度 */
   overflow: hidden;
-  background: #334155; /* slate-700 */
+  background: #334155;
+  flex-shrink: 0; /* 防止压缩 */
+  display: flex; /* 新增：用于居中图片 */
+  align-items: center; /* 新增：垂直居中 */
+  justify-content: center; /* 新增：水平居中 */
 }
 
 .community-banner img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center; /* 新增：确保图片居中裁剪 */
 }
 
 .community-info {
-  padding: 16px;
+  padding: 20px; /* 稍微增加内边距 */
+  flex: 1; /* 占据剩余空间 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 让内容分布均匀 */
 }
 
 .community-header {
@@ -629,7 +703,9 @@ const getButtonClass = (community: Community): string => {
   height: 48px;
   border-radius: 50%;
   margin-right: 12px;
-  background: #475569; /* slate-600 */
+  background: #475569;
+  object-fit: cover; /* 新增：确保头像正确显示 */
+  object-position: center; /* 新增：头像居中 */
 }
 
 .community-meta {
@@ -651,13 +727,14 @@ const getButtonClass = (community: Community): string => {
 
 .community-description {
   font-size: 14px;
-  color: #cbd5e1; /* slate-300 */
-  line-height: 1.4;
+  color: #cbd5e1;
+  line-height: 1.5; /* 稍微增加行高 */
   margin-bottom: 12px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 2; /* 保持2行 */
   -webkit-box-orient: vertical;
   overflow: hidden;
+  flex: 1; /* 让描述占据可用空间 */
 }
 
 .community-tags {
@@ -682,6 +759,7 @@ const getButtonClass = (community: Community): string => {
 .community-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center; /* 新增：垂直居中按钮 */
 }
 
 .btn {
@@ -740,7 +818,6 @@ const getButtonClass = (community: Community): string => {
 .sidebar-title {
   font-size: 18px;
   font-weight: 600;
-  color: #f1f5f9; /* slate-100 */
   margin-bottom: 16px;
 }
 
@@ -800,16 +877,7 @@ const getButtonClass = (community: Community): string => {
   font-size: 14px;
 }
 
-@media (max-width: 1024px) {
-  .main-container {
-    grid-template-columns: 1fr;
-  }
-
-  .communities-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
-
+/* 响应式调整 */
 @media (max-width: 768px) {
   .main-container {
     padding: 16px;
@@ -820,7 +888,22 @@ const getButtonClass = (community: Community): string => {
     align-items: stretch;
   }
 
-  .communities-grid {
+  .community-card {
+    flex-direction: column; /* 移动端改为垂直布局 */
+  }
+
+  .community-banner {
+    width: 100%; /* 移动端横幅占满宽度 */
+    height: 120px; /* 移动端高度稍小 */
+  }
+
+  .community-info {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .main-container {
     grid-template-columns: 1fr;
   }
 }

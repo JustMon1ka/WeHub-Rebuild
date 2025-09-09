@@ -51,9 +51,9 @@
           class="activity-card"
           @click="handleActivityClick(activity)"
         >
-          <!-- 活动图片 -->
-          <div class="activity-image">
-            <img :src="activity.imageUrl || getDefaultImage()" :alt="activity.title" />
+          <!-- 活动图片 - 仅在有图片时显示 -->
+          <div v-if="activity.imageUrl" class="activity-image">
+            <img :src="activity.imageUrl" :alt="activity.title" />
             <div class="activity-status-overlay">
               <span class="status-badge" :class="getStatusClass(activity)">
                 {{ getStatusText(activity) }}
@@ -62,7 +62,14 @@
           </div>
 
           <!-- 活动信息 -->
-          <div class="activity-info">
+          <div class="activity-info" :class="{ 'no-image': !activity.imageUrl }">
+            <!-- 在没有图片时显示状态标签 -->
+            <div v-if="!activity.imageUrl" class="activity-header">
+              <span class="status-badge" :class="getStatusClass(activity)">
+                {{ getStatusText(activity) }}
+              </span>
+            </div>
+
             <h3 class="activity-title">{{ activity.title }}</h3>
             <p class="activity-description">
               {{ activity.description || '暂无描述' }}
@@ -353,11 +360,6 @@ const formatTime = (timeStr: string) => {
   })
 }
 
-// 默认图片
-const getDefaultImage = () => {
-  return 'https://placehold.co/400x200/f0f2f5/86909c?text=活动图片'
-}
-
 // 空状态文案
 const getEmptyStateTitle = () => {
   switch (activeFilter.value) {
@@ -595,10 +597,10 @@ interface ActivityStats {
 
 <style scoped>
 .activity-list-container {
-  background: #1e293b; /* slate-800 */
+  background: #1e293b;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #334155; /* slate-700 */
+  border: 1px solid #334155;
 }
 
 .loading-state,
@@ -608,14 +610,14 @@ interface ActivityStats {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #64748b; /* slate-500 */
+  color: #64748b;
 }
 
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #334155; /* slate-700 */
-  border-top: 3px solid #0ea5e9; /* sky-500 */
+  border: 3px solid #334155;
+  border-top: 3px solid #0ea5e9;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -632,7 +634,7 @@ interface ActivityStats {
 
 .activity-content {
   padding: 24px;
-  background: #1e293b; /* slate-800 */
+  background: #1e293b;
 }
 
 .activity-filters {
@@ -641,7 +643,7 @@ interface ActivityStats {
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #334155; /* slate-700 */
+  border-bottom: 1px solid #334155;
 }
 
 .filter-left {
@@ -662,35 +664,35 @@ interface ActivityStats {
 }
 
 .btn-secondary {
-  background: #334155; /* slate-700 */
-  color: #cbd5e1; /* slate-300 */
-  border: 1px solid #475569; /* slate-600 */
+  background: #334155;
+  color: #cbd5e1;
+  border: 1px solid #475569;
 }
 
 .btn-secondary:hover {
-  background: #475569; /* slate-600 */
-  border-color: #64748b; /* slate-500 */
+  background: #475569;
+  border-color: #64748b;
 }
 
 .filter-btn {
   padding: 8px 16px;
-  border: 1px solid #334155; /* slate-700 */
-  background: #1e293b; /* slate-800 */
+  border: 1px solid #334155;
+  background: #1e293b;
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 14px;
-  color: #cbd5e1; /* slate-300 */
+  color: #cbd5e1;
 }
 
 .filter-btn:hover {
-  border-color: #0ea5e9; /* sky-500 */
-  color: #38bdf8; /* sky-400 */
+  border-color: #0ea5e9;
+  color: #38bdf8;
 }
 
 .filter-btn.active {
-  background: #0ea5e9; /* sky-500 */
-  border-color: #0ea5e9; /* sky-500 */
+  background: #0ea5e9;
+  border-color: #0ea5e9;
   color: #fff;
 }
 
@@ -709,7 +711,7 @@ interface ActivityStats {
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: #64748b; /* slate-500 */
+  color: #64748b;
 }
 
 .empty-icon {
@@ -718,29 +720,30 @@ interface ActivityStats {
 }
 
 .empty-state h3 {
-  color: #cbd5e1; /* slate-300 */
+  color: #cbd5e1;
   margin: 0 0 8px 0;
 }
 
 .activity-card {
-  border: 1px solid #334155; /* slate-700 */
+  border: 1px solid #334155;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
-  background: #0f172a; /* slate-900 */
+  background: #0f172a;
 }
 
 .activity-card:hover {
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
-  border-color: #0ea5e9; /* sky-500 */
+  border-color: #0ea5e9;
 }
 
+/* 活动图片 - 仅在有图片时显示 */
 .activity-image {
   position: relative;
   height: 160px;
   overflow: hidden;
-  background: #334155; /* slate-700 */
+  background: #334155;
 }
 
 .activity-image img {
@@ -755,36 +758,47 @@ interface ActivityStats {
   right: 12px;
 }
 
+.activity-info {
+  padding: 16px;
+}
+
+/* 没有图片时的特殊样式 */
+.activity-info.no-image {
+  padding-top: 16px;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .status-badge {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: rgba(15, 23, 42, 0.9); /* slate-900 with opacity */
+  background: rgba(15, 23, 42, 0.9);
   backdrop-filter: blur(4px);
-  border: 1px solid #334155; /* slate-700 */
+  border: 1px solid #334155;
 }
 
 .status-badge.upcoming {
-  color: #fbbf24; /* amber-400 */
+  color: #fbbf24;
 }
 
 .status-badge.active {
-  color: #86efac; /* green-300 */
+  color: #86efac;
 }
 
 .status-badge.expired {
-  color: #9ca3af; /* gray-400 */
-}
-
-.activity-info {
-  padding: 16px;
+  color: #9ca3af;
 }
 
 .activity-title {
   font-size: 16px;
   font-weight: 600;
-  color: #f1f5f9; /* slate-100 */
+  color: #f1f5f9;
   margin: 0 0 8px 0;
   line-height: 1.4;
   overflow: hidden;
@@ -795,7 +809,7 @@ interface ActivityStats {
 }
 
 .activity-description {
-  color: #64748b; /* slate-500 */
+  color: #64748b;
   font-size: 14px;
   line-height: 1.5;
   margin: 0 0 12px 0;
@@ -818,11 +832,11 @@ interface ActivityStats {
 }
 
 .time-label {
-  color: #64748b; /* slate-500 */
+  color: #64748b;
 }
 
 .time-value {
-  color: #cbd5e1; /* slate-300 */
+  color: #cbd5e1;
   font-weight: 500;
 }
 
@@ -831,10 +845,10 @@ interface ActivityStats {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: #1f2937; /* gray-800 */
+  background: #1f2937;
   border-radius: 6px;
   margin-bottom: 12px;
-  border: 1px solid #374151; /* gray-700 */
+  border: 1px solid #374151;
 }
 
 .reward-icon {
@@ -842,7 +856,7 @@ interface ActivityStats {
 }
 
 .reward-text {
-  color: #fbbf24; /* amber-400 */
+  color: #fbbf24;
   font-size: 13px;
   font-weight: 500;
   flex: 1;
@@ -857,7 +871,7 @@ interface ActivityStats {
   align-items: center;
   margin-bottom: 16px;
   padding-top: 8px;
-  border-top: 1px solid #334155; /* slate-700 */
+  border-top: 1px solid #334155;
 }
 
 .participant-count {
@@ -865,7 +879,7 @@ interface ActivityStats {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #64748b; /* slate-500 */
+  color: #64748b;
 }
 
 .count-icon {
@@ -884,15 +898,15 @@ interface ActivityStats {
 }
 
 .status-icon.in-progress {
-  color: #38bdf8; /* sky-400 */
+  color: #38bdf8;
 }
 
 .status-icon.completed {
-  color: #86efac; /* green-300 */
+  color: #86efac;
 }
 
 .status-text {
-  color: #cbd5e1; /* slate-300 */
+  color: #cbd5e1;
   font-weight: 500;
 }
 
@@ -918,41 +932,41 @@ interface ActivityStats {
 }
 
 .btn-primary {
-  background: #0ea5e9; /* sky-500 */
+  background: #0ea5e9;
   color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #0284c7; /* sky-600 */
+  background: #0284c7;
 }
 
 .btn-success {
-  background: #10b981; /* emerald-500 */
+  background: #10b981;
   color: #fff;
 }
 
 .btn-success:hover:not(:disabled) {
-  background: #059669; /* emerald-600 */
+  background: #059669;
 }
 
 .btn-reward {
-  background: #f59e0b; /* amber-500 */
+  background: #f59e0b;
   color: #fff;
 }
 
 .btn-reward:hover:not(:disabled) {
-  background: #d97706; /* amber-600 */
+  background: #d97706;
 }
 
 .btn-outline {
-  background: #1e293b; /* slate-800 */
-  color: #cbd5e1; /* slate-300 */
-  border: 1px solid #334155; /* slate-700 */
+  background: #1e293b;
+  color: #cbd5e1;
+  border: 1px solid #334155;
 }
 
 .btn-outline:hover {
-  border-color: #0ea5e9; /* sky-500 */
-  color: #38bdf8; /* sky-400 */
+  border-color: #0ea5e9;
+  color: #38bdf8;
 }
 
 .btn:disabled {
