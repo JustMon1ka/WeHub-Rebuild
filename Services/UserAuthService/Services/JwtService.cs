@@ -15,7 +15,7 @@ public class JwtService
         _config = config;
     }
 
-    public string GenerateToken(User user)
+    public string GenerateToken(User user, bool longTerm = false)
     {
         var claims = new[]
         {
@@ -29,11 +29,13 @@ public class JwtService
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        var expirationMinutes = longTerm ? int.Parse(_config["Jwt:LongExpiresMinutes"] ?? "43200") : 
+            int.Parse(_config["Jwt:ExpiresMinutes"] ?? "30");
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"],
             audience: _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(int.Parse(_config["Jwt:ExpiresMinutes"]!)),
+            expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
             signingCredentials: creds
         );
 

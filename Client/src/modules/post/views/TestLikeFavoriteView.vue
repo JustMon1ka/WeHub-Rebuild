@@ -1,0 +1,319 @@
+<template>
+  <div class="container mx-auto max-w-screen-xl">
+    <div class="grid grid-cols-1 md:grid-cols-10 lg:grid-cols-12 gap-x-4">
+      
+      <!-- 左侧导航栏 -->
+      <aside class="hidden md:block md:col-span-2 lg:col-span-2 p-4 sticky top-0 h-screen">
+        <div class="flex flex-col h-full">
+          <!-- Logo -->
+          <div class="h-16 flex items-center mb-4">
+            <svg class="w-8 h-8 text-sky-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="ml-2 text-xl font-bold">论坛</span>
+          </div>
+
+          <!-- 导航菜单 -->
+          <nav class="flex-grow">
+            <ul class="space-y-2">
+              <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+                <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                首页
+              </a></li>
+              <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+                <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                发现
+              </a></li>
+              <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+                <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                社区
+              </a></li>
+              <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+                <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                通知
+              </a></li>
+              <li><a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+                <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                私信
+              </a></li>
+              <li><a href="#" class="flex items-center p-3 rounded-full bg-slate-800 font-semibold">
+                <svg class="w-6 h-6 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                个人主页
+              </a></li>
+            </ul>
+          </nav>
+
+          <!-- 用户信息 -->
+          <div class="mt-auto">
+            <a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
+              <img class="w-10 h-10 rounded-full" src="https://placehold.co/100x100/7dd3fc/0f172a?text=头像" alt="User Avatar">
+              <div class="ml-3">
+                <p class="font-semibold text-sm">用户名</p>
+                <p class="text-slate-400 text-xs">@username</p>
+              </div>
+              <svg class="w-5 h-5 ml-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 中间主内容区 -->
+      <main class="col-span-1 md:col-span-8 lg:col-span-7 border-x border-slate-800 min-h-screen">
+        <!-- 页面头部 -->
+        <div class="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md flex items-center p-4 border-b border-slate-800">
+          <button class="p-2 rounded-full hover:bg-slate-800 mr-4" @click="goBack">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          </button>
+          <h1 class="text-xl font-bold">帖子详情</h1>
+        </div>
+
+        <!-- 帖子内容 -->
+        <div class="p-4">
+          <!-- 作者信息 -->
+          <div class="flex items-center space-x-3">
+            <img class="w-12 h-12 rounded-full" src="https://placehold.co/100x100/7dd3fc/0f172a?text=头像" alt="User Avatar">
+            <div>
+              <p class="font-bold">用户名</p>
+              <p class="text-sm text-slate-500">@username</p>
+            </div>
+          </div>
+          
+          <!-- 帖子内容 -->
+          <h2 class="text-2xl font-bold mt-4">关于新发布的《赛博纪元》DLC，大家怎么看？</h2>
+          <p class="mt-4 text-slate-300 leading-relaxed">
+            刚玩了两个小时，感觉地图设计和剧情都相当不错，就是优化有点问题，我的3070都有点卡。你们的体验如何？
+            <br><br>
+            特别是夜之城的北部扩展区，风景真的绝了。随便截几张图都是壁纸级的。
+          </p>
+          <div class="mt-4 rounded-2xl border border-slate-800 overflow-hidden">
+            <img src="https://placehold.co/600x350/1e40af/dbeafe?text=游戏截图" alt="Game Screenshot" class="w-full h-auto object-cover">
+          </div>
+          <p class="text-sm text-slate-500 mt-4">发布于 2小时前</p>
+          
+          <!-- 互动数据 -->
+          <div class="flex items-center space-x-6 py-4 border-y border-slate-800 mt-4">
+            <p><span class="font-bold text-white">32</span> <span class="text-slate-500">转发</span></p>
+            <p><span class="font-bold text-white">1,158</span> <span class="text-slate-500">赞</span></p>
+            <p><span class="font-bold text-white">125</span> <span class="text-slate-500">回复</span></p>
+          </div>
+          
+          <!-- 测试组件区域 -->
+          <div class="bg-slate-800 p-4 rounded-lg mt-6">
+            <h3 class="text-lg font-bold mb-4 text-sky-400">组件测试区域</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <!-- 点赞按钮测试 -->
+              <div class="bg-slate-900 p-4 rounded-lg">
+                <h4 class="font-semibold mb-2">点赞按钮测试</h4>
+                <LikeButton
+                  :post-id="123"
+                  :is-liked="false"
+                  :like-count="5"
+                />
+                <LikeButton
+                  :post-id="124"
+                  :is-liked="true"
+                  :like-count="12"
+                  class="mt-2"
+                />
+              </div>
+              
+              <!-- 收藏按钮测试 -->
+              <div class="bg-slate-900 p-4 rounded-lg">
+                <h4 class="font-semibold mb-2">收藏按钮测试</h4>
+                <FavoriteButton
+                  :post-id="123"
+                  :is-favorited="false"
+                />
+                <FavoriteButton
+                  :post-id="124"
+                  :is-favorited="true"
+                  class="mt-2"
+                />
+              </div>
+              
+              <!-- 分享按钮测试 -->
+              <div class="bg-slate-900 p-4 rounded-lg">
+                <h4 class="font-semibold mb-2">分享按钮测试</h4>
+                <ShareButton
+                  :post-id="123"
+                />
+              </div>
+            </div>
+            
+            <!-- 互动按钮 (原帖子设计) -->
+            <div class="flex justify-around text-slate-500 mt-2">
+              <button class="flex-1 flex items-center justify-center space-x-2 py-3 rounded-md hover:bg-slate-800 hover:text-sky-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                <span>回复</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center space-x-2 py-3 rounded-md hover:bg-slate-800 hover:text-green-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 20h5v-5M20 4h-5v5"></path></svg>
+                <span>转发</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center space-x-2 py-3 rounded-md hover:bg-slate-800 hover:text-red-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                <span>赞</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center space-x-2 py-3 rounded-md hover:bg-slate-800 hover:text-yellow-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <span>分享</span>
+              </button>
+              <button class="flex-1 flex items-center justify-center space-x-2 py-3 rounded-md hover:bg-slate-800 hover:text-orange-400">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1v12z"></path></svg>
+                <span>举报</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 评论区 -->
+        <div class="border-t border-slate-800 divide-y divide-slate-800">
+          <!-- 回复卡片 1 -->
+          <article class="p-4">
+            <div class="flex space-x-4">
+              <img class="w-10 h-10 rounded-full flex-shrink-0" src="https://placehold.co/100x100/ec4899/831843?text=B" alt="User Avatar">
+              <div class="flex-1">
+                <div class="flex items-baseline space-x-2">
+                  <p class="font-bold">设计圈大佬</p>
+                  <p class="text-slate-400 text-sm">@designer_pro · 1小时前</p>
+                </div>
+                <p class="mt-2 text-slate-300">同感，画面确实顶级，但帧数波动太大了。</p>
+                <div class="flex space-x-4 text-slate-500 mt-2 text-sm">
+                  <button class="hover:text-sky-400">回复</button>
+                  <button class="hover:text-red-400">赞 (15)</button>
+                </div>
+
+                <!-- 楼中楼 / 嵌套回复 -->
+                <div class="mt-4 pl-4 border-l-2 border-slate-800 space-y-4">
+                  <!-- 嵌套回复 1 -->
+                  <div class="flex space-x-3">
+                    <img class="w-8 h-8 rounded-full flex-shrink-0" src="https://placehold.co/100x100/34d399/064e3b?text=D" alt="User Avatar">
+                    <div class="flex-1">
+                      <p><span class="font-bold">dev_master</span> <span class="text-slate-400">回复</span> <span class="font-bold text-sky-400">@designer_pro</span></p>
+                      <p class="mt-1 text-slate-300">据说下周就有性能补丁了，等等看。</p>
+                      <div class="flex space-x-4 text-slate-500 mt-2 text-xs">
+                        <button class="hover:text-sky-400">回复</button>
+                        <button class="hover:text-red-400">赞 (5)</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- 嵌套回复 2 -->
+                  <div class="flex space-x-3">
+                    <img class="w-8 h-8 rounded-full flex-shrink-0" src="https://placehold.co/100x100/7dd3fc/0f172a?text=头像" alt="User Avatar">
+                    <div class="flex-1">
+                      <p><span class="font-bold">用户名</span> <span class="text-slate-400">回复</span> <span class="font-bold text-sky-400">@dev_master</span></p>
+                      <p class="mt-1 text-slate-300">希望如此！</p>
+                      <div class="flex space-x-4 text-slate-500 mt-2 text-xs">
+                        <button class="hover:text-sky-400">回复</button>
+                        <button class="hover:text-red-400">赞 (2)</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+          
+          <!-- 回复卡片 2 -->
+          <article class="p-4">
+            <div class="flex space-x-4">
+              <img class="w-10 h-10 rounded-full flex-shrink-0" src="https://placehold.co/100x100/facc15/78350f?text=F" alt="User Avatar">
+              <div class="flex-1">
+                <div class="flex items-baseline space-x-2">
+                  <p class="font-bold">旅行的青蛙</p>
+                  <p class="text-slate-400 text-sm">@travel_frog · 45分钟前</p>
+                </div>
+                <p class="mt-2 text-slate-300">还没买，看了你的截图，有点心动了！</p>
+                <div class="flex space-x-4 text-slate-500 mt-2 text-sm">
+                  <button class="hover:text-sky-400">回复</button>
+                  <button class="hover:text-red-400">赞 (8)</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </main>
+
+      <!-- 右侧边栏 -->
+      <aside class="hidden lg:block lg:col-span-3 p-4 sticky top-0 h-screen">
+        <div class="space-y-6">
+          <!-- 搜索框 -->
+          <div class="relative">
+            <svg class="w-5 h-5 text-slate-500 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <input type="text" placeholder="搜索..." class="w-full bg-slate-800 border border-slate-700 rounded-full py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+          <!-- 推荐关注 -->
+          <div class="bg-slate-800 rounded-2xl p-4">
+            <h2 class="text-lg font-bold mb-4">你可能感兴趣</h2>
+            <ul class="space-y-3">
+              <li class="flex items-center">
+                <img class="w-10 h-10 rounded-full" src="https://placehold.co/100x100/ec4899/831843?text=B" alt="User Avatar">
+                <div class="ml-3 flex-1">
+                  <p class="font-semibold text-sm">设计圈大佬</p>
+                  <p class="text-slate-400 text-xs">@designer_pro</p>
+                </div>
+                <button class="bg-slate-200 hover:bg-white text-slate-900 font-semibold text-sm py-1 px-4 rounded-full transition-colors duration-200">关注</button>
+              </li>
+              <li class="flex items-center">
+                <img class="w-10 h-10 rounded-full" src="https://placehold.co/100x100/8b5cf6/4c1d95?text=E" alt="User Avatar">
+                <div class="ml-3 flex-1">
+                  <p class="font-semibold text-sm">前端技术周刊</p>
+                  <p class="text-slate-400 text-xs">@frontend_weekly</p>
+                </div>
+                <button class="bg-slate-200 hover:bg-white text-slate-900 font-semibold text-sm py-1 px-4 rounded-full transition-colors duration-200">关注</button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+// 引入你的测试组件
+import { LikeButton, FavoriteButton, ShareButton } from "../public";
+
+const router = useRouter();
+
+const goBack = () => {
+  router.back();
+};
+
+// 你可以在这里添加一些测试用的状态
+const testPost = ref({
+  id: 123,
+  title: '测试帖子标题',
+  content: '这是测试帖子的内容...',
+  likes: 5,
+  isLiked: false,
+  isFavorited: false
+});
+</script>
+
+<style scoped>
+/* 保持原有的样式 */
+body {
+  font-family: 'Inter', sans-serif;
+}
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+html, body {
+  overflow-x: hidden;
+}
+</style>

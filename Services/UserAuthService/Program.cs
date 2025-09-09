@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using UserAuthService.Data;
 using UserAuthService.Repositories;
 using UserAuthService.Services;
+using UserAuthService.Services.Interfaces;
 
 namespace UserAuthService
 {
@@ -22,6 +23,8 @@ namespace UserAuthService
             // ------------------ JWT ------------------
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddSingleton<JwtService>();
+            builder.Services.AddSingleton<IEmailService, EmailService>();
+
 
             builder.Services.AddAuthentication("Bearer")
                 .AddJwtBearer("Bearer", options =>
@@ -44,7 +47,8 @@ namespace UserAuthService
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // 允许前端端口
+                    policy.WithOrigins("http://localhost:5000",
+                            "http://localhost:5173") // 允许前端端口
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -80,7 +84,7 @@ namespace UserAuthService
 
             // ------------------ Controllers & Repositories ------------------
             builder.Services.AddControllers();
-            builder.Services.AddScoped<IUserAuthRepository, UserAuthAuthRepository>();
+            builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>();
             builder.Services.AddAuthorization();
 
             var app = builder.Build();
