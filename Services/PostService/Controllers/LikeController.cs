@@ -9,9 +9,9 @@ namespace PostService.Controllers
     [Route("api/posts/like")]
     public class LikeController : ControllerBase
     {
-        private readonly LikeService _service;
+        private readonly ILikeService _service;
 
-        public LikeController(LikeService service)
+        public LikeController(ILikeService service)
         {
             _service = service;
         }

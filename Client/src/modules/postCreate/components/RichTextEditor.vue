@@ -118,6 +118,7 @@ import {
 import AudioPreview from './AudioPreview.vue';
 import ImagePreview from './ImagePreview.vue';
 import VideoPreview from './VideoPreview.vue';
+import RepostPreview from './RepostPreview.vue';
 
 defineExpose({
   uploadMedia
@@ -137,6 +138,7 @@ watch(() => props.modelValue, v => {
 
 // 用于解析自定义媒体标签的正则表达式
 const mediaRegex = /<type:\s*(audio|video|image),\s*fileId:\s*['"]?([\w\d-]+)['"]?(\s*,\s*length:\s*(\d+))?\s*>/;
+const repostRegex = /<type:\s*repost,\s*postId:\s*['"]?([\w\d-]+)['"]?,\s*title:\s*['"]?(.*?)['"]?\s*>/
 
 // 辅助函数：将 AST 节点转换为 HTML，现在包括了对自定义媒体标签的特别处理
 function nodeToHtml(node: any): string {
@@ -262,6 +264,11 @@ const hybridPlugin = ViewPlugin.fromClass(
             return SKIP;
           }
 
+          // 如果当前节点在代码块里，我们不应该应用其他装饰（如加粗、斜体等）
+          if (isInsideCodeBlock) {
+            return;
+          }
+
           // --- 处理自定义媒体标签 ---
           const textContent = view.state.doc.sliceString(nodeStart, nodeEnd);
           const mediaMatch = textContent.match(mediaRegex);
@@ -288,12 +295,23 @@ const hybridPlugin = ViewPlugin.fromClass(
             }
             return SKIP;
           }
+          // --- 处理自定义转发标签 ---
+          const repostMatch = textContent.match(repostRegex);
+          if (repostMatch) {
+            const postId = repostMatch[1];
+            const title = repostMatch[2].trim(); // trim 清除前后可能存在的空格
+
+            const vnode = createVNode(RepostPreview, { postId, title });
+            decorations.push(
+              Decoration.replace({
+                // 使用 postId 作为 widget 的唯一标识符
+                widget: new VueWidget(vnode, `repost-${postId}`),
+              }).range(nodeStart, nodeEnd)
+            );
+            return SKIP; // 阻止访问内部节点
+          }
 
           // --- 处理其他行内元素（保持不变） ---
-          // 如果当前节点在代码块里，我们不应该应用其他装饰（如加粗、斜体等）
-          if (isInsideCodeBlock) {
-            return;
-          }
 
           const isInline = ['strong', 'emphasis', 'inlineCode', 'link', 'heading'].includes(node.type);
           if (isInline) {

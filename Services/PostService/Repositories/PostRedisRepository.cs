@@ -9,12 +9,14 @@ namespace PostService.Repositories
     {
         Task<List<string>> GetHotKeywordsAsync(int count);
         Task IncrementSearchCountAsync(string keyword);
+        Task InsertUnreadNoticeAsync(long? userId, string type, long id);
     }
 
     public class PostRedisRepository : IPostRedisRepository
     {
         private readonly IConnectionMultiplexer _redis;
         private const string HotSearchKey = "hot-searches";
+        private const string UnreadNoticeKey = "unread-notice";
 
         public PostRedisRepository(IConnectionMultiplexer redis)
         {
@@ -44,6 +46,24 @@ namespace PostService.Repositories
             await db.SortedSetIncrementAsync(HotSearchKey, keyword, 1);
             // 可以设置一个过期时间，防止数据无限增长，比如 30 天
             await db.KeyExpireAsync(HotSearchKey, TimeSpan.FromDays(30));
+        }
+
+        /// <summary>
+        /// 向指定用户的指定类型未读通知中插入多条消息。
+        /// </summary>
+        /// <param name="userId">用户的ID。</param>
+        /// <param name="type">消息的类型。</param>
+        /// <param name="id">消息在数据库中的索引ID。</param>
+        public async Task InsertUnreadNoticeAsync(long? userId, string type, long id)
+        {
+            var db = _redis.GetDatabase();
+
+            // 构建 Redis 列表的键名
+            var key = $"{UnreadNoticeKey}:{userId}:{type}";
+
+            // 使用 ListRightPushAsync 将消息ID添加到列表的末尾
+            // 这样可以按时间顺序保留消息
+            await db.ListRightPushAsync(key, id);
         }
     }
 }
