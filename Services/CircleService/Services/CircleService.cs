@@ -68,6 +68,21 @@ public class CircleService : ICircleService
         };
 
         await _circleRepository.AddAsync(circle);
+        
+        // 圈主自动成为第一个成员，角色为管理员
+        var ownerMember = new CircleMember
+        {
+            CircleId = circle.CircleId,
+            UserId = ownerId,
+            Role = CircleMemberRole.Admin,
+            Status = CircleMemberStatus.Approved,
+            Points = 0,
+            ApplyTime = DateTime.UtcNow,
+            ProcessedTime = DateTime.UtcNow
+        };
+        
+        await _memberRepository.AddAsync(ownerMember);
+        
         // 新创建的圈子成员数为1（即圈主自己）
         return MapToCircleDto(circle, 1);
     }

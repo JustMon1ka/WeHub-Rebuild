@@ -3,6 +3,8 @@ using CircleService.Models;
 using CircleService.Services;
 using DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace CircleService.Controllers;
@@ -12,6 +14,7 @@ namespace CircleService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // 默认需要认证
 public class CirclesController : ControllerBase
 {
     private readonly ICircleService _circleService;
@@ -28,6 +31,20 @@ public class CirclesController : ControllerBase
         _activityService = activityService;
     }
 
+    /// <summary>
+    /// 从JWT Claims中获取当前用户ID
+    /// </summary>
+    /// <returns>用户ID，如果获取失败则返回null</returns>
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return userId;
+        }
+        return null;
+    }
+
     // --- Circle Management Endpoints ---
 
     /// <summary>
@@ -37,6 +54,7 @@ public class CirclesController : ControllerBase
     /// <param name="category">可选的分类标签，用于筛选圈子</param>
     /// <param name="joinedBy">可选的用户ID，用于查询该用户已加入的圈子</param>
     [HttpGet]
+    [AllowAnonymous] // 公共接口，无需认证
     public async Task<IActionResult> GetAllCircles([FromQuery] string? name = null, [FromQuery] string? category = null, [FromQuery] int? joinedBy = null)
     {
         var circles = await _circleService.GetAllCirclesAsync(name, category, joinedBy);
@@ -47,6 +65,7 @@ public class CirclesController : ControllerBase
     /// 获取所有圈子分类标签列表，用于分类筛选下拉菜单
     /// </summary>
     [HttpGet("categories")]
+    [AllowAnonymous] // 公共接口，无需认证
     public async Task<IActionResult> GetAllCategories()
     {
         var categories = await _circleService.GetAllCategoriesAsync();
@@ -58,6 +77,7 @@ public class CirclesController : ControllerBase
     /// </summary>
     /// <param name="id">圈子ID</param>
     [HttpGet("{id}")]
+    [AllowAnonymous] // 公共接口，无需认证
     public async Task<IActionResult> GetCircleById(int id)
     {
         var circle = await _circleService.GetCircleByIdAsync(id);
@@ -86,10 +106,13 @@ public class CirclesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateCircle([FromBody] CreateCircleDto createCircleDto)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var ownerId = 1; // TODO: 实际应从用户认证信息中获取
+        var ownerId = GetCurrentUserId();
+        if (ownerId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var newCircle = await _circleService.CreateCircleAsync(createCircleDto, ownerId);
+        var newCircle = await _circleService.CreateCircleAsync(createCircleDto, ownerId.Value);
         return CreatedAtAction(nameof(GetCircleById), new { id = newCircle.CircleId }, BaseHttpResponse<object>.Success(newCircle, "圈子创建成功"));
     }
 
@@ -116,10 +139,13 @@ public class CirclesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCircle(int id)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var deleterId = 1; // TODO: 实际应从用户认证信息中获取
+        var deleterId = GetCurrentUserId();
+        if (deleterId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
         
-        var result = await _circleService.DeleteCircleAsync(id, deleterId);
+        var result = await _circleService.DeleteCircleAsync(id, deleterId.Value);
         if (!result)
         {
             return NotFound(BaseHttpResponse.Fail(404, "圈子不存在或无权删除"));
@@ -136,10 +162,13 @@ public class CirclesController : ControllerBase
     [HttpDelete("{id}/membership")]
     public async Task<IActionResult> LeaveCircle(int id)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var userId = 2; // TODO: 实际应从用户认证信息中获取
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var result = await _memberService.LeaveCircleAsync(id, userId);
+        var result = await _memberService.LeaveCircleAsync(id, userId.Value);
 
         if (!result.Success)
         {
@@ -158,10 +187,13 @@ public class CirclesController : ControllerBase
     [HttpPost("{circleId}/join")]
     public async Task<IActionResult> ApplyToJoin(int circleId)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var userId = 2; // TODO: 实际应从用户认证信息中获取
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var response = await _memberService.ApplyToJoinCircleAsync(circleId, userId);
+        var response = await _memberService.ApplyToJoinCircleAsync(circleId, userId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -175,6 +207,7 @@ public class CirclesController : ControllerBase
     /// <param name="circleId">圈子ID</param>
     /// <param name="sortByPoints">是否按积分排序 (0=不排序, 1=按积分降序排序)</param>
     [HttpGet("{circleId}/members")]
+    [AllowAnonymous] // 公共接口，无需认证
     public async Task<IActionResult> GetMembers(int circleId, [FromQuery] int sortByPoints = 0)
     {
         var members = await _memberService.GetCircleMembersAsync(circleId, sortByPoints == 1);
@@ -191,8 +224,11 @@ public class CirclesController : ControllerBase
     [HttpPut("{circleId}/applications/{targetUserId}")]
     public async Task<IActionResult> ApproveApplication(int circleId, int targetUserId, [FromQuery] bool approve, [FromQuery] int? role = null)
     {
-        // TODO: 实际应从用户认证信息中获取当前用户ID
-        var approverId = 1; // 临时硬编码，后续需要从JWT Token获取
+        var approverId = GetCurrentUserId();
+        if (approverId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
         // 转换角色参数
         CircleMemberRole? memberRole = null;
@@ -201,7 +237,7 @@ public class CirclesController : ControllerBase
             memberRole = (CircleMemberRole)role.Value;
         }
 
-        var response = await _memberService.ApproveJoinApplicationAsync(circleId, targetUserId, approverId, approve, memberRole);
+        var response = await _memberService.ApproveJoinApplicationAsync(circleId, targetUserId, approverId.Value, approve, memberRole);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -216,10 +252,13 @@ public class CirclesController : ControllerBase
     [HttpGet("{circleId}/applications")]
     public async Task<IActionResult> GetApplications(int circleId)
     {
-        // TODO: 实际应从用户认证信息中获取当前用户ID
-        var requesterId = 1; // 临时硬编码，后续需要从JWT Token获取
+        var requesterId = GetCurrentUserId();
+        if (requesterId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var applications = await _memberService.GetApplicationsAsync(circleId, requesterId);
+        var applications = await _memberService.GetApplicationsAsync(circleId, requesterId.Value);
         if (applications == null)
         {
             return NotFound(BaseHttpResponse.Fail(404, "圈子不存在或权限不足"));
@@ -236,10 +275,13 @@ public class CirclesController : ControllerBase
     [HttpDelete("{circleId}/members/{targetUserId}")]
     public async Task<IActionResult> RemoveMember(int circleId, int targetUserId)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var removerId = 1; // TODO: 实际应从用户认证信息中获取
+        var removerId = GetCurrentUserId();
+        if (removerId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
         
-        var response = await _memberService.RemoveMemberAsync(circleId, targetUserId, removerId);
+        var response = await _memberService.RemoveMemberAsync(circleId, targetUserId, removerId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -267,10 +309,13 @@ public class CirclesController : ControllerBase
     [HttpGet("{circleId}/points")]
     public async Task<IActionResult> GetMyPoints(int circleId)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var userId = 2; // TODO: 实际应从用户认证信息中获取
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var memberDetails = await _memberService.GetMemberDetailsAsync(circleId, userId);
+        var memberDetails = await _memberService.GetMemberDetailsAsync(circleId, userId.Value);
         if (memberDetails == null)
         {
             return NotFound(BaseHttpResponse.Fail(404, "您不是该圈子成员或查询出错。"));
@@ -322,10 +367,13 @@ public class CirclesController : ControllerBase
     [HttpPost("{circleId}/activities")]
     public async Task<IActionResult> CreateActivity(int circleId, [FromBody] CreateActivityDto createActivityDto)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替，后续衔接时需要更改
-        var creatorId = 1; // TODO: 实际应从用户认证信息中获取
+        var creatorId = GetCurrentUserId();
+        if (creatorId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var response = await _activityService.CreateActivityAsync(circleId, createActivityDto, creatorId);
+        var response = await _activityService.CreateActivityAsync(circleId, createActivityDto, creatorId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -342,10 +390,13 @@ public class CirclesController : ControllerBase
     [HttpPut("{circleId}/activities/{activityId}")]
     public async Task<IActionResult> UpdateActivity(int circleId, int activityId, [FromBody] UpdateActivityDto updateActivityDto)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var modifierId = 1; // TODO: 实际应从用户认证信息中获取
+        var modifierId = GetCurrentUserId();
+        if (modifierId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var response = await _activityService.UpdateActivityAsync(activityId, updateActivityDto, modifierId);
+        var response = await _activityService.UpdateActivityAsync(activityId, updateActivityDto, modifierId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -361,10 +412,13 @@ public class CirclesController : ControllerBase
     [HttpDelete("{circleId}/activities/{activityId}")]
     public async Task<IActionResult> DeleteActivity(int circleId, int activityId)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var deleterId = 1; // TODO: 实际应从用户认证信息中获取
+        var deleterId = GetCurrentUserId();
+        if (deleterId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
         
-        var response = await _activityService.DeleteActivityAsync(activityId, deleterId);
+        var response = await _activityService.DeleteActivityAsync(activityId, deleterId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));

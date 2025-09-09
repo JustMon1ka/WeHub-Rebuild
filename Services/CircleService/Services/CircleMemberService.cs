@@ -196,10 +196,15 @@ public class CircleMemberService : ICircleMemberService
             return null;
         }
 
-        // 检查权限：只有圈主可以查看申请列表
+        // 检查权限：圈主或管理员可以查看申请列表
         if (circle.OwnerId != requesterId)
         {
-            return null;
+            // 如果不是圈主，检查是否为管理员
+            var member = await _memberRepository.GetByIdAsync(circleId, requesterId);
+            if (member == null || member.Status != CircleMemberStatus.Approved || member.Role != CircleMemberRole.Admin)
+            {
+                return null;
+            }
         }
 
         // 获取所有申请记录
