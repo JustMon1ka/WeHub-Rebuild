@@ -5,28 +5,44 @@
       <div class="divider-horizontal"></div>
       <div class="notice-heading">
         <span class="separator">通知 > </span>
-        <span @click="$router.go(-1)" class="back-link">收到的赞</span>
+        <span @click="goBackToNotice" class="back-link">收到的赞</span>
         <span> > 点赞详情</span>
       </div>
       <div class="divider-horizontal"></div>
       <div class="post-info">
-        <span class="post-title">帖子：{{ postTitle }}</span>
+        <span class="post-title"
+          >{{ targetType === 'post' ? '帖子' : '评论' }}：{{ targetTitle }}</span
+        >
       </div>
       <div class="divider-horizontal"></div>
 
       <div class="like-users-list">
-        <div v-for="user in likeUsers" :key="user.id" class="like-user-item">
-          <div class="item-left">
-            <div class="user-avater">
-              <img :src="user.avatar" :alt="user.username" />
+        <div v-if="loading" class="loading-state">
+          <span>加载中...</span>
+        </div>
+        <div v-else-if="error" class="error-state">
+          <span>{{ error }}</span>
+        </div>
+        <div v-else-if="filteredLikeUsers.length === 0" class="empty-state">
+          <span>暂无点赞用户</span>
+        </div>
+        <div v-else>
+          <div v-for="user in filteredLikeUsers" :key="user.id" class="like-user-item">
+            <div class="item-left">
+              <div class="user-avater">
+                <img v-if="user.avatar" :src="user.avatar" :alt="user.username" />
+                <span v-else class="avatar-placeholder">
+                  {{ user.username.charAt(0).toUpperCase() }}
+                </span>
+              </div>
             </div>
-          </div>
-          <div class="item-right">
-            <div class="item-content">
-              <span class="username">{{ user.username }}</span>
-              <span class="action">赞了我</span>
+            <div class="item-right">
+              <div class="item-content">
+                <span class="username">{{ user.username }}</span>
+                <span class="action">赞了我</span>
+              </div>
+              <span class="time">{{ user.time }}</span>
             </div>
-            <span class="time">{{ user.time }}</span>
           </div>
         </div>
       </div>
@@ -37,25 +53,104 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { getLikeUsersByPostId, getPostTitleById } from '../noticeData'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { getLikersByTarget, getPostDetail, getCommentDetail } from '../api'
+import { getUserDetail } from '../../message/api'
+import { unwrap } from '../types'
 
 const route = useRoute()
-const postId = ref(Number(route.params.postId))
-const postTitle = ref(getPostTitleById(postId.value))
+const router = useRouter()
+const targetType = ref(route.params.targetType as 'post' | 'comment')
+const targetId = ref(Number(route.params.targetId))
+const targetTitle = ref('')
 const searchText = ref('')
+const likeUsers = ref<
+  Array<{
+    id: number
+    username: string
+    avatar: string
+    time: string
+  }>
+>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+// 获取目标标题（帖子或评论）
+async function getTargetTitle() {
+  try {
+    if (targetType.value === 'post') {
+      const postDetailResp = await getPostDetail(targetId.value)
+      const postDetail = unwrap(postDetailResp)
+      targetTitle.value = postDetail.title
+    } else if (targetType.value === 'comment') {
+      const commentDetailResp = await getCommentDetail(targetId.value)
+      const commentDetail = unwrap(commentDetailResp)
+      // 评论标题显示为评论内容的前50个字符
+      targetTitle.value =
+        commentDetail.content.length > 50
+          ? commentDetail.content.substring(0, 50) + '...'
+          : commentDetail.content
+    }
+  } catch (err) {
+    console.error('获取目标标题失败:', err)
+    targetTitle.value = `${targetType.value === 'post' ? '帖子' : '评论'}${targetId.value}`
+  }
+}
 
 // 获取点赞用户列表
-const likeUsers = computed(() => {
-  const users = getLikeUsersByPostId(postId.value)
+async function getLikeUsersList() {
+  loading.value = true
+  error.value = null
 
+  try {
+    // 直接调用API获取点赞者信息
+    const likersResp = await getLikersByTarget({
+      targetType: targetType.value,
+      targetId: targetId.value,
+      page: 1,
+      pageSize: 100,
+    })
+    const likersData = unwrap(likersResp)
+
+    // 获取所有点赞者的详细信息
+    const allLikerDetails = await Promise.all(
+      likersData.items.map(async (userId) => {
+        const userDetail = await getUserDetail(userId)
+        return {
+          id: userId,
+          username: userDetail.nickname,
+          avatar: userDetail.avatar,
+          time: '刚刚', // API中没有提供点赞时间，使用默认值
+        }
+      })
+    )
+
+    likeUsers.value = allLikerDetails
+  } catch (err: any) {
+    console.error('获取点赞用户列表失败:', err)
+    error.value = err?.message ?? '获取点赞用户列表失败'
+  } finally {
+    loading.value = false
+  }
+}
+
+// 过滤后的点赞用户列表
+const filteredLikeUsers = computed(() => {
   if (searchText.value.trim()) {
     const searchLower = searchText.value.toLowerCase()
-    return users.filter((user) => user.username.toLowerCase().includes(searchLower))
+    return likeUsers.value.filter((user) => user.username.toLowerCase().includes(searchLower))
   }
+  return likeUsers.value
+})
 
-  return users
+// 返回到通知页面
+const goBackToNotice = () => {
+  router.push('/notice/like')
+}
+
+onMounted(async () => {
+  await Promise.all([getTargetTitle(), getLikeUsersList()])
 })
 </script>
 
@@ -79,9 +174,8 @@ const likeUsers = computed(() => {
 }
 
 .notice-heading {
-  flex: 1;
   display: flex;
-  padding-left: 32px;
+  padding: 12px 32px;
   align-items: center;
   gap: 8px;
 }
@@ -185,6 +279,8 @@ const likeUsers = computed(() => {
   font-size: 12px;
 }
 
+.loading-state,
+.error-state,
 .empty-state {
   display: flex;
   justify-content: center;
@@ -192,6 +288,22 @@ const likeUsers = computed(() => {
   height: 200px;
   color: #999;
   font-size: 16px;
+}
+
+.error-state {
+  color: #ef4444;
+}
+
+.avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #6b7280;
 }
 
 .right {

@@ -1,6 +1,13 @@
 export function formatTime(timeStr: string) {
     const now = new Date();
     const newestMessageTime = new Date(timeStr);
+
+    // 检查日期是否有效
+    if (isNaN(newestMessageTime.getTime())) {
+        console.warn('无效的时间字符串，使用当前时间:', timeStr);
+        return '刚刚';
+    }
+
     //console.log("newestMessageTime:", newestMessageTime.getTime());
     //console.log("now:", now.getTime());
     const diffms = now.getTime() - newestMessageTime.getTime();

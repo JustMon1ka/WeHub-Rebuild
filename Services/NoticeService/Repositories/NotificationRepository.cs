@@ -23,7 +23,7 @@ namespace NoticeService.Repositories
         public async Task<Dictionary<string, int>> GetUnreadCountsAsync(int userId, IDatabase redis)
         {
             if (redis == null) throw new ArgumentNullException(nameof(redis));
-            var types = new[] { "reply", "like", "repost", "mention" };
+            var types = new[] { "comment", "reply", "like", "repost", "mention" };
             var counts = new Dictionary<string, int>();
 
             foreach (var type in types)
@@ -59,7 +59,7 @@ namespace NoticeService.Repositories
             if (unreadLikeIds.Any())
             {
                 var unreadQuery = _context.Likes
-                    .Where(l => unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
+                    .Where(l => l.TargetUserId == userId && unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
 
                 unreadLikes = await unreadQuery
                     .GroupBy(l => new { l.TargetType, l.TargetId })
@@ -73,10 +73,10 @@ namespace NoticeService.Repositories
                     })
                     .OrderByDescending(l => l.CreatedAt)
                     .ToListAsync();
-            }
+            }            
 
             var allLikesQuery = _context.Likes
-                .Where(l => !unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
+                .Where(l => l.TargetUserId == userId && !unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
 
             var readTotal = await allLikesQuery
                 .GroupBy(l => new { l.TargetType, l.TargetId })
@@ -186,6 +186,27 @@ namespace NoticeService.Repositories
                 .ToListAsync();
 
             return (likerIds, total);
+        }
+
+        public async Task<List<Comment>> GetCommentsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis)
+        {
+            var commentKey = $"unread-notice:{userId}:comment";
+            var unreadCommentIds = (await redis.ListRangeAsync(commentKey, 0, -1, CommandFlags.None))
+                .Select(id => int.Parse(id)).ToList();
+
+            var query = _context.Comments
+                .Where(c => c.TargetUserId == userId && !c.IsDeleted);
+
+            if (unreadOnly)
+                query = query.Where(c => unreadCommentIds.Contains(c.CommentId));
+            else
+                query = query.Where(c => !unreadCommentIds.Contains(c.CommentId) || unreadCommentIds.Contains(c.CommentId));
+
+            return await query
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
     }
 }
