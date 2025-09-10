@@ -26,7 +26,7 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.value.follo
     <!-- 悬浮窗 -->
     <div class="p-4">
       <div class="flex justify-between items-start">
-        <img v-if="!!userInfo.avatarURL" :src="userInfo.avatarURL"
+        <img v-if="!!userInfo.avatarUrl" :src="userInfo.avatarUrl"
              class="w-12 h-12 rounded-full" alt="User Avatar">
         <PlaceHolder v-else width="100" :text="userInfo.nickname" height="100"
                      class="w-12 h-12 rounded-full"/>

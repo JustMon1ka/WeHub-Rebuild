@@ -8,7 +8,7 @@ export const reportRouter = createRouter({
             path: '/report',
             name: 'report',
             component: ReportView,
-            meta: { title: '举报', navi: false, recommend: false }
+            meta: { title: '举报', navi: false, recommend: false, requireLogin: true },
         }
     ]
 })
