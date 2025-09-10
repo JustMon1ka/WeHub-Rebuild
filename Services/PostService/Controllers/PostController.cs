@@ -121,7 +121,6 @@ public class PostController : ControllerBase
                 PostId = p.PostId,
                 UserId = p.UserId ?? 0,
                 Title = p.Title ?? "",
-                Content = p.Content ?? "",
                 Tags = p.TagNames ?? new List<string>(),
                 CreatedAt = p.CreatedAt ?? DateTime.MinValue,
                 Views = p.Views ?? 0,
