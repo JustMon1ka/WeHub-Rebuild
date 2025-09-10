@@ -15,13 +15,13 @@ public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
-    private readonly IDistributedCache _redis;
+    private readonly IShareService _shareService;
 
-    public PostController(IPostService postService, ICommentService commentService, IDistributedCache redis)
+    public PostController(IPostService postService, ICommentService commentService, IShareService shareService)
     {
         _postService = postService;
         _commentService = commentService;
-        _redis = redis;
+        _shareService = shareService;
     }
 
     [HttpGet]
@@ -354,49 +354,29 @@ public class PostController : ControllerBase
         }
     }
     
-    [HttpPost("share")]
-    [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<BaseHttpResponse<PostPublishResponse>> SharePost([FromBody] ShareRequest request)
+    [HttpPost("{post_id}/share")]
+[Authorize(AuthenticationSchemes = "Bearer")]
+public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
+{
+    try
     {
-        try
+        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
         {
-            // 从 token 中取 userId（转发人）
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            if (userIdClaim == null)
-                return BaseHttpResponse<PostPublishResponse>.Fail(401, "未认证的用户");
-
-            long userId = long.Parse(userIdClaim.Value);
-
-            // 获取被分享的原帖
-            var original = await _postService.GetPostByIdAsync(request.TargetId);
-            if (original == null || original.IsDeleted == 1)
-                return BaseHttpResponse<PostPublishResponse>.Fail(404, "原帖不存在");
-
-            // 生成特殊标记文本
-            string marker = $"<type:repost,targetId:{original.PostId},title:{original.Title}>";
-
-            // 发布新帖（内容就是 marker + 用户的附加评论）
-            var newPost = await _postService.PublishPostAsync(
-                userId,
-                request.CircleId ?? original.CircleId ?? 100000L,
-                $"转发：{original.Title}",
-                marker + "\n\n" + (request.Comment ?? ""),
-                new List<long>() // 不带标签
-            );
-
-            //把通知写入 Redis
-            string message = $"type:repost,targetId:{original.PostId}";
-            await _redis.SetStringAsync(original.UserId.ToString(), message);
-            return BaseHttpResponse<PostPublishResponse>.Success(new PostPublishResponse
-         {
-                PostId = newPost.PostId,
-                CreatedAt = newPost.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""
-            });
+            return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
         }
-        catch (Exception ex)
-        {
-            return BaseHttpResponse<PostPublishResponse>.Fail(500, "转发失败: " + ex.Message);
-        }
+
+        long userId = long.Parse(userIdClaim.Value);
+
+        await _shareService.SharePostAsync(userId, post_id);
+
+        return BaseHttpResponse<object?>.Success(null, "分享成功");
     }
+    catch (Exception ex)
+    {
+        return BaseHttpResponse<object?>.Fail(500, "分享失败：" + ex.Message);
+    }
+}
+
 
 }

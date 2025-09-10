@@ -21,18 +21,23 @@ async function onShare() {
   if (pending.value) return;
   pending.value = true;
   try {
-    // 拉取原帖（可以保留，方便发帖页展示原帖）
+    // 1) 调用后端接口，写 Redis 通知
+    await sharePost(props.postId, "");
+
+    // 2) 拉取原帖信息
     const post = await getPostDetail(props.postId);
+
+    // 3) 放到 sessionStorage，供发帖页读取
     stashOriginalPost(post);
 
-    // 跳转发帖页，带上 shareFrom 参数
+    // 4) 跳转发帖页
     router.push({
       name: "PostCreate",
       query: { shareFrom: String(props.postId) }
     });
   } catch (e) {
-    console.error("获取帖子详情失败：", e);
-    alert("获取原帖失败，稍后再试");
+    console.error("分享失败：", e);
+    alert("分享失败，请重试");
   } finally {
     pending.value = false;
   }

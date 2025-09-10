@@ -1,24 +1,27 @@
 using PostService.DTOs;
 using PostService.Models;
 using PostService.Repositories;
-using StackExchange.Redis;  // 引入 Redis
 
 namespace PostService.Services
-{
+{  
+    public interface ILikeService
+    {
+        Task ToggleLikeAsync(int userId, LikeRequest request);
+    }
     public class LikeService : ILikeService
     {
         private readonly ILikeRepository _likeRepository;
-        private readonly IPostRepository _postRepository;   // 需要获取被点赞帖子的作者
-        private readonly IConnectionMultiplexer _redis;     // Redis 连接
+        private readonly IPostRepository _postRepository;
+        private readonly IPostRedisRepository _redisRepository;
 
         public LikeService(
             ILikeRepository likeRepository,
             IPostRepository postRepository,
-            IConnectionMultiplexer redis)
+            IPostRedisRepository redisRepository)
         {
             _likeRepository = likeRepository;
             _postRepository = postRepository;
-            _redis = redis;
+            _redisRepository = redisRepository;
         }
 
         public async Task ToggleLikeAsync(int userId, LikeRequest request)
@@ -33,32 +36,27 @@ namespace PostService.Services
             // 调用仓库处理点赞/取消点赞
             bool changed = await _likeRepository.ToggleLikeAsync(userId, like);
 
-            // 如果仓库确认数据有变化（即状态确实切换了），再更新 Post.Likes
             if (changed && like.TargetType == "post")
             {
+                var postId = Convert.ToInt64(like.TargetId);
+
                 if (like.IsLike)
                 {
-                    await _likeRepository.IncrementLikeCountAsync(like.TargetId);
+                    await _likeRepository.IncrementLikeCountAsync(postId);
 
-                    // 取到被点赞的帖子，找到作者
-                    var post = await _postRepository.GetByIdAsync(like.TargetId);
+                    // ✅ 查帖子找到作者
+                    var post = await _postRepository.GetByIdAsync(postId);
                     if (post != null && post.UserId.HasValue)
                     {
-                        var db = _redis.GetDatabase();
-                        string message = $"like:{like.TargetId}";
-                        await db.StringSetAsync($"notify:{post.UserId.Value}", message);
+                        // ✅ 调用 PostRedisRepository 插入一条未读通知
+                        await _redisRepository.InsertUnreadNoticeAsync(post.UserId, "like", postId);
                     }
                 }
                 else
                 {
-                    await _likeRepository.DecrementLikeCountAsync(like.TargetId);
+                    await _likeRepository.DecrementLikeCountAsync(postId);
                 }
             }
         }
-    }
-
-    public interface ILikeService
-    {
-        Task ToggleLikeAsync(int userId, LikeRequest request);
     }
 }
