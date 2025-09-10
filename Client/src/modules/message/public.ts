@@ -1,0 +1,1 @@
+export { default as MessageView } from './views/MessageView.vue'

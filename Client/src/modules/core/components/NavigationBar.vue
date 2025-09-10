@@ -6,7 +6,6 @@
       <img src="@/assets/logo.svg" alt="Logo" class="w-9 h-9">
       <span class="ml-2 text-xl font-bold p-2">WeHub</span>
     </div>
-
     <!-- 导航菜单 -->
     <nav class="flex-grow">
       <ul class="space-y-2">
@@ -64,7 +63,6 @@
       退出
     </button>
   </div>
-
 </template>
 
 <script setup lang="ts">
