@@ -64,8 +64,25 @@ https://www.bilibili.com/video/BV1xx411c7mD
 </script>
 
 <template>
-  <div class="w-full max-w-none min-w-0 border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6 max-h-[100dvh] overflow-y-auto">
-    <MarkdownViewer :model-value="mdDemo" />
+  <!-- 显示区域规定 -->
+  <div class="w-full max-w-none min-w-0 pt-16 scroll-pt-16 max-h-[calc(100dvh-4rem)] overflow-y-auto">
+    <!-- 帖主个人信息 -->
+    <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
+    </div>
+    
+    <!-- 帖子内容 -->
+    <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
+      <MarkdownViewer :model-value="mdDemo" />
+    </div>
+    
+
+    <!-- 点赞分享 -->
+    <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
+    </div>
+
+    <!-- 评论区 -->
+    <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
+    </div>
   </div>
 </template>
 

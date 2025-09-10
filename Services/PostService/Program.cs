@@ -105,6 +105,9 @@ namespace PostService
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
             builder.Services.AddScoped<IPostService, PostService.Services.PostService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<ILikeRepository, LikeRepository>();
+            builder.Services.AddScoped<ILikeService, LikeService>();
+            builder.Services.AddScoped<IShareService, ShareService>();
 
             var app = builder.Build();
 

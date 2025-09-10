@@ -16,6 +16,7 @@ namespace PostService.Repositories
         Task MarkAsDeletedAsync(long postId);
         Task<Post> InsertPostAsync(long userId, long circleId, string title, string content, List<long> tags);
         Task<List<string>> GetTagNamesByPostIdAsync(long postId);
+        Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true);
         /// <summary>
         /// 使用 Oracle Text CONTAINS 做全文候选检索，返回按 oracle_score 降序的候选（不做最终排序）
         /// maxCandidates: 若为 null 则返回全部 Oracle Text 命中的结果（慎用）
@@ -37,6 +38,7 @@ namespace PostService.Repositories
         {
             _contextFactory = contextFactory;
         }
+        
 
         public async Task<List<Post>> GetPostsByIdsAsync(List<long> ids)
         {
@@ -49,13 +51,13 @@ namespace PostService.Repositories
 
             // 一次性查询所有 PostTag + TagName
             var postTags = await (from pt in context.PostTags
-                join t in context.Tags on pt.TagId equals t.TagId
-                where ids.Contains(pt.PostId)
-                select new
-                {
-                    pt.PostId,
-                    t.TagName
-                }).ToListAsync();
+                                  join t in context.Tags on pt.TagId equals t.TagId
+                                  where ids.Contains(pt.PostId)
+                                  select new
+                                  {
+                                      pt.PostId,
+                                      t.TagName
+                                  }).ToListAsync();
 
             // 用 Dictionary 分组映射
             var tagLookup = postTags
@@ -174,6 +176,53 @@ namespace PostService.Repositories
                 .Include(pt => pt.Tag)
                 .Select(pt => pt.Tag.TagName)
                 .ToListAsync();
+        }
+        
+        public async Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true)
+        {
+            await using var context = _contextFactory.CreateDbContext();
+
+            var q = context.Posts.Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
+
+            if (desc)
+            {
+                if (lastId.HasValue && lastId.Value > 0)
+                {
+                    q = q.Where(p => p.PostId < lastId.Value);
+                }
+                q = q.OrderByDescending(p => p.PostId);
+            }
+            else
+            {
+                if (lastId.HasValue && lastId.Value > 0)
+                {
+                    q = q.Where(p => p.PostId > lastId.Value);
+                }
+                q = q.OrderBy(p => p.PostId);
+            }
+
+            // 取一页
+            var posts = await q.Take(num).ToListAsync();
+            if (!posts.Any())
+            {
+                return posts;
+            }
+
+            // 填充 TagNames（与现有 GetPostsByIdsAsync 的做法保持一致）
+            var ids = posts.Select(p => p.PostId).ToList();
+            var postTags = await (from pt in context.PostTags
+                join t in context.Tags on pt.TagId equals t.TagId
+                where ids.Contains(pt.PostId)
+                select new { pt.PostId, t.TagName }).ToListAsync();
+
+            var tagLookup = postTags
+                .GroupBy(x => x.PostId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.TagName).ToList());
+
+            foreach (var p in posts)
+                if (tagLookup.TryGetValue(p.PostId, out var tags)) p.TagNames = tags;
+
+            return posts;
         }
         
         public async Task<List<Post>> SearchCandidatesByOracleTextAsync(string query, int? maxCandidates)

@@ -11,7 +11,7 @@ public class AppDbContext : DbContext
     { }
 
     public DbSet<User> Users => Set<User>();
-    public DbSet<Circle> Circles => Set<Circle>();
+    public DbSet<Circles> Circles => Set<Circles>();
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<PostTag> PostTags => Set<PostTag>();
@@ -79,9 +79,9 @@ public class AppDbContext : DbContext
         });
 
         // Circle & Tag 映射示例
-        modelBuilder.Entity<Circle>(entity =>
+        modelBuilder.Entity<Circles>(entity =>
         {
-            entity.ToTable("CIRCLE");
+            entity.ToTable("CIRCLES");
             entity.HasKey(c => c.CircleId);
             entity.Property(c => c.CircleId).HasColumnName("CIRCLE_ID");
             entity.Property(c => c.Name).HasColumnName("NAME").IsRequired(false);

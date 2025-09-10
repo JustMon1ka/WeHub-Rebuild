@@ -12,6 +12,18 @@ import MarkdownViewer from ...
 content-theme # 默认参数；值仅可为'light'或'dark'；明暗主题；缺省为'dark'
 code-theme    # 默认参数；string类型；代码渲染主题名称；缺省为'github'
 :after-render # 可选参数；void函数类型；Markdown渲染后调用的钩子函数
+
+用例：
+<template>
+  <div class="边框">
+    <MarkdownViewer :model-value="md" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import MarkdownViewer from '../components/MarkdownViewer.vue';
+const md = "# demo\n- listitem\n## h2\n> shield\nmain content";
+</script>
 -->
 <template>
   <!-- 消除外部CSS影响 -->

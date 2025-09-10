@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Models;
 using PostService.DTOs;
 using PostService.Services;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace PostService.Controllers;
 
@@ -14,13 +15,15 @@ public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
+    private readonly IShareService _shareService;
 
-    public PostController(IPostService postService, ICommentService commentService)
+    public PostController(IPostService postService, ICommentService commentService, IShareService shareService)
     {
         _postService = postService;
         _commentService = commentService;
+        _shareService = shareService;
     }
-    
+
     [HttpGet]
     public async Task<BaseHttpResponse<List<PostResponse>>> GetPosts([FromQuery] string? ids, [FromQuery] long? userId)
     {
@@ -58,7 +61,7 @@ public class PostController : ControllerBase
                 var responseListByIds = postsByIds.Select(ToPostResponse).ToList();
                 return BaseHttpResponse<List<PostResponse>>.Success(responseListByIds);
             }
-            
+
 
             // 如果提供了 userId，则执行新逻辑
             if (userId.HasValue)
@@ -83,7 +86,7 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<PostResponse>>.Fail(500, $"服务器内部错误：{ex.Message}");
         }
     }
-    
+
     // 辅助方法，用于将 Post 对象映射为 PostResponse 对象，避免代码重复。
     private PostResponse ToPostResponse(Post post)
     {
@@ -100,6 +103,39 @@ public class PostController : ControllerBase
         };
     }
     
+    [HttpGet("list")]
+    public async Task<BaseHttpResponse<List<PostResponse>>> List(
+        [FromQuery] long? lastId,
+        [FromQuery] int? num)
+    {
+        try
+        {
+            int take = num.GetValueOrDefault(10);
+            if (take <= 0) take = 10;
+            if (take > 100) take = 100;
+
+            var posts = await _postService.GetPagedPostsAsync(lastId, take, desc: true);
+
+            var data = posts.Select(p => new PostResponse
+            {
+                PostId = p.PostId,
+                UserId = p.UserId ?? 0,
+                Title = p.Title ?? "",
+                Tags = p.TagNames ?? new List<string>(),
+                CreatedAt = p.CreatedAt ?? DateTime.MinValue,
+                Views = p.Views ?? 0,
+                Likes = p.Likes ?? 0,
+                CircleId = p.CircleId
+            }).ToList();
+
+            return BaseHttpResponse<List<PostResponse>>.Success(data);
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<List<PostResponse>>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
+    }
+
     [HttpDelete]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<BaseHttpResponse<object?>> DeletePost([FromQuery] long post_id)
@@ -138,9 +174,10 @@ public class PostController : ControllerBase
             return BaseHttpResponse<object?>.Fail(500, "服务器内部错误：" + ex.Message);
         }
     }
-    
+
     [HttpGet("{post_id}")]
-    public async Task<BaseHttpResponse<PostResponse>> GetPost([FromRoute] long post_id){
+    public async Task<BaseHttpResponse<PostResponse>> GetPost([FromRoute] long post_id)
+    {
         try
         {
             var post = await _postService.GetPostByIdAsync(post_id);
@@ -189,7 +226,7 @@ public class PostController : ControllerBase
             }
 
             long userId = long.Parse(userIdClaim.Value);
-            
+
             // 如果未填 CircleId，用 100000 作为默认值
             long circleId = postPublishRequest.CircleId ?? 100000;
 
@@ -234,7 +271,7 @@ public class PostController : ControllerBase
     {
         // 设置默认值
         int effectiveLimits = limits ?? 10;
-        
+
         // 简单参数验证
         if (effectiveLimits <= 0)
         {
@@ -284,7 +321,7 @@ public class PostController : ControllerBase
 
     [HttpGet("comments")]
     public async Task<BaseHttpResponse<List<GetCommentResponse>>> GetComments(
-        [FromQuery] long? postId, 
+        [FromQuery] long? postId,
         [FromQuery] long? userId)
     {
         try
@@ -349,4 +386,30 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, "An error occurred.");
         }
     }
+    
+[HttpPost("{post_id}/share")]
+[Authorize(AuthenticationSchemes = "Bearer")]
+public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
+{
+    try
+    {
+        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+        {
+            return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+        }
+
+        long userId = long.Parse(userIdClaim.Value);
+
+        await _shareService.SharePostAsync(userId, post_id);
+
+        return BaseHttpResponse<object?>.Success(null, "分享成功");
+    }
+    catch (Exception ex)
+    {
+        return BaseHttpResponse<object?>.Fail(500, "分享失败：" + ex.Message);
+    }
+}
+
+
 }
