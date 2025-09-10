@@ -2,6 +2,8 @@ using CircleService.DTOs;
 using CircleService.Services;
 using DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace CircleService.Controllers;
@@ -11,6 +13,7 @@ namespace CircleService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/activities/{activityId}/participants")]
+[Authorize] // 默认需要认证
 public class ActivityParticipantsController : ControllerBase
 {
     private readonly IActivityParticipantService _participantService;
@@ -21,16 +24,33 @@ public class ActivityParticipantsController : ControllerBase
     }
 
     /// <summary>
+    /// 从JWT Claims中获取当前用户ID
+    /// </summary>
+    /// <returns>用户ID，如果获取失败则返回null</returns>
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return userId;
+        }
+        return null;
+    }
+
+    /// <summary>
     /// 报名参加一个活动
     /// </summary>
     /// <param name="activityId">活动ID</param>
     [HttpPost("join")]
     public async Task<IActionResult> JoinActivity(int activityId)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var userId = 2; // TODO: 实际应从用户认证信息中获取
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var response = await _participantService.JoinActivityAsync(activityId, userId);
+        var response = await _participantService.JoinActivityAsync(activityId, userId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -45,10 +65,13 @@ public class ActivityParticipantsController : ControllerBase
     [HttpPut("complete")]
     public async Task<IActionResult> CompleteActivityTask(int activityId)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var userId = 2; // TODO: 实际应从用户认证信息中获取
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
 
-        var response = await _participantService.CompleteActivityTaskAsync(activityId, userId);
+        var response = await _participantService.CompleteActivityTaskAsync(activityId, userId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));
@@ -63,10 +86,13 @@ public class ActivityParticipantsController : ControllerBase
     [HttpPost("claim-reward")]
     public async Task<IActionResult> ClaimReward(int activityId)
     {
-        // 假设从JWT Token中获取当前用户ID，这里暂时用一个硬编码代替
-        var userId = 2; // TODO: 实际应从用户认证信息中获取
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+        }
         
-        var response = await _participantService.ClaimRewardAsync(activityId, userId);
+        var response = await _participantService.ClaimRewardAsync(activityId, userId.Value);
         if (!response.Success)
         {
             return BadRequest(BaseHttpResponse.Fail(400, response.ErrorMessage!));

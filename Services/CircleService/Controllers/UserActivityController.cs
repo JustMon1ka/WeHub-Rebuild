@@ -2,6 +2,8 @@ using CircleService.DTOs;
 using CircleService.Services;
 using DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace CircleService.Controllers;
@@ -11,6 +13,7 @@ namespace CircleService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/activity-participants")]
+[Authorize] // 默认需要认证
 public class UserActivityController : ControllerBase
 {
     private readonly IActivityParticipantService _participantService;
@@ -18,6 +21,20 @@ public class UserActivityController : ControllerBase
     public UserActivityController(IActivityParticipantService participantService)
     {
         _participantService = participantService;
+    }
+
+    /// <summary>
+    /// 从JWT Claims中获取当前用户ID
+    /// </summary>
+    /// <returns>用户ID，如果获取失败则返回null</returns>
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return userId;
+        }
+        return null;
     }
 
     /// <summary>
@@ -29,8 +46,11 @@ public class UserActivityController : ControllerBase
     {
         try
         {
-            // TODO: 实际应从用户认证信息中获取当前用户ID，并验证权限
-            var currentUserId = 2; // 临时硬编码，后续需要从JWT Token获取
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+            }
             
             // 权限验证：用户只能查看自己的参与状态
             if (currentUserId != userId)
@@ -57,8 +77,11 @@ public class UserActivityController : ControllerBase
     {
         try
         {
-            // TODO: 实际应从用户认证信息中获取当前用户ID，并验证权限
-            var currentUserId = 2; // 临时硬编码，后续需要从JWT Token获取
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                return Unauthorized(BaseHttpResponse.Fail(401, "用户身份验证失败"));
+            }
             
             // 权限验证：用户只能查看自己的参与状态
             if (currentUserId != userId)

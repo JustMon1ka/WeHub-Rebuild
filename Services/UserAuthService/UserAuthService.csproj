@@ -19,7 +19,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Shared\DTOs\DTOs.csproj" />
       <ProjectReference Include="..\Shared\Models\Models.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="appsettings.json" />
     </ItemGroup>
 
 </Project>

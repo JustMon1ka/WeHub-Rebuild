@@ -1,2 +1,5 @@
 
-export {default as welcome} from './components/TheWelcome.vue'
+export {default as fetchFromAPI} from './scripts/FetchFromAPI.ts'
+
+
+export const GATEWAY = 'http://localhost:5000'

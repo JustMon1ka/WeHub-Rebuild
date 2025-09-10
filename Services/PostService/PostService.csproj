@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="jieba.NET" Version="0.42.2" />
+        <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" Version="9.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.18" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11"/>
+        <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.90" />
+        <PackageReference Include="StackExchange.Redis" Version="2.8.58" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Remove="Resources\char_state_tab.json" />
+        <Content Remove="Resources\pos_prob_emit.json" />
+        <Content Remove="Resources\pos_prob_start.json" />
+        <Content Remove="Resources\pos_prob_trans.json" />
+        <Content Remove="Resources\prob_emit.json" />
+        <Content Remove="Resources\prob_trans.json" />
+      <ProjectReference Include="..\Shared\DTOs\DTOs.csproj" />
+      <ProjectReference Include="..\TagService\TagService.csproj" />
+      <Content Include="Resources\**\*">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Models\" />
+    </ItemGroup>
+
+</Project>

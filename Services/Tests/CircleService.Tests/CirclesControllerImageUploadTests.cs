@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Text;
 using DTOs;
+using System.Security.Claims;
 
 namespace CircleService.Tests
 {
@@ -25,6 +26,28 @@ namespace CircleService.Tests
             _mockMemberService = new Mock<ICircleMemberService>();
             _mockActivityService = new Mock<IActivityService>();
             _controller = new CirclesController(_mockCircleService.Object, _mockMemberService.Object, _mockActivityService.Object);
+            
+            // 设置默认的认证上下文
+            SetupAuthenticationContext("1");
+        }
+
+        /// <summary>
+        /// 设置测试中的认证上下文
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        private void SetupAuthenticationContext(string userId)
+        {
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId)
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuth");
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+            
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+            };
         }
 
         [TestMethod]

@@ -2,6 +2,10 @@ using CircleService.Data;
 using CircleService.Repositories;
 using CircleService.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +30,27 @@ builder.Services.AddScoped<IActivityAutoCompleteService, ActivityAutoCompleteSer
 builder.Services.Configure<FileBrowserOptions>(builder.Configuration.GetSection("FileBrowser"));
 builder.Services.AddScoped<IFileBrowserClient, FileBrowserClient>();
 
+// 4. 配置 JWT 认证
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                builder.Configuration["Jwt:Key"]!
+            ))
+        };
+    });
 
-// 3. 添加控制器服务
+// 5. 添加授权服务
+builder.Services.AddAuthorization();
+
+// 6. 添加控制器服务
 builder.Services.AddControllers();
 
 // 4. 配置 CORS
@@ -42,9 +65,33 @@ builder.Services.AddCors(options =>
 });
 
 
-// 5. 配置 Swagger (用于 API 文档和测试)
+// 7. 配置 Swagger (用于 API 文档和测试)
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Circle Service API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+});
 
 
 // ------------------ 中间件管道 (Middleware Pipeline) ------------------
@@ -66,6 +113,9 @@ app.UseRouting();
 
 // 启用 CORS 策略
 app.UseCors();
+
+// 启用认证（必须在授权之前）
+app.UseAuthentication();
 
 // 启用授权
 app.UseAuthorization();

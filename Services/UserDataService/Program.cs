@@ -43,7 +43,8 @@ namespace UserDataService
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // 前端地址
+                    policy.WithOrigins("http://localhost:5000",
+                            "http://localhost:5173") // 前端地址
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -80,7 +81,7 @@ namespace UserDataService
             // ------------------ Controllers & Services ------------------
             builder.Services.AddControllers();
             builder.Services.AddScoped<IUserDataRepository, UserDataRepository>();
-            builder.Services.AddScoped<IDataService, DataService>();
+            builder.Services.AddScoped<IUserDataService, DataService>();
 
             var app = builder.Build();
 

@@ -782,3 +782,29 @@ body {
     flex-direction: column;
   }
 }
+
+img {
+  caret-color: transparent; /* 隐藏图片元素的光标 */
+}
+
+svg {
+  caret-color: transparent;
+}
+
+button {
+  cursor: pointer; /* 鼠标悬停时显示手型光标 */
+  caret-color: transparent;
+}
+
+input {
+  cursor: text; /* 鼠标悬停时显示文本输入光标 */
+}
+
+input[type="checkbox"]{
+  cursor: pointer; /* 鼠标悬停时显示手型光标 */
+}
+
+label {
+  caret-color: transparent;
+  cursor: default;
+}
