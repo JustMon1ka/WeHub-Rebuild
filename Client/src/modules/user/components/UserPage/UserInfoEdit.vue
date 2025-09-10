@@ -62,7 +62,7 @@ const dateConfig = ref({
     <div class="h-48 bg-slate-700 relative">
       <input @change="userInfo.uploadPicture($event, 'profile')"
              type="file" accept="image/jpeg, image/png, image/jpg" class="hidden" id="bgInput">
-      <img v-if="!!userInfo?.profileURL" v-bind:src="userInfo?.profileURL"
+      <img v-if="!!userInfo?.profileUrl" v-bind:src="userInfo?.profileUrl"
            class="w-full h-full object-cover" alt="Profile banner">
       <img v-else src="@/modules/user/assets/default_background.svg"
            class="w-full h-full object-cover" alt="Profile banner">
@@ -78,9 +78,9 @@ const dateConfig = ref({
       <div class="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800 relative">
         <input @change="userInfo.uploadPicture($event, 'avatar')"
                type="file" accept="image/*" class="hidden" id="avatarInput">
-        <img v-if="!!userInfo?.avatarURL" v-bind:src="userInfo?.avatarURL"
+        <img v-if="!!userInfo?.avatarUrl" v-bind:src="userInfo?.avatarUrl"
              v-bind:class="styles.userPic" alt="User avatar">
-        <PlaceHolder width="150"  height="150" :text="userInfo.nickname"
+        <PlaceHolder v-else width="150"  height="150" :text="userInfo.nickname"
                      v-bind:class="styles.userPic"></PlaceHolder>
         <label for="avatarInput" class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
           <label for="avatarInput" class="p-3 bg-slate-900/50 rounded-full hover:bg-slate-900/75 transition-colors">

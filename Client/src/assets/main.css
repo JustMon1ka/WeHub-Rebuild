@@ -1,8 +1,6 @@
 @import './base.css';
 
-body {
-  font-family: 'Inter', sans-serif;
-}
+
 
 img {
   caret-color: transparent; /* 隐藏图片元素的光标 */

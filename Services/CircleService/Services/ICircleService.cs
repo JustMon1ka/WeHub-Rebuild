@@ -1,0 +1,95 @@
+using CircleService.DTOs;
+using CircleService.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace CircleService.Services;
+
+/// <summary>
+/// 圈子服务接口，定义了与圈子相关的业务逻辑。
+/// </summary>
+public interface ICircleService
+{
+    /// <summary>
+    /// 根据ID异步获取一个圈子的DTO
+    /// </summary>
+    /// <param name="id">圈子ID</param>
+    /// <returns>返回圈子的数据传输对象，如果不存在则返回null</returns>
+    Task<CircleDto?> GetCircleByIdAsync(int id);
+
+    /// <summary>
+    /// 异步获取所有圈子的DTO列表，支持按名称模糊搜索和分类筛选
+    /// </summary>
+    /// <param name="name">可选的圈子名称，用于模糊搜索</param>
+    /// <param name="category">可选的分类标签，用于筛选圈子</param>
+    /// <param name="userId">可选的用户ID，用于查询该用户加入的圈子</param>
+    /// <returns>返回所有圈子的DTO列表</returns>
+    Task<IEnumerable<CircleDto>> GetAllCirclesAsync(string? name = null, string? category = null, int? userId = null);
+
+    /// <summary>
+    /// 异步创建一个新圈子
+    /// </summary>
+    /// <param name="createCircleDto">创建圈子所需的数据</param>
+    /// <param name="ownerId">创建者的用户ID</param>
+    /// <returns>返回创建成功的圈子的DTO</returns>
+    Task<CircleDto> CreateCircleAsync(CreateCircleDto createCircleDto, int ownerId);
+
+    /// <summary>
+    /// 异步更新一个圈子
+    /// </summary>
+    /// <param name="id">要更新的圈子ID</param>
+    /// <param name="updateCircleDto">更新圈子所需的数据</param>
+    /// <returns>返回一个布尔值，表示更新是否成功</returns>
+    Task<bool> UpdateCircleAsync(int id, UpdateCircleDto updateCircleDto);
+
+    /// <summary>
+    /// 异步删除一个圈子
+    /// </summary>
+    /// <param name="id">要删除的圈子ID</param>
+    /// <param name="deleterId">执行删除操作的用户ID</param>
+    /// <returns>返回一个布尔值，表示删除是否成功</returns>
+    Task<bool> DeleteCircleAsync(int id, int deleterId);
+
+    /// <summary>
+    /// 异步获取所有不重复的圈子分类列表
+    /// </summary>
+    /// <returns>返回所有分类标签的列表</returns>
+    Task<IEnumerable<string>> GetAllCategoriesAsync();
+
+    /// <summary>
+    /// 异步上传圈子头像
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="fileStream">图片文件流</param>
+    /// <param name="fileName">文件名</param>
+    /// <param name="contentType">文件类型</param>
+    /// <returns>返回上传结果</returns>
+    Task<ImageUploadResponseDto?> UploadAvatarAsync(int circleId, Stream fileStream, string fileName, string contentType);
+
+    /// <summary>
+    /// 异步上传圈子背景图
+    /// </summary>
+    /// <param name="circleId">圈子ID</param>
+    /// <param name="fileStream">图片文件流</param>
+    /// <param name="fileName">文件名</param>
+    /// <param name="contentType">文件类型</param>
+    /// <returns>返回上传结果</returns>
+    Task<ImageUploadResponseDto?> UploadBannerAsync(int circleId, Stream fileStream, string fileName, string contentType);
+
+    /// <summary>
+    /// 异步上传活动封面图片
+    /// </summary>
+    /// <param name="activityId">活动ID</param>
+    /// <param name="fileStream">图片文件流</param>
+    /// <param name="fileName">文件名</param>
+    /// <param name="contentType">文件类型</param>
+    /// <returns>返回上传结果</returns>
+    Task<ImageUploadResponseDto?> UploadActivityImageAsync(int activityId, Stream fileStream, string fileName, string contentType);
+
+    /// <summary>
+    /// 异步获取指定圈子内的所有帖子ID列表
+    /// </summary>
+    /// <param name="circleId">圈子ID（可选，不提供时返回所有帖子的ID）</param>
+    /// <returns>返回帖子ID列表的DTO</returns>
+    Task<PostIdListDto> GetPostIdsByCircleIdAsync(int? circleId = null);
+} 

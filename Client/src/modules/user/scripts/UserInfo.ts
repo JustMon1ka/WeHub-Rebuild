@@ -1,12 +1,13 @@
 import { User } from '@/modules/auth/public.ts'
 import {
-  getUserDataAPI,
-  setUserProfileAPI,
+  getUserDataAPI, MEDIA_BASE_URL,
+  setUserProfileAPI, uploadMediaAPI,
   type UserData,
   type userProfileData
 } from '@/modules/user/scripts/UserDataAPI.ts'
 import { getTagsAPI, setTagsAPI } from '@/modules/user/scripts/UserTagAPI.ts'
 import tags from '@/modules/user/scripts/tags.json'
+import user from '@/modules/auth/scripts/User.ts'
 
 class UserInfo implements UserData{
   static readonly errorMsg = {
@@ -77,8 +78,10 @@ class UserInfo implements UserData{
   createdAt: string = '';
   password: string = '';
 
-  profileURL: string = '';
-  avatarURL: string = '';
+  profileId: string = '';
+  profileUrl: string = '';
+  avatarId: string = '';
+  avatarUrl: string = '';
   status: string = '';
   nickname: string = 'Loading...';
   birthday: string = '';
@@ -140,8 +143,10 @@ class UserInfo implements UserData{
     this.createdAt = userProfile.createdAt.split('T')[0]; // 只保留日期部分
     this.password = '';
 
-    this.profileURL = userProfile.profileURL || '';
-    this.avatarURL = userProfile.avatarURL || '';
+    this.profileId = userProfile.profileUrl || '';
+    this.profileUrl = this.profileId ? `${MEDIA_BASE_URL}/${this.profileId}` : '';
+    this.avatarId = userProfile.avatarUrl || '';
+    this.avatarUrl = this.avatarId ? `${MEDIA_BASE_URL}/${this.avatarId}` : '';
     this.status = userProfile.status || '';
     this.experience = userProfile.experience || 0;
     this.nickname = userProfile.nickname || this.username;
@@ -182,8 +187,8 @@ class UserInfo implements UserData{
     copyUserInfo.isMe = this.isMe;
     copyUserInfo.username = this.username;
 
-    copyUserInfo.profileURL = this.profileURL;
-    copyUserInfo.avatarURL = this.avatarURL;
+    copyUserInfo.profileUrl = this.profileUrl;
+    copyUserInfo.avatarUrl = this.avatarUrl;
 
     copyUserInfo.nickname = this.nickname;
     copyUserInfo.birthday = this.birthday;
@@ -215,8 +220,8 @@ class UserInfo implements UserData{
 
     try {
       await setUserProfileAPI(this.userId, <userProfileData>{
-        profileURL: this.profileURL,
-        avatarURL: this.avatarURL,
+        profileUrl: this.profileId,
+        avatarUrl: this.avatarId,
         experience: this.experience,
         gender: this.gender,
         level: this.level,
@@ -248,9 +253,22 @@ class UserInfo implements UserData{
       return;
     }
 
-    this.changed = true;
+    try {
+      const result = await uploadMediaAPI(this.userId, file);
+      console.log(result);
+      if (type === 'avatar') {
+        this.avatarId = result.data.fileId;
+        this.avatarUrl = this.avatarId ? `${MEDIA_BASE_URL}/${this.avatarId}` : '';
+      } else {
+        this.profileId = result.data.fileId;
+        this.profileUrl = this.profileId ? `${MEDIA_BASE_URL}/${this.profileId}` : '';
+      }
+    } catch (error) {
+      this.handleError(error);
+      return;
+    }
 
-    // TODO: Upload picture to server
+    this.changed = true;
   }
 
   async updateTags() {
