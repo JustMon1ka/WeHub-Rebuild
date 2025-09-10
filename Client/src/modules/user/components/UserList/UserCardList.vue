@@ -104,7 +104,7 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
     <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
                  @mouseenter="moveIn($event, 'avatar')"
                  @mouseleave="moveOut($event, 'avatar')" class="pr-4 py-2">
-      <img v-if="!!userInfo.avatarURL" :src="userInfo.avatarURL"
+      <img v-if="!!userInfo.avatarUrl" :src="userInfo.avatarUrl"
            class="w-12 h-12 rounded-full" alt="User Avatar">
       <PlaceHolder v-else width="100" :text="userInfo.nickname" height="100" class="w-12 h-12 rounded-full"/>
     </router-link>

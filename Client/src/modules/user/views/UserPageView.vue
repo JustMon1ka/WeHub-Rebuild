@@ -11,10 +11,9 @@ import router from '@/router.ts'
 import PrivacyView from '@/modules/auth/views/PrivacyView.vue'
 import { toggleLoginHover } from '@/router.ts'
 
-const props = defineProps<{
-  userId_p?: string;
-}>()
-const { userId_p } = props;
+const { userId_p } = defineProps<{
+  userId_p: string;
+}>();
 
 let userId = userId_p || 'Me';
 let userInfo : Ref<UserInfo, UserInfo>;

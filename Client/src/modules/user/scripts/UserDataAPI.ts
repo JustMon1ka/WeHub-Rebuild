@@ -1,4 +1,5 @@
 import { fetchFromAPI, GATEWAY } from '@/modules/core/public.ts'
+import User from '@/modules/auth/scripts/User.ts'
 
 interface userReadOnlyData {
   userId: string,
@@ -14,8 +15,8 @@ interface userAuthData {
 }
 
 interface userProfileData{
-  profileURL: string,
-  avatarURL: string,
+  profileUrl: string,
+  avatarUrl: string,
   nickname: string,
   bio: string,
   gender: string,
@@ -28,6 +29,8 @@ interface userProfileData{
 interface UserData extends userAuthData, userProfileData, userReadOnlyData {}
 
 const BASE_URL : string = `${GATEWAY}/api/user_data`;
+
+/* API from user data service */
 
 async function getUserDataAPI(userId: string){
   return await fetchFromAPI(`${BASE_URL}/${userId}`, 'GET');
@@ -45,6 +48,34 @@ async function deleteUserAPI(userId: string) {
   return await fetchFromAPI(`${BASE_URL}/${userId}/delete`, 'DELETE');
 }
 
+/* API from media service */
 
-export { getUserDataAPI, setUserAuthDataAPI, setUserProfileAPI, deleteUserAPI,
+const MEDIA_BASE_URL : string = `${GATEWAY}/api/media`;
+
+async function uploadMediaAPI(userId: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file); // file 是 File 类型对象
+
+  const token = User.getInstance()?.userAuth?.token || null;
+  if (!token)
+    throw new Error('请先登录');
+
+  const result =  await fetch(`${MEDIA_BASE_URL}/upload`, {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : '',
+    },
+    body: formData,
+  });
+  console.log(result);
+  const resultData = await result.json();
+  if (!result.ok) {
+
+    throw new Error(resultData.msg);
+  }
+  return resultData;
+}
+
+export { getUserDataAPI, setUserAuthDataAPI, setUserProfileAPI, deleteUserAPI, uploadMediaAPI, MEDIA_BASE_URL,
   type userAuthData, type userProfileData, type userReadOnlyData, type UserData };

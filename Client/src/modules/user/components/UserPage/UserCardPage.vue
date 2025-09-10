@@ -33,7 +33,7 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.followingCo
   <div>
     <!-- 背景横幅 -->
     <div class="h-72 bg-slate-700">
-      <img v-if="!!userInfo.profileURL" v-bind:src="userInfo.profileURL"
+      <img v-if="!!userInfo.profileUrl" v-bind:src="userInfo.profileUrl"
            class="w-full h-full object-cover" alt="Profile banner">
       <img v-else src="@/modules/user/assets/default_background.svg"
            class="w-full h-full object-cover" alt="Profile banner">
@@ -42,7 +42,7 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.followingCo
     <div class="px-4 -mt-16">
       <div class="flex justify-between items-end">
         <div class="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800">
-          <img v-if="!!userInfo.avatarURL" v-bind:src="userInfo.avatarURL"
+          <img v-if="!!userInfo.avatarUrl" v-bind:src="userInfo.avatarUrl"
                v-bind:class="styles.userPic" alt="User avatar">
           <PlaceHolder width="150"  height="150" :text="userInfo.nickname"
                        v-bind:class="styles.userPic"></PlaceHolder>
