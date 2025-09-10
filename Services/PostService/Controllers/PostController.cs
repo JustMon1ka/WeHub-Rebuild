@@ -102,6 +102,40 @@ public class PostController : ControllerBase
             Likes = post.Likes ?? 0
         };
     }
+    
+    [HttpGet("list")]
+    public async Task<BaseHttpResponse<List<PostResponse>>> List(
+        [FromQuery] long? lastId,
+        [FromQuery] int? num)
+    {
+        try
+        {
+            int take = num.GetValueOrDefault(10);
+            if (take <= 0) take = 10;
+            if (take > 100) take = 100;
+
+            var posts = await _postService.GetPagedPostsAsync(lastId, take, desc: true);
+
+            var data = posts.Select(p => new PostResponse
+            {
+                PostId = p.PostId,
+                UserId = p.UserId ?? 0,
+                Title = p.Title ?? "",
+                Content = p.Content ?? "",
+                Tags = p.TagNames ?? new List<string>(),
+                CreatedAt = p.CreatedAt ?? DateTime.MinValue,
+                Views = p.Views ?? 0,
+                Likes = p.Likes ?? 0,
+                CircleId = p.CircleId
+            }).ToList();
+
+            return BaseHttpResponse<List<PostResponse>>.Success(data);
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<List<PostResponse>>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
+    }
 
     [HttpDelete]
     [Authorize(AuthenticationSchemes = "Bearer")]
