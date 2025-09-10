@@ -2,11 +2,11 @@
   <div class="fixed left-0 top-0 bottom-0 w-64 flex flex-col h-full z-30 bg-slate-900 p-4 border-r border-slate-800">
 <!--    flex-none sr-only md:not-sr-only md:h-screen border-x border-slate-800 p-4-->
     <!-- Logo -->
+
     <div class="h-16 flex items-center mb-4">
       <img src="@/assets/logo.svg" alt="Logo" class="w-9 h-9">
       <span class="ml-2 text-xl font-bold">WeHub</span>
     </div>
-
     <!-- 导航菜单 -->
     <nav class="flex-grow">
       <ul class="space-y-2">
@@ -55,13 +55,32 @@
     </div>
 
     <div class="mt-auto">
-      <a href="#" class="flex items-center p-3 rounded-full hover:bg-slate-800 transition-colors duration-200">
-        <img class="w-10 h-10 rounded-full" src="https://placehold.co/100x100/7dd3fc/0f172a?text=头像" alt="User Avatar">
+      <a
+        href="#"
+        class="flex items-center p-3 rounded-full hover:bg-slate-700/50 transition-colors duration-200"
+      >
+        <img
+          class="w-10 h-10 rounded-full"
+          src="https://placehold.co/100x100/7dd3fc/0f172a?text=头像"
+          alt="User Avatar"
+        />
         <div class="ml-3">
           <p class="font-semibold text-sm">用户名</p>
           <p class="text-slate-400 text-xs">@username</p>
         </div>
-        <svg class="w-5 h-5 ml-auto text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+        <svg
+          class="w-5 h-5 ml-auto text-slate-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
+          ></path>
+        </svg>
       </a>
     </div>
 
@@ -69,7 +88,6 @@
       退出
     </button>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -109,3 +127,6 @@ User.afterLoadCallbacks.push(() => {
   }
 });
 </script>
+
+<style scoped>
+</style>
