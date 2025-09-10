@@ -34,7 +34,11 @@ const router = createRouter({
     ...coreRouter.getRoutes(),
     ...authRouter.getRoutes(),
     ...userRouter.getRoutes(),
-    ...postRouter,                               // post 模块路由数组
+    ...circleRouter.getRoutes(),
+    ...messageRouter.getRoutes(),
+    ...noticeRouter.getRoutes(),
+    ...reportRouter.getRoutes(),
+    ...postRouter,                   // post 模块路由数组
     // ...yourRouter.getRoutes(),
     // your router must be imported before NotFound route
     {

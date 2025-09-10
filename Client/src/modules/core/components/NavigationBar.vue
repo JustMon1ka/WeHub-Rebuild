@@ -21,11 +21,11 @@
           <img src="@/modules/core/assets/community.svg" alt="Community" class="svg">
           社区
         </router-link></li>
-        <li><router-link to="/notifications" class="router-link">
+        <li><router-link to="/notice" class="router-link">
           <img src="@/modules/core/assets/notifications.svg" alt="Notifications" class="svg">
           通知
         </router-link></li>
-        <li><router-link to="/messages" class="router-link">
+        <li><router-link to="/message" class="router-link">
           <img src="@/modules/core/assets/messages.svg" alt="Messages" class="svg">
           私信
         </router-link></li>
