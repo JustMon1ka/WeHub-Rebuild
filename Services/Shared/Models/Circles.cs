@@ -5,8 +5,8 @@ using Models;
 
 namespace Models;
 
-[Table("CIRCLE")]
-public class Circle
+[Table("CIRCLES")]
+public class Circles
 {
     [Key]
     [Column("CIRCLE_ID")]

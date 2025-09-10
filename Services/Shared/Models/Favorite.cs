@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PostService.Models
+namespace Models
 {
     public class Favorite
     {

@@ -1,9 +1,10 @@
 ﻿import axios from 'axios';
+import User from '@/modules/auth/scripts/User.ts';
 
 axios.defaults.baseURL = 'http://localhost:5000/api';
 axios.interceptors.request.use(config => {
   // 设置 Bearer 认证
-  let token = localStorage.getItem('token');
+  let token = User.getInstance()?.userAuth?.token || null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

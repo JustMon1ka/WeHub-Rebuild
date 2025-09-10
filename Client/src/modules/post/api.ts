@@ -11,11 +11,12 @@ import type {
   Comment,
   CommentRequest
 } from "./types";
+import User from "@/modules/auth/scripts/User.ts";
 
 // 设置基础URL - 修正为正确的API根路径
 axios.defaults.baseURL = 'http://localhost:5000';
 axios.interceptors.request.use(config => {
-  const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMDAxNDAiLCJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEwMDE0MCIsInN0YXR1cyI6IjAiLCJleHAiOjE3NTUxNjI3NjIsImlzcyI6IllvdXJBcHAiLCJhdWQiOiJZb3VyQXBwVXNlcnMifQ.sUN81A9VyyR69RwlGgjfT9QMmlRSqrXBlOW7T74V4OY";
+  const token =  User.getInstance()?.userAuth?.token || null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

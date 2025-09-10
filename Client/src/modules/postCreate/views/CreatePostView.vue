@@ -65,11 +65,26 @@
       <footer class="sticky bottom-0 bg-slate-900 px-6 py-4 border-t border-slate-700">
         <button
           @click="publish"
-          class="w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-semibold py-3 rounded-full shadow-lg transition-all"
+          :disabled="isLoading"
+          class="w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-semibold py-3 rounded-full shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          发布
+          <span v-if="isLoading">发布中...</span>
+          <span v-else>发布</span>
         </button>
       </footer>
+
+      <transition
+        enter-active-class="transition-opacity duration-200 ease-out"
+        leave-active-class="transition-opacity duration-200 ease-in"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="isLoading" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-20">
+          <div class="w-12 h-12 border-4 border-slate-500 border-t-sky-500 rounded-full animate-spin"></div>
+        </div>
+      </transition>
     </div>
   </transition>
 </template>
@@ -97,6 +112,8 @@ const title = ref('')
 const content = ref('')
 const tags = ref<string[]>([])
 
+const isLoading = ref(false)
+
 onMounted(() => {
   visible.value = true
   const x = Number(route.query.x)
@@ -112,7 +129,8 @@ onBeforeUnmount(() => {
 
 async function publish() {
   // 0. 判断是否是分享模式
-    const shareFrom = route.query.shareFrom as string | undefined
+  const shareFrom = route.query.shareFrom as string | undefined
+  isLoading.value = true // <--- 新增：开始加载，显示蒙版
   try {
     // 1. 先处理标签（仅普通发帖需要）
     // 假设 TagInput 的 v-model 绑定的就是标签名数组（string[]）
@@ -133,7 +151,7 @@ async function publish() {
     if (shareFrom) {
       // 分享模式 → 调用分享接口
       const res = await sharePost(Number(shareFrom), content.value)
-      alert('分享成功，ID: ' + res.postId) // 注意根据实际返回字段调整
+      alert('分享成功，ID: ' + res.data?.postId) // 注意根据实际返回字段调整
     } else {
       // 普通发帖 → 调用发布帖子 API
       const payload = {
@@ -143,7 +161,7 @@ async function publish() {
         tags: finalTagIds
       }
       const res = await publishPost(payload)
-      alert('发布成功，ID: ' + res.postId) // 注意根据实际返回字段调整
+      alert('发布成功，ID: ' + res.data?.postId) // 注意根据实际返回字段调整
     }
 
     // 3. 关闭弹窗 / 返回
@@ -151,6 +169,8 @@ async function publish() {
   } catch (err) {
     console.error(err)
     alert(shareFrom ? '分享失败，请重试' : '发布失败，请重试')
+  } finally {
+    isLoading.value = false // <--- 新增：结束加载，隐藏蒙版
   }
 }
 
@@ -160,3 +180,17 @@ function close() {
 }
 
 </script>
+
+<style scoped>
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+</style>
