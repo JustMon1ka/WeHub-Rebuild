@@ -1,10 +1,21 @@
 <template>
-  <button class="like-btn"
-          :aria-pressed="isLikedLocal ? 'true' : 'false'"
-          :disabled="pending"
-          @click="onToggleLike">
+  <button
+    class="like-btn"
+    :class="[
+      isLikedLocal 
+        ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20' 
+        : 'text-slate-500 hover:bg-slate-800 hover:text-red-400'
+    ]"
+    :aria-pressed="isLikedLocal ? 'true' : 'false'"
+    :disabled="pending"
+    @click="onToggleLike"
+  >
     <!-- 点赞图标 -->
-    <span class="icon" :class="{ liked: isLikedLocal }">❤️</span>
+    <span class="icon" :class="{ liked: isLikedLocal }">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" :class="{ 'fill-current': isLikedLocal }">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+      </svg>
+    </span>
     <!-- 点赞数 -->
     <span class="count" :class="{ liked: isLikedLocal }">{{ likeCountLocal }}</span>
   </button>
@@ -64,11 +75,15 @@ async function onToggleLike() {
 .like-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
   border: none;
+  border-radius: 8px;
   background: transparent;
   cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
 }
 
 .like-btn:disabled {
@@ -76,21 +91,22 @@ async function onToggleLike() {
   cursor: not-allowed;
 }
 
-/* 默认灰色 */
+/* 默认样式 */
 .icon {
-  font-size: 18px;
-  color: #999;
-  transition: color 0.2s ease;
-}
-.count {
-  font-size: 14px;
-  color: #555;
+  display: flex;
+  align-items: center;
   transition: color 0.2s ease;
 }
 
-/* 点赞后变红 */
+.count {
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+/* 点赞后样式 */
 .icon.liked,
 .count.liked {
-  color: #e0245e; /* 推特红色 */
+  color: inherit;
 }
 </style>
