@@ -363,7 +363,46 @@ public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
         if (userIdClaim == null)
         {
+<<<<<<< HEAD
             return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+=======
+            // 从 token 中取 userId（转发人）
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return BaseHttpResponse<PostPublishResponse>.Fail(401, "未认证的用户");
+
+            long userId = long.Parse(userIdClaim.Value);
+
+            // 获取被分享的原帖
+            var original = await _postService.GetPostByIdAsync(request.TargetId);
+            if (original == null || original.IsDeleted == 1)
+                return BaseHttpResponse<PostPublishResponse>.Fail(404, "原帖不存在");
+
+            // 生成特殊标记文本
+            string marker = $"<type:repost,targetId:{original.PostId},title:{original.Title}>";
+
+            // 发布新帖（内容就是 marker + 用户的附加评论）
+            var newPost = await _postService.PublishPostAsync(
+                userId,
+                request.CircleId ?? original.CircleId,
+                $"转发：{original.Title}",
+                marker + "\n\n" + (request.Comment ?? ""),
+                new List<long>() // 不带标签
+            );
+
+            //把通知写入 Redis
+            string message = $"type:repost,targetId:{original.PostId}";
+            await _redis.SetStringAsync(original.UserId.ToString(), message);
+            return BaseHttpResponse<PostPublishResponse>.Success(new PostPublishResponse
+         {
+                PostId = newPost.PostId,
+                CreatedAt = newPost.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""
+            });
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<PostPublishResponse>.Fail(500, "转发失败: " + ex.Message);
+>>>>>>> e51c93fd184acd2ae5a3bbbb20ae621a5859cd43
         }
 
         long userId = long.Parse(userIdClaim.Value);
