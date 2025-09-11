@@ -79,21 +79,22 @@ const submitComment = async () => {
   isSubmitting.value = true;
 
   try {
+    // 修正请求参数格式
     const commentData: CommentRequest = {
-      type: props.replyTo ? 'reply' : 'comment',
-      content: content.value.trim()
+      post_id: props.postId,
+      content: content.value.trim(),
+      parent_id: props.replyTo ? (props.replyTo.comment_id || props.replyTo.reply_id || 0) : 0,
+      reply_to_user_id: props.replyTo ? props.replyTo.user_id : undefined
     };
-
-    if (props.replyTo) {
-      const targetId = props.replyTo.comment_id || props.replyTo.reply_id;
-      if (targetId) {
-        commentData.target_id = targetId;
-      }
-    }
 
     await postService.submitComment(commentData);
     content.value = '';
     emit('submitted');
+    
+    // 如果是回复，取消回复状态
+    if (props.replyTo) {
+      emit('cancel-reply');
+    }
   } catch (error) {
     console.error('提交评论失败:', error);
     alert('提交评论失败，请重试');

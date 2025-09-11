@@ -18,10 +18,11 @@ public class AppDbContext : DbContext
     public DbSet<Comments> Comments => Set<Comments>();
     public DbSet<Reply> Replies => Set<Reply>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
-    
+    public DbSet<Like> Likes => Set<Like>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        
+
         modelBuilder.Entity<PostTag>()
             .HasKey(pt => new { pt.PostId, pt.TagId });
 
@@ -34,7 +35,9 @@ public class AppDbContext : DbContext
             .HasOne(pt => pt.Tag)
             .WithMany(t => t.PostTags)
             .HasForeignKey(pt => pt.TagId);
-        
+
+
+
         // --- 显式映射 Post 与 User / Circle ---
         modelBuilder.Entity<Post>(entity =>
         {
@@ -93,6 +96,23 @@ public class AppDbContext : DbContext
             entity.HasKey(t => t.TagId);
             entity.Property(t => t.TagId).HasColumnName("TAG_ID");
             entity.Property(t => t.TagName).HasColumnName("TAG_NAME").IsRequired(false);
+        });
+        
+        modelBuilder.Entity<Like>(entity =>
+        {
+            entity.ToTable("LIKES");
+            entity.HasKey(l => new { l.UserId, l.TargetId }); // 复合主键
+
+            entity.Property(l => l.UserId).HasColumnName("USER_ID");
+            entity.Property(l => l.TargetId).HasColumnName("TARGET_ID");
+            entity.Property(l => l.TargetType).HasColumnName("TARGET_TYPE");
+            entity.Property(l => l.IsLike).HasColumnName("LIKE_TYPE");
+            entity.Property(l => l.IsLike)
+            .HasColumnName("LIKE_TYPE")
+            .HasConversion(
+                v => v ? 1 : 0,    // 将 bool 转换为 1/0
+                v => v == 1        // 将 1/0 转换回 bool
+            );
         });
     }
 }

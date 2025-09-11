@@ -162,8 +162,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 // 引入你的测试组件
 import { LikeButton, FavoriteButton, ShareButton } from "../public";
 // 引入API函数

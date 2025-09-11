@@ -1,8 +1,9 @@
 // 点赞请求体（按你们后端 LikeRequest）
 export type ToggleLikeRequest = {
-  type: 'post' | 'comment' | 'reply';       // 如果后续要点赞评论，可传 'comment'
+  type: 'post' | 'comment' | 'reply'; 
   target_id: number;
   like: boolean;      // true=点赞，false=取消点赞
+  user_id: number;    // 点赞用户ID
 };
 
 // 标准响应
@@ -80,10 +81,18 @@ export interface Comment {
   comment_id?: number;
   reply_id?: number;
   user_id: number;
-  created_at: string;
+  user?: {
+    id: number;
+    name: string;
+    username: string;
+    avatar: string;
+  };
   content: string;
+  created_at: string;
   likes: number;
-  user?: User; // 前端扩展字段
+  parent_id?: number;
+  reply_to_user_id?: number;
+  replies?: Comment[];
 }
 
 export interface Post {
@@ -101,7 +110,8 @@ export interface Post {
 }
 
 export interface CommentRequest {
-  type: 'comment' | 'reply';
-  target_id?: number;
+  post_id: number;
   content: string;
+  parent_id: number;
+  reply_to_user_id?: number;
 }

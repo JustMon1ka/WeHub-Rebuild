@@ -57,7 +57,7 @@ async function onToggleLike() {
   likeCountLocal.value = next ? prevCount + 1 : Math.max(0, prevCount - 1);
 
   try {
-    await toggleLike({ type: "post", target_id: props.postId, like: next });
+    await toggleLike({ type: "post", target_id: props.postId, like: next, user_id: 100247 }); // TODO: 替换为实际用户ID
     emit("update:isLiked", isLikedLocal.value);
     emit("update:likeCount", likeCountLocal.value);
   } catch (e) {

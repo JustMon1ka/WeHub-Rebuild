@@ -72,18 +72,18 @@ const handleLike = async () => {
     const targetId = props.comment.comment_id || props.comment.reply_id;
     if (!targetId) return;
     
-    const type = props.comment.type === 'comment' ? 'comment' : 'reply';
-    const success = await postService.toggleLike({
-      type,
+    // 修正点赞API调用
+    const result = await postService.toggleLike({
+      type: props.comment.type === 'comment' ? 'comment' : 'reply',
       target_id: targetId,
       like: !isLiked.value
     });
     
-    if (success) {
+    if (result.code === 200) {
       isLiked.value = !isLiked.value;
       const updatedComment = {
         ...props.comment,
-        likes: isLiked.value ? props.comment.likes + 1 : props.comment.likes - 1
+        likes: isLiked.value ? (props.comment.likes || 0) + 1 : Math.max(0, (props.comment.likes || 0) - 1)
       };
       emit('update:comment', updatedComment);
     }
@@ -99,6 +99,7 @@ const handleDelete = async () => {
     const targetId = props.comment.comment_id || props.comment.reply_id;
     if (!targetId) return;
     
+    // 修正删除API调用
     const success = await postService.deleteComment(props.comment.type, targetId);
     if (success) {
       emit('delete', props.comment);

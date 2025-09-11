@@ -25,8 +25,33 @@
         @update:comment="handleCommentUpdate"
       />
     </template>
+
+    <!-- 在评论列表中添加嵌套回复显示 -->
+    <div v-for="comment in comments" :key="comment.comment_id">
+      <CommentItem
+        :comment="comment"
+        @reply="handleReply"
+        @delete="handleDelete"
+        @update:comment="handleCommentUpdate"
+      />
+      
+      <!-- 显示嵌套回复 -->
+      <div v-if="comment.replies && comment.replies.length > 0" 
+           class="ml-12 pl-4 border-l-2 border-slate-800 space-y-4">
+        <CommentItem
+          v-for="reply in comment.replies"
+          :key="reply.reply_id"
+          :comment="reply"
+          @reply="handleNestedReply"
+          @delete="handleDelete"
+          @update:comment="handleCommentUpdate"
+        />
+      </div>
+    </div>
   </div>
 </template>
+
+
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
@@ -34,6 +59,8 @@ import type { Comment } from '../types';
 import { postService } from '../api';
 import CommentItem from './CommentItem.vue';
 import CommentForm from './CommentForm.vue';
+
+const error = ref<string>('');
 
 const props = defineProps<{
   postId: number;
@@ -45,10 +72,12 @@ const currentReply = ref<Comment>();
 
 const loadComments = async () => {
   loading.value = true;
+  error.value = '';
   try {
     comments.value = await postService.getComments(props.postId);
-  } catch (error) {
-    console.error('加载评论失败:', error);
+  } catch (err) {
+    console.error('加载评论失败:', err);
+    error.value = '加载评论失败，请重试';
   } finally {
     loading.value = false;
   }
@@ -78,6 +107,19 @@ const handleCommentUpdate = (updatedComment: Comment) => {
   if (index !== -1) {
     comments.value[index] = updatedComment;
   }
+};
+
+const handleNestedReply = (reply: Comment) => {
+  // 对于嵌套回复，需要找到父评论
+  const parentComment = comments.value.find(c => 
+    c.comment_id === reply.parent_id || c.replies?.some(r => r.reply_id === reply.parent_id)
+  );
+  currentReply.value = reply;
+};
+
+const handleCommentSubmitted = () => {
+  loadComments();
+  currentReply.value = undefined;
 };
 
 onMounted(() => {
