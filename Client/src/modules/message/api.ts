@@ -10,7 +10,7 @@ import type {
 import { unwrap } from './types'
 
 // 设置baseURL
-axios.defaults.baseURL = 'http://127.0.0.1:4523/m1/7050705-6770801-default/api'
+axios.defaults.baseURL = 'http://localhost:5000'
 
 // 获取会话列表
 export async function getConversationList(): Promise<conversationList> {
