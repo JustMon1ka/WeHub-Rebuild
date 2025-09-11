@@ -74,10 +74,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// 配置 YARP Reverse Proxy
-builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
 var app = builder.Build();
 
 // 配置 HTTP 请求管道
@@ -94,7 +90,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapReverseProxy(); // YARP 中间件
 app.MapControllers();
 
 app.Run();
