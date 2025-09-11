@@ -1,7 +1,7 @@
 <template>
   <article class="p-4" :data-comment-id="comment.comment_id || comment.reply_id" :data-type="comment.type">
     <div class="flex space-x-4">
-      <img class="w-10 h-10 rounded-full flex-shrink-0" :src="comment.user?.avatar || getDefaultAvatar(comment.user_id)" 
+      <img class="w-10 h-10 rounded-full flex-shrink-0" :src="comment.user?.avatar || getDefaultAvatar(comment.user_id)"
            :alt="comment.user?.name || `用户${comment.user_id}`">
       <div class="flex-1">
         <div class="flex items-baseline space-x-2">
@@ -51,7 +51,7 @@ const formatTime = (timestamp: string) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   if (diff < 60000) {
     return '刚刚';
   } else if (diff < 3600000) {
@@ -76,11 +76,11 @@ const handleLike = async () => {
     // 修正点赞API调用
     const result = await postService.toggleLike({
       type: props.comment.type === 'comment' ? 'comment' : 'reply',
-      target_id: targetId,
+      targetId: targetId,
       like: !isLiked.value,
-      user_id: userId
+      userId: userId
     });
-    
+
     if (result.code === 200) {
       isLiked.value = !isLiked.value;
       const updatedComment = {
@@ -96,11 +96,11 @@ const handleLike = async () => {
 
 const handleDelete = async () => {
   if (!confirm('确定要删除吗？')) return;
-  
+
   try {
     const targetId = props.comment.comment_id || props.comment.reply_id;
     if (!targetId) return;
-    
+
     // 修正删除API调用
     const success = await postService.deleteComment(props.comment.type, targetId);
     if (success) {

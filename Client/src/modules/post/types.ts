@@ -1,9 +1,9 @@
 // 点赞请求体（按你们后端 LikeRequest）
 export type ToggleLikeRequest = {
-  type: 'post' | 'comment' | 'reply'; 
-  target_id: number;
+  type: 'post' | 'comment' | 'reply';
+  targetId: number;
   like: boolean;      // true=点赞，false=取消点赞
-  user_id: number;    // 点赞用户ID
+  userId: number;    // 点赞用户ID
 };
 
 // 标准响应
