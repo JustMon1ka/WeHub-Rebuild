@@ -5,27 +5,23 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Yarp.ReverseProxy.Configuration;  // YARP ÅäÖÃ
+using Yarp.ReverseProxy.Configuration;  // YARP é…ç½®
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Ìí¼Ó·şÎñµ½ÈİÆ÷
+// æ·»åŠ æœåŠ¡åˆ°å®¹å™¨
 builder.Services.AddControllers();
 
-// ÅäÖÃ Oracle Êı¾İ¿â
+// é…ç½® Oracle æ•°æ®åº“
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ×¢²á²Ö´¢ºÍ·şÎñ
+// æ³¨å†Œä»“å‚¨å’ŒæœåŠ¡
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessageService, MessageService.Services.MessageService>();
 
-// ÅäÖÃ YARP ·´Ïò´úÀí
-builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
-// ÅäÖÃ JWT ÈÏÖ¤
+// é…ç½® JWT è®¤è¯
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -45,16 +41,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// ÅäÖÃ Swagger
+// é…ç½® Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "MessageService API", Version = "v1" });
-    // Ìí¼Ó JWT ÈÏÖ¤Ö§³Ö
+    // æ·»åŠ  JWT è®¤è¯æ”¯æŒ
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "ÇëÊäÈë JWT ÁîÅÆ£¬¸ñÊ½£ºBearer {token}",
+        Description = "è¯·è¾“å…¥ JWT ä»¤ç‰Œï¼Œæ ¼å¼ï¼šBearer {token}",
         Name = "Authorization",
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
@@ -75,7 +71,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Ìí¼ÓÈÕÖ¾
+// æ·»åŠ æ—¥å¿—
 builder.Services.AddLogging(logging =>
 {
     logging.AddConsole();
@@ -84,7 +80,7 @@ builder.Services.AddLogging(logging =>
 
 var app = builder.Build();
 
-// ÅäÖÃ HTTP ÇëÇó¹ÜµÀ
+// é…ç½® HTTP è¯·æ±‚ç®¡é“
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -97,8 +93,5 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Ó³Éä YARP ·´Ïò´úÀí£¨´¦ÀíËùÓĞÂ·ÓÉ£©
-app.MapReverseProxy();
 
 app.Run();

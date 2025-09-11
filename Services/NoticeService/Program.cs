@@ -16,11 +16,11 @@ builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAutoMapper(typeof(Program));
 
-// Oracle ÅäÖÃ
+// Oracle é…ç½®
 builder.Services.AddDbContext<NoticeDbContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Redis ÅäÖÃ
+// Redis é…ç½®
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var redisConfig = builder.Configuration.GetSection("Redis:ConnectionString").Value;
@@ -30,11 +30,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
-// YARP ÅäÖÃ£¨Gateway Â·ÓÉ£©
-builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
-// JWT ÈÏÖ¤ÅäÖÃ
+// JWT è®¤è¯é…ç½®
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -54,16 +50,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Swagger ÅäÖÃ£¨Ö§³Ö JWT£©
+// Swagger é…ç½®ï¼ˆæ”¯æŒ JWTï¼‰
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "NoticeService API", Version = "v1" });
-    // Ìí¼Ó JWT ÈÏÖ¤Ö§³Ö
+    // æ·»åŠ  JWT è®¤è¯æ”¯æŒ
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "ÇëÊäÈë JWT ÁîÅÆ£¬¸ñÊ½£ºBearer {token}",
+        Description = "è¯·è¾“å…¥ JWT ä»¤ç‰Œï¼Œæ ¼å¼ï¼šBearer {token}",
         Name = "Authorization",
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
@@ -86,7 +82,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ÅäÖÃ HTTP ÇëÇó¹ÜµÀ
+// é…ç½® HTTP è¯·æ±‚ç®¡é“
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -100,10 +96,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Ó³Éä YARP ·´Ïò´úÀí£¨´¦Àí Gateway Â·ÓÉ£©
-app.MapReverseProxy();
-
-// Ó³Éä¿ØÖÆÆ÷Â·ÓÉ
+// æ˜ å°„æ§åˆ¶å™¨è·¯ç”±
 app.MapControllers();
 
 app.Run();
