@@ -264,10 +264,10 @@ class UserInfo implements UserData{
   }
 
   async updateTags() {
-    const tagId: Array<number> = [];
+    const tagId: Set<number> = new Set();
     for (const tag of this.userTags.keys()){
       if (Number(tag) > 0) {
-        tagId.push(Number(tag));
+        tagId.add(Number(tag));
       }
     }
 
@@ -277,11 +277,11 @@ class UserInfo implements UserData{
         throw new Error(tagResult.msg || UserInfo.errorMsg.DefaultError);
       }
       for (const tag of tagResult.data)
-        tagId.push(tag.tagId);
+        tagId.add(tag.tagId);
     }
 
     const result = await setTagsAPI(this.userId, {
-      tags: tagId,
+      tags: [...tagId]
     });
     if (result.code !== 200) {
       throw new Error(result.msg || UserInfo.errorMsg.DefaultError);

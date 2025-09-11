@@ -250,7 +250,8 @@ class User {
 
     setTimeout(async () => {
       this.userInfo = new UserInfo(userid, false);
-      await this.userInfo.loadProfile();
+      this.userInfo.isMe = true; // 显示指定，因为此时用户实例尚未创建完成，拿不到userid
+      await this.userInfo.loadUserData();
     }, 0);
   }
 
@@ -276,7 +277,7 @@ class User {
 
   async reloadUserInfo() {
     this.userInfo = new UserInfo(this.#userId);
-    await this.userInfo.loadProfile();
+    await this.userInfo.loadUserData();
   }
 
   async resetPassword(newPassword: string): Promise<resultState> {
