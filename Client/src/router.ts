@@ -61,6 +61,8 @@ router.beforeEach((to, from, next) => {
   const checkLogin = () => {
     if (!User.getInstance()) {
       toggleLoginHover(true);
+      toggleNavigationBar(!!from.meta.navi);
+      toggleRecommendBar(!!from.meta.recommend);
       if (!from.name) {
         next('/'); // 首次加载时跳转首页
       }
