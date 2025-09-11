@@ -31,7 +31,7 @@
           <!-- 帖子内容 -->
           <h2 class="text-2xl font-bold mt-4">测试帖子标题 (ID: 100072)</h2>
           <p class="mt-4 text-slate-300 leading-relaxed">
-            这是一个用于测试点赞、收藏和分享功能的帖子。帖子ID为100072，确保API调用正确。
+            这是一个用于测试点赞、收藏、分享和评论功能的帖子。帖子ID为100072，确保API调用正确。
           </p>
           <div class="mt-4 rounded-2xl border border-slate-800 overflow-hidden">
             <img src="https://placehold.co/600x350/1e40af/dbeafe?text=测试图片" alt="Test Image" class="w-full h-auto object-cover">
@@ -43,6 +43,7 @@
             <p><span class="font-bold text-white">{{ testPost.shares || 0 }}</span> <span class="text-slate-500">转发</span></p>
             <p><span class="font-bold text-white">{{ testPost.likes }}</span> <span class="text-slate-500">赞</span></p>
             <p><span class="font-bold text-white">{{ testPost.favorites || 0 }}</span> <span class="text-slate-500">收藏</span></p>
+            <p><span class="font-bold text-white">{{ testPost.comments || 0 }}</span> <span class="text-slate-500">评论</span></p>
           </div>
           
           <!-- 测试组件区域 -->
@@ -57,6 +58,7 @@
                 <div>点赞数: <span class="text-white">{{ testPost.likes }}</span></div>
                 <div>收藏状态: <span :class="testPost.isFavorited ? 'text-yellow-400' : 'text-slate-400'">{{ testPost.isFavorited ? '已收藏' : '未收藏' }}</span></div>
                 <div>收藏数: <span class="text-white">{{ testPost.favorites || 0 }}</span></div>
+                <div>评论数: <span class="text-white">{{ testPost.comments || 0 }}</span></div>
               </div>
             </div>
             
@@ -142,6 +144,19 @@
           </div>
         </div>
 
+        <!-- 评论组件区域 -->
+        <div class="border-t border-slate-800 mt-8">
+          <h3 class="text-xl font-bold p-4 bg-slate-800">评论功能测试</h3>
+          
+          <!-- 评论列表组件 -->
+          <CommentList 
+            :post-id="100072"
+            @comment-added="handleCommentAdded"
+            @comment-deleted="handleCommentDeleted"
+            @comment-updated="handleCommentUpdated"
+          />
+        </div>
+
         <!-- 控制台信息 -->
         <div class="bg-slate-800 p-4 rounded-lg mt-6 mx-4">
           <h4 class="font-semibold mb-2 text-purple-400">控制台输出</h4>
@@ -163,9 +178,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 // 引入你的测试组件
 import { LikeButton, FavoriteButton, ShareButton } from "../public";
+// 引入评论组件
+import CommentList from '../components/CommentList.vue';
 // 引入API函数
 import { getPostDetail } from "../../post/api";
 
@@ -180,6 +197,7 @@ const testPost = ref({
   likes: 5,
   favorites: 3,
   shares: 2,
+  comments: 8,
   isLiked: false,
   isFavorited: false
 });
@@ -217,6 +235,21 @@ const handleFavoriteCountUpdate = (count: number) => {
   addLog(`收藏数更新: ${count}`);
 };
 
+// 评论相关事件处理
+const handleCommentAdded = () => {
+  testPost.value.comments = (testPost.value.comments || 0) + 1;
+  addLog('新评论添加成功');
+};
+
+const handleCommentDeleted = () => {
+  testPost.value.comments = Math.max(0, (testPost.value.comments || 0) - 1);
+  addLog('评论删除成功');
+};
+
+const handleCommentUpdated = () => {
+  addLog('评论更新成功');
+};
+
 const handleError = (error: unknown) => {
   addLog(`操作错误: ${error instanceof Error ? error.message : String(error)}`);
   console.error('组件操作错误:', error);
@@ -233,11 +266,12 @@ onMounted(async () => {
     testPost.value = {
       ...testPost.value,
       likes: postDetail.likes || 5,
+      comments: postDetail.comment_count || 8,
       isLiked: (postDetail as any).isLiked ?? (postDetail as any).liked ?? false,
       isFavorited: (postDetail as any).isFavorited ?? (postDetail as any).favorited ?? false
     };
     
-    addLog(`初始化完成: 点赞数=${testPost.value.likes}, 收藏数=${testPost.value.favorites}`);
+    addLog(`初始化完成: 点赞数=${testPost.value.likes}, 评论数=${testPost.value.comments}`);
   } catch (error) {
     addLog(`获取帖子详情失败: ${error instanceof Error ? error.message : String(error)}`);
     console.error('获取帖子详情失败:', error);

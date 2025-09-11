@@ -5,6 +5,7 @@ import MarkdownViewer from '@/modules/post/components/MarkdownViewer.vue';
 import LikeButton from '@/modules/post/components/LikeButton.vue';
 import ShareButton from '@/modules/post/components/ShareButton.vue';
 import FavoriteButton from '@/modules/post/components/FavoriteButton.vue';
+import CommentList from '@/modules/post/components/CommentList.vue'; // 导入评论组件
 import { getPostDetail } from '@/modules/post/api';
 import type { PostDetail } from '@/modules/post/types';
 import UserInfo from '@/modules/user/scripts/UserInfo';
@@ -39,6 +40,7 @@ const isLiked = ref(false);
 const likeCount = ref(0);
 const isFavorited = ref(false);
 const favoriteCount = ref(0);
+const commentCount = ref(0); // 添加评论数状态
 
 // —— 衍生显示
 const createdAtLabel = computed(() =>
@@ -57,17 +59,22 @@ onMounted(async () => {
     likeCount.value = detail.likes || 0;
     isFavorited.value = detail.isFavorited || false;
 
-    
     author.value = new UserInfo(String(detail.userId));
     await author.value.loadUserData();
   } catch (e) {
     err.value = e;
     // 这里不抛出，让页面仍能用 mdDemo 回退渲染
-    console.error('[PostDetail] load failed:', e);
+    console.error('[PostDetail] load失败:', e);
   } finally {
     loading.value = false;
   }
 });
+
+// 处理评论数变化事件
+function handleCommentCountChange(newCount: number) {
+  console.log('🔄 接收到评论数更新:', newCount);
+  commentCount.value = newCount;
+}
 
 // 处理点赞状态更新
 function handleLikeUpdate(newValue: boolean) {
@@ -89,6 +96,15 @@ function handleFavoriteCountUpdate(newCount: number) {
   favoriteCount.value = newCount;
 }
 
+// 处理评论数更新
+function handleCommentAdded() {
+  commentCount.value = (commentCount.value || 0) + 1;
+}
+
+function handleCommentDeleted() {
+  commentCount.value = Math.max(0, (commentCount.value || 0) - 1);
+}
+
 // 处理错误
 function handleError(error: unknown) {
   console.error('操作失败:', error);
@@ -104,10 +120,12 @@ function handleError(error: unknown) {
       <h1 class="text-2xl font-bold text-slate-100 leading-snug">
         {{ post?.title || '帖子标题' }}
       </h1>
-      <p v-if="post?.views!==undefined || post?.likes!==undefined" class="mt-2 text-sm text-slate-500">
+      <p v-if="post?.views!==undefined || post?.likes!==undefined || commentCount!==undefined" class="mt-2 text-sm text-slate-500">
         <span v-if="post?.views!==undefined">阅读 {{ post.views }}</span>
         <span v-if="post?.views!==undefined && post?.likes!==undefined" class="mx-2">·</span>
         <span v-if="post?.likes!==undefined">点赞 {{ post.likes }}</span>
+        <span v-if="(post?.views!==undefined || post?.likes!==undefined) && commentCount!==undefined" class="mx-2">·</span>
+        <span v-if="commentCount!==undefined">评论 {{ commentCount }}</span>
       </p>
     </div>
 
@@ -171,10 +189,38 @@ function handleError(error: unknown) {
 
     <!-- 评论区 -->
     <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
+      <h3 class="text-xl font-bold text-slate-100 mb-4">评论 ({{ commentCount }})</h3>
+      
+      <!-- 评论列表组件 -->
+      <CommentList 
+        :post-id="postId"
+        @comment-added="handleCommentAdded"
+        @comment-deleted="handleCommentDeleted"
+        @comment-count-change="handleCommentCountChange"
+      />
     </div>
   </div>
 </template>
 
 <style scoped>
+/* 确保评论区域样式协调 */
+.comment-section {
+  background-color: transparent;
+}
 
+.comment-input-container {
+  border-color: #1e293b;
+}
+
+.comments-list {
+  border-color: #1e293b;
+}
+
+.comment-item {
+  border-color: #1e293b;
+}
+
+.reply-input-container {
+  border-color: #1e293b;
+}
 </style>

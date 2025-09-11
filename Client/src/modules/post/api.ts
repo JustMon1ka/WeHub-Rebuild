@@ -18,6 +18,11 @@ import User from '@/modules/auth/scripts/User.ts';
 const API_BASE = "http://localhost:5000/api"; // '/api' 或 'http://localhost:5000/api'
 const postHttp = axios.create({ baseURL: API_BASE });
 
+export const CommentType = {
+  Comment: 0,
+  Reply: 1
+} as const;
+
 // 携带 token（仍然保留原有逻辑）
 postHttp.interceptors.request.use(config => {
   const token = User.getInstance()?.userAuth?.token || null;
@@ -72,19 +77,42 @@ export async function sharePost(targetId: number, comment: string): Promise<any>
 export const postService = {
   // 获取帖子评论 - 修正参数传递
   async getComments(postId: number): Promise<Comment[]> {
+    // 获取当前用户ID
+    const currentUser = User.getInstance();
+    const userId = currentUser?.userAuth?.userId || 1; // 使用默认值1如果获取不到
+  
     const resp = await axios.get("/posts/comments", {
-      params: { post_id: postId }
+      params: { 
+        postId: postId,
+        userId: userId // 添加userId参数
+      }
     });
+  
+    console.log('📊 评论API响应:', resp.data);
+  
     const data = unwrap<any>(resp.data);
     return data.data || [];
   },
 
   // 发表评论 - 修正参数
-  async submitComment(commentData: CommentRequest): Promise<any> {
-    const resp = await axios.post("/posts/comment", commentData);
+async submitComment(commentData: CommentRequest): Promise<any> {
+  console.log('📨 提交评论请求:', commentData);
+  
+  try {
+    const resp = await axios.post("/posts/comment", commentData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📩 提交评论响应:', resp.data);
     return unwrap(resp.data);
-  },
-
+    
+  } catch (error) {
+    console.error('❌ 提交评论API错误详情:', error.response?.data || error);
+    throw error;
+  }
+},
   // 删除评论 - 修正参数传递方式
   async deleteComment(type: 'comment' | 'reply', targetId: number): Promise<boolean> {
     const resp = await axios.delete("/posts/comment", {
