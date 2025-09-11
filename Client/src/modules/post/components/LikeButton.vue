@@ -2,8 +2,8 @@
   <button
     class="like-btn"
     :class="[
-      isLikedLocal 
-        ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20' 
+      isLikedLocal
+        ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
         : 'text-slate-500 hover:bg-slate-800 hover:text-red-400'
     ]"
     :aria-pressed="isLikedLocal ? 'true' : 'false'"
@@ -57,7 +57,7 @@ async function onToggleLike() {
   likeCountLocal.value = next ? prevCount + 1 : Math.max(0, prevCount - 1);
 
   try {
-    await toggleLike({ type: "post", target_id: props.postId, like: next, user_id: 100247 }); // TODO: 替换为实际用户ID
+    await toggleLike({ type: "post", targetId: props.postId, like: next, userId: 100247 }); // TODO: 替换为实际用户ID
     emit("update:isLiked", isLikedLocal.value);
     emit("update:likeCount", likeCountLocal.value);
   } catch (e) {
