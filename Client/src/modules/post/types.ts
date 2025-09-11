@@ -49,6 +49,19 @@ export type SearchResponse = BaseResp<{
   content: string
 }[]>;
 
+// 帖子列表项
+export type PostListItem = {
+  postId: number;
+  userId: number;
+  title: string;
+  content?: string;
+  tags?: string[];
+  createdAt: string; // ISO 时间字符串
+  views?: number;
+  likes: number;
+  circleId?: number | null;
+};
+
 export interface PostDetail {
   postId: number;
   userId: number;

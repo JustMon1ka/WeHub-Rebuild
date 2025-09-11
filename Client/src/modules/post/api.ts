@@ -9,59 +9,58 @@ import type {
   SearchSuggestions,
   SearchResponse,
   Comment,
-  CommentRequest
+  CommentRequest,
+  PostListItem
 } from "./types";
 import User from '@/modules/auth/scripts/User.ts';
 
-// 设置基础URL - 修正为正确的API根路径
-axios.defaults.baseURL = 'http://localhost:5000';
-axios.interceptors.request.use(config => {
-  const token =  User.getInstance()?.userAuth?.token || null;
+// ✅ 新增：为帖子模块创建“专用实例”，不再依赖全局 defaults
+const API_BASE = "http://localhost:5000/api"; // '/api' 或 'http://localhost:5000/api'
+const postHttp = axios.create({ baseURL: API_BASE });
+
+// 携带 token（仍然保留原有逻辑）
+postHttp.interceptors.request.use(config => {
+  const token = User.getInstance()?.userAuth?.token || null;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// 点赞/取消赞 - 修正端点路径
+// ❌ 删除这一句（会和别处冲突，造成“偶尔被覆盖”）：
+// axios.defaults.baseURL = 'http://localhost:5000';
+
+// 下面所有接口统一改成：不要以 “/” 开头（重要！）
+// 这样 baseURL='/api' ➜ 最终 /api/xxx，不会出现 /api/api/xxx
+
 export async function toggleLike(data: ToggleLikeRequest) {
   const resp = await axios.post<BaseResp>("/posts/like", data);
   return resp.data;
 }
 
-// 收藏/取消收藏 - 修正端点路径
 export async function toggleFavorite(data: { type: string; target_id: number; favorite: boolean }) {
   const resp = await axios.post<BaseResp>("/posts/favorite", data);
   return resp.data;
 }
 
-// 获取我的收藏
 export async function getMyFavorites() {
   const resp = await axios.get<FavoriteListResp>("/posts/favorite");
   return resp.data;
 }
 
-// 获取搜索建议
 export async function getSearchSuggestion(keyword?: string, limits: number = 10) {
-  const resp = await axios.get<SearchSuggestions>("/posts/search/suggest", {
-    params: { keyword, limits }
-  });
+  const resp = await postHttp.get<SearchSuggestions>("posts/search/suggest", { params: { keyword, limits }});
   return resp.data;
 }
 
-// 搜索相关帖子
 export async function getSearch(query?: string, limits?: number) {
-  const resp = await axios.get<SearchResponse>("/posts/search", {
-    params: { query, limits }
-  });
+  const resp = await postHttp.get<SearchResponse>("posts/search", { params: { query, limits }});
   return resp.data;
 }
 
-// 获取帖子详情 - 修正端点路径
 export async function getPostDetail(postId: number): Promise<PostDetail> {
-  const res = await axios.get(`/posts/${postId}`);
+  const res = await postHttp.get(`posts/${postId}`);
   return unwrap<PostDetail>(res.data);
 }
 
-// 分享帖子 - 修正端点路径
 export async function sharePost(targetId: number, comment: string): Promise<any> {
   const res = await axios.post("/posts/share", {
     targetId,
@@ -70,7 +69,6 @@ export async function sharePost(targetId: number, comment: string): Promise<any>
   return unwrap(res.data);
 }
 
-// 评论相关功能 - 统一使用axios
 export const postService = {
   // 获取帖子评论 - 修正参数传递
   async getComments(postId: number): Promise<Comment[]> {
@@ -105,16 +103,26 @@ export const postService = {
   }
 };
 
-// 发布新帖子
 export async function publishPost(postData: any) {
-  const resp = await axios.post("/posts/publish", postData);
+  const resp = await postHttp.post("posts/publish", postData);
   return unwrap(resp.data);
 }
 
-// 删除帖子
 export async function deletePost(postId: number) {
-  const resp = await axios.delete("/posts", {
-    params: { post_id: postId }
-  });
+  const resp = await postHttp.delete("posts", { params: { post_id: postId }});
   return unwrap(resp.data);
 }
+
+// ✅ 重点：getPostList —— 永远正确地命中 /api/posts/list
+export async function getPostList(num: number, tailPostId?: number): Promise<PostListItem[]> {
+  const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts/list", {
+    params: { num, lastId: tailPostId }
+  });
+  return unwrap<PostListItem[]>(resp.data);
+}
+
+// （可选）调试日志，看看最终请求是什么
+postHttp.interceptors.request.use(cfg => {
+  console.debug('[postHttp]', { baseURL: cfg.baseURL, url: cfg.url, params: cfg.params });
+  return cfg;
+});
