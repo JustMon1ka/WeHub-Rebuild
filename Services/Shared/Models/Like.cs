@@ -14,5 +14,7 @@ namespace PostService.Models
         public string TargetType { get; set; }  // "post", "comment", "reply"
 
         public bool IsLike { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -107,6 +107,7 @@ public class AppDbContext : DbContext
             entity.Property(l => l.TargetId).HasColumnName("TARGET_ID");
             entity.Property(l => l.TargetType).HasColumnName("TARGET_TYPE");
             entity.Property(l => l.IsLike).HasColumnName("LIKE_TYPE");
+            entity.Property(l => l.CreatedAt).HasColumnName("LIKE_TIME");
             entity.Property(l => l.IsLike)
             .HasColumnName("LIKE_TYPE")
             .HasConversion(

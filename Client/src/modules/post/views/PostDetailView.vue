@@ -1,8 +1,10 @@
-﻿<!-- 该文件处于测试阶段 -->
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import MarkdownViewer from '@/modules/post/components/MarkdownViewer.vue';
+import LikeButton from '@/modules/post/components/LikeButton.vue';
+import ShareButton from '@/modules/post/components/ShareButton.vue';
+import FavoriteButton from '@/modules/post/components/FavoriteButton.vue';
 import { getPostDetail } from '@/modules/post/api';
 import type { PostDetail } from '@/modules/post/types';
 import UserInfo from '@/modules/user/scripts/UserInfo';
@@ -32,6 +34,12 @@ const err = ref<unknown>(null);
 const post = ref<PostDetail | null>(null);
 const author = ref<UserInfo | null>(null);
 
+// —— 按钮状态
+const isLiked = ref(false);
+const likeCount = ref(0);
+const isFavorited = ref(false);
+const favoriteCount = ref(0);
+
 // —— 衍生显示
 const createdAtLabel = computed(() =>
   post.value?.createdAt ? formatTime(String(post.value.createdAt)) : ''
@@ -43,6 +51,13 @@ onMounted(async () => {
   try {
     const detail = await getPostDetail(postId);
     post.value = detail;
+    
+    // 设置按钮状态
+    isLiked.value = detail.isLiked || false;
+    likeCount.value = detail.likes || 0;
+    isFavorited.value = detail.isFavorited || false;
+
+    
     author.value = new UserInfo(String(detail.userId));
     await author.value.loadUserData();
   } catch (e) {
@@ -53,6 +68,32 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+// 处理点赞状态更新
+function handleLikeUpdate(newValue: boolean) {
+  isLiked.value = newValue;
+}
+
+// 处理点赞数更新
+function handleLikeCountUpdate(newCount: number) {
+  likeCount.value = newCount;
+}
+
+// 处理收藏状态更新
+function handleFavoriteUpdate(newValue: boolean) {
+  isFavorited.value = newValue;
+}
+
+// 处理收藏数更新
+function handleFavoriteCountUpdate(newCount: number) {
+  favoriteCount.value = newCount;
+}
+
+// 处理错误
+function handleError(error: unknown) {
+  console.error('操作失败:', error);
+  // 可以在这里添加用户提示
+}
 </script>
 
 <template>
@@ -101,6 +142,31 @@ onMounted(async () => {
 
     <!-- 点赞分享举报等 -->
     <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
+      <div class="flex items-center justify-center gap-4">
+        <!-- 点赞按钮 -->
+        <LikeButton
+          :postId="postId"
+          :isLiked="isLiked"
+          :likeCount="likeCount"
+          @update:isLiked="handleLikeUpdate"
+          @update:likeCount="handleLikeCountUpdate"
+          @error="handleError"
+        />
+        
+        <!-- 分享按钮 -->
+        <ShareButton :postId="postId" />
+        
+        <!-- 收藏按钮 -->
+        <FavoriteButton
+          :postId="postId"
+          :isFavorited="isFavorited"
+          :favoriteCount="favoriteCount"
+          :showCount="true"
+          @update:isFavorited="handleFavoriteUpdate"
+          @update:favoriteCount="handleFavoriteCountUpdate"
+          @error="handleError"
+        />
+      </div>
     </div>
 
     <!-- 评论区 -->
