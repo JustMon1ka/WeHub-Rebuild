@@ -28,6 +28,7 @@ namespace PostService.Services
         {
             var like = new Like
             {
+                UserId = userId,
                 TargetId = request.TargetId,
                 TargetType = request.Type,
                 IsLike = request.Like
