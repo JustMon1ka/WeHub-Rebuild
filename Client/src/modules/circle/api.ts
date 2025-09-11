@@ -1,5 +1,6 @@
 // src/services/api.ts
 import request from './utils/request'
+import { User } from '@/modules/auth/scripts/User'
 
 // 使用相对路径，通过 Vite 代理转发到后端
 const API_BASE_URL = ''
@@ -31,7 +32,7 @@ export const getProxiedImageUrl = async (originalUrl: string): Promise<string> =
   try {
     // 使用你提供的代理接口
     const encodedUrl = encodeURIComponent(originalUrl)
-    const proxyUrl = `${API_BASE_URL}/api/Files/proxy?u=${encodedUrl}`
+    const proxyUrl = `${API_BASE_URL}/api/files/proxy?u=${encodedUrl}`
 
     const response = await fetch(proxyUrl, {
       method: 'GET',
@@ -114,7 +115,16 @@ export class CircleAPI {
     maxMembers?: number
   }) {
     try {
+      console.log('=== 创建社区 ===')
       console.log('API调用 - 发送数据:', data)
+
+      // 🔧 获取认证token
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
 
       // 发送后端支持的字段
       const backendData = {
@@ -123,16 +133,29 @@ export class CircleAPI {
         categories: data.categories || '通用', // 确保有默认值
       }
 
+      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
+      console.log('👤 当前用户ID:', userInstance?.userAuth?.userId)
+
       const response = await fetch(`${API_BASE_URL}/api/circles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // 🔧 添加这一行
         },
         body: JSON.stringify(backendData),
         credentials: 'include',
       })
 
-      console.log('HTTP状态:', response.status)
+      console.log('创建社区响应状态:', response.status)
+
+      // 🔧 检查401错误
+      if (response.status === 401) {
+        console.error('🔐 认证失败，清除登录状态')
+        if (userInstance) {
+          userInstance.logout()
+        }
+        throw new Error('登录已过期，请重新登录')
+      }
 
       const contentType = response.headers.get('content-type')
       const isJson = contentType && contentType.includes('application/json')
@@ -165,7 +188,7 @@ export class CircleAPI {
         return { success: true, message: textResult, rawResponse: textResult }
       }
     } catch (error) {
-      console.error('API调用失败:', error)
+      console.error('❌ API调用失败:', error)
       throw error
     }
   }
@@ -751,25 +774,82 @@ export const activityApi = {
   // 报名参加活动
   joinActivity: async (circleId: number, activityId: number): Promise<ApiResponse<null>> => {
     try {
+      console.log('=== 报名活动 ===')
       console.log('报名活动请求:', { circleId, activityId })
-      const response = await request.post(`/api/activities/${activityId}/participants/join`, {})
-      return response.data
+
+      // 🔧 获取认证信息
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
+
+      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
+      console.log('👤 当前用户ID:', userInstance?.userAuth?.userId)
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/activities/${activityId}/participants/join`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // 🔧 添加认证头
+          },
+          body: JSON.stringify({}),
+          credentials: 'include',
+        },
+      )
+
+      console.log('报名响应状态:', response.status)
+
+      // 🔧 处理401认证错误
+      if (response.status === 401) {
+        console.error('🔐 认证失败，清除登录状态')
+        if (userInstance) {
+          userInstance.logout()
+        }
+        throw new Error('登录已过期，请重新登录')
+      }
+
+      const responseText = await response.text()
+      console.log('报名响应内容:', responseText)
+
+      let result
+      try {
+        result = responseText ? JSON.parse(responseText) : { success: true }
+      } catch {
+        result = { success: true, message: responseText }
+      }
+
+      if (!response.ok) {
+        // 处理已报名活动的情况
+        if (response.status === 400 && responseText.includes('已参加')) {
+          return {
+            success: true,
+            data: null,
+            alreadyJoined: true,
+            message: '您已经报名了该活动',
+          }
+        }
+        throw new Error(`报名失败: ${responseText}`)
+      }
+
+      return result
     } catch (error: any) {
       console.error('报名活动API调用失败:', {
         circleId,
         activityId,
-        error: error.response?.data,
-        status: error.response?.status,
-        url: error.config?.url,
+        error: error.message,
       })
 
       // 处理已报名活动的情况
-      if (error.response?.status === 400 && error.response?.data?.msg?.includes('已参加')) {
+      if (error.message.includes('已参加')) {
         return {
           success: true,
           data: null,
           alreadyJoined: true,
-          message: error.response.data.msg,
+          message: '您已经报名了该活动',
         }
       }
 
@@ -789,21 +869,47 @@ export const activityApi = {
     try {
       console.log('=== 开始一键完成活动流程 ===')
 
+      // 🔧 获取认证信息
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
+
+      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
+      console.log('👤 当前用户ID:', userInstance?.userAuth?.userId)
+
+      // 🔧 统一的认证headers
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      }
+
       // 第一步：报名参加活动
       console.log('第一步：报名参加活动')
       try {
         const joinUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/join`
         const joinResponse = await fetch(joinUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: authHeaders,
           body: JSON.stringify({}),
           credentials: 'include',
         })
 
         console.log('报名响应状态:', joinResponse.status)
+
+        // 🔧 处理401认证错误
+        if (joinResponse.status === 401) {
+          console.error('🔐 认证失败，清除登录状态')
+          if (userInstance) {
+            userInstance.logout()
+          }
+          throw new Error('登录已过期，请重新登录')
+        }
+
         const joinResponseText = await joinResponse.text()
+
         console.log('报名响应内容:', joinResponseText)
 
         if (
@@ -815,8 +921,15 @@ export const activityApi = {
         }
         console.log('✅ 报名成功')
       } catch (joinError: any) {
-        if (!joinError.message.includes('已参加') && !joinError.message.includes('已经申请')) {
+        if (
+          !joinError.message.includes('已参加') &&
+          !joinError.message.includes('已经申请') &&
+          !joinError.message.includes('登录已过期')
+        ) {
           throw new Error(`报名活动失败: ${joinError.message}`)
+        }
+        if (joinError.message.includes('登录已过期')) {
+          throw joinError // 直接抛出登录过期错误
         }
         console.log('✅ 用户已报名，继续下一步')
       }
@@ -826,20 +939,27 @@ export const activityApi = {
       const completeUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/complete`
       const completeResponse = await fetch(completeUrl, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: authHeaders, // 🔧 使用认证headers
         body: JSON.stringify(data),
         credentials: 'include',
       })
 
       console.log('完成活动响应状态:', completeResponse.status)
+      // 🔧 处理401认证错误
+      if (completeResponse.status === 401) {
+        console.error('🔐 认证失败，清除登录状态')
+        if (userInstance) {
+          userInstance.logout()
+        }
+        throw new Error('登录已过期，请重新登录')
+      }
       const completeResponseText = await completeResponse.text()
       console.log('完成活动响应内容:', completeResponseText)
 
       if (!completeResponse.ok) {
         throw new Error(`完成活动失败: ${completeResponseText}`)
       }
+
       console.log('✅ 活动完成成功')
 
       // 第三步：自动领取奖励
@@ -848,14 +968,22 @@ export const activityApi = {
         const rewardUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/claim-reward`
         const rewardResponse = await fetch(rewardUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: authHeaders, // 🔧 使用认证headers
           body: JSON.stringify({}),
           credentials: 'include',
         })
 
         console.log('领取奖励响应状态:', rewardResponse.status)
+        if (rewardResponse.status === 401) {
+          console.error('🔐 奖励领取认证失败')
+          return {
+            success: true,
+            message: '心得提交成功，活动已完成！（请手动领取奖励）',
+            completed: true,
+            rewardClaimed: false,
+            rewardError: '认证失败',
+          }
+        }
         const rewardResponseText = await rewardResponse.text()
         console.log('领取奖励响应内容:', rewardResponseText)
 
@@ -902,8 +1030,17 @@ export const activityApi = {
     activityId: number,
   ): Promise<ApiResponse<ActivityParticipant | null>> => {
     try {
-      // 当前用户ID（与后端硬编码保持一致）
-      const currentUserId = 2
+      // 🔧 获取当前登录用户的真实ID
+      const userInstance = User.getInstance()
+      const currentUserId = userInstance?.userAuth?.userId // 这应该是100247
+
+      console.log('=== 获取用户参与状态 ===')
+      console.log('当前用户ID:', currentUserId)
+      console.log('活动ID:', activityId)
+
+      if (!currentUserId) {
+        throw new Error('用户未登录')
+      }
 
       const response = await request.get(
         `/api/activity-participants/activity/${activityId}/user/${currentUserId}`,
@@ -912,6 +1049,11 @@ export const activityApi = {
     } catch (error: any) {
       if (error.response?.status === 404) {
         // 404表示用户未参与该活动
+        return { success: true, data: null }
+      }
+      if (error.response?.status === 403) {
+        // 403表示权限不足，可能是在查看其他用户的状态
+        console.log('权限不足，可能在查看其他用户的活动参与状态')
         return { success: true, data: null }
       }
       console.error('获取参与状态失败:', error)
@@ -968,4 +1110,214 @@ export const activityApi = {
       throw error
     }
   },
+}
+
+// 在 api.ts 中添加发帖相关的API
+export class PostAPI {
+  private static baseURL = ''
+
+  // 获取当前用户token
+  private static getAuthToken(): string | null {
+    try {
+      const userInstance = User.getInstance()
+      return userInstance?.userAuth?.token || null
+    } catch (error) {
+      console.warn('⚠️ 无法获取认证token:', error)
+      return null
+    }
+  }
+
+  // 获取当前用户ID
+  private static getCurrentUserId(): string | null {
+    try {
+      const userInstance = User.getInstance()
+      return userInstance?.userAuth?.userId || null
+    } catch (error) {
+      console.warn('⚠️ 无法获取用户ID:', error)
+      return null
+    }
+  }
+
+  // 发布帖子
+  static async publishPost(data: {
+    circleId?: number
+    title: string
+    content: string
+    tags?: number[]
+  }): Promise<any> {
+    try {
+      console.log('=== 发布帖子 ===')
+      console.log('请求数据:', data)
+
+      const requestData = {
+        circleId: data.circleId || null,
+        title: data.title,
+        content: data.content,
+        tags: data.tags || [],
+      }
+
+      // 获取认证token
+      const token = this.getAuthToken()
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      }
+
+      console.log('发送到后端的数据:', requestData)
+      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
+      console.log('👤 当前用户ID:', this.getCurrentUserId())
+
+      const response = await fetch(`${this.baseURL}/api/posts/publish`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestData),
+        credentials: 'include',
+      })
+
+      console.log('发帖响应状态:', response.status)
+
+      const responseText = await response.text()
+      console.log('发帖响应内容:', responseText)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // 认证失败，清除本地token并提示登录
+          const userInstance = User.getInstance()
+          if (userInstance) {
+            userInstance.logout()
+          }
+          throw new Error('登录已过期，请重新登录')
+        }
+
+        throw new Error(`发帖失败: HTTP ${response.status} - ${responseText}`)
+      }
+
+      let result
+      try {
+        result = responseText ? JSON.parse(responseText) : { success: true }
+      } catch (parseError) {
+        console.error('JSON解析失败:', parseError)
+        throw new Error(`响应格式错误: ${responseText}`)
+      }
+
+      // 🔧 检查后端返回的业务状态码
+      if (result.code && result.code !== 200) {
+        console.error('❌ 后端业务错误:', result)
+
+        // 🔧 处理数据库错误
+        if (result.msg && result.msg.includes('ORA-')) {
+          console.error('💾 数据库错误:', result.msg)
+
+          if (result.msg.includes('ORA-12570')) {
+            throw new Error('数据库连接失败，请稍后重试或联系管理员')
+          } else if (result.msg.includes('ORA-00942')) {
+            throw new Error('系统维护中，请稍后再试')
+          } else {
+            throw new Error('数据库操作失败，请稍后重试')
+          }
+        }
+
+        // 🔧 其他业务错误
+        throw new Error(result.msg || '发布失败，请重试')
+      }
+
+      console.log('发帖成功:', result)
+      return result
+    } catch (error) {
+      console.error('=== 发帖失败 ===')
+      console.error('错误详情:', error)
+      throw error
+    }
+  }
+
+  // 获取帖子列表（按社区ID筛选）
+  static async getPostsByCircle(
+    circleId: number,
+    params?: {
+      lastId?: number
+      num?: number
+    },
+  ): Promise<any> {
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.lastId) queryParams.append('lastId', params.lastId.toString())
+      if (params?.num) queryParams.append('num', params.num.toString())
+
+      const queryString = queryParams.toString()
+      const url = `${this.baseURL}/api/posts/list${queryString ? `?${queryString}` : ''}`
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error(`获取帖子失败: HTTP ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      // 筛选指定社区的帖子
+      if (result.success && result.data) {
+        result.data = result.data.filter((post: any) => post.circleId === circleId)
+      }
+
+      return result
+    } catch (error) {
+      console.error('获取帖子失败:', error)
+      throw error
+    }
+  }
+
+  // 获取单个帖子详情
+  static async getPostDetail(postId: number): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/posts/${postId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error(`获取帖子详情失败: HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('获取帖子详情失败:', error)
+      throw error
+    }
+  }
+
+  // 删除帖子
+  static async deletePost(postId: number): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/posts?post_id=${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error(`删除帖子失败: HTTP ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      return responseText ? JSON.parse(responseText) : { success: true }
+    } catch (error) {
+      console.error('删除帖子失败:', error)
+      throw error
+    }
+  }
 }
