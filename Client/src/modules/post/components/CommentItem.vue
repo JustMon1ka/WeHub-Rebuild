@@ -2,10 +2,11 @@
   <article class="p-4" :data-comment-id="comment.comment_id || comment.reply_id" :data-type="comment.type">
     <div class="flex space-x-4">
       <img class="w-10 h-10 rounded-full flex-shrink-0" :src="comment.user?.avatar || getDefaultAvatar(comment.user_id)"
-           :alt="comment.user?.name || `用户${comment.user_id}`">
+           :alt="comment.user?.nickName || comment.user?.username || `用户${comment.user_id}`">
       <div class="flex-1">
         <div class="flex items-baseline space-x-2">
-          <p class="font-bold">{{ comment.user?.name || `用户${comment.user_id}` }}</p>
+          <!-- 主要修改这里：username → nickname -->
+          <p class="font-bold">{{ comment.user?.nickName || comment.user?.username || `用户${comment.user_id}` }}</p>
           <p class="text-slate-400 text-sm">{{ formatTime(comment.created_at) }}</p>
         </div>
         <p class="mt-2 text-slate-300">{{ comment.content }}</p>
@@ -89,7 +90,7 @@ const handleLike = async () => {
       type: props.comment.type === 'comment' ? 'comment' : 'reply',
       targetId: targetId,      // 小驼峰
       like: !isLiked.value,
-      userId: userId           // 小驼峰
+      userd: userId           // 小驼峰
     });
 
     console.log('✅ 点赞响应:', result);

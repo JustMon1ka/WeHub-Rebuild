@@ -86,6 +86,7 @@ export interface User {
   name: string;
   username: string;
   avatar: string;
+  nickName: string;
 }
 
 export interface Comment {
@@ -98,6 +99,7 @@ export interface Comment {
     name: string;
     username: string;
     avatar: string;
+    nickName: string;
   };
   content: string;
   created_at: string;
@@ -145,21 +147,27 @@ export interface CommentResponse {
   createdAt: string;
   likes: number;
   postTitle: string | null;
+  nickName: string;
 }
 
-// 更新转换函数
+
 export function convertCommentResponseToFrontend(response: CommentResponse): Comment {
+  // 构建完整的用户信息
+  const userInfo = {
+    id: response.userId,
+    name: response.nickName || response.userName, // 显示用：优先nickName
+    username: response.userName,                  // 用户名：保持原样
+    nickName: response.nickName,                  // 保留nickName字段
+    avatar: response.avatarUrl || getDefaultAvatar(response.userId),
+    email: '' // 可选
+  };
+  
   return {
     type: response.type === 1 ? 'reply' : 'comment',
     comment_id: response.id,
     reply_id: response.type === 1 ? response.id : undefined,
     user_id: response.userId,
-    user: {
-      id: response.userId,
-      name: response.userName,          // 使用后端返回的 userName
-      username: response.userName,      // 如果没有单独的用户名字段，可以用userName
-      avatar: response.avatarUrl || getDefaultAvatar(response.userId) // 使用avatarUrl或默认头像
-    },
+    user: userInfo,
     content: response.content,
     created_at: response.createdAt,
     likes: response.likes || 0,
