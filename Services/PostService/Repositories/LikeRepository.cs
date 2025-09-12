@@ -9,7 +9,7 @@ namespace PostService.Repositories
     {
         Task IncrementLikeCountAsync(long postId);
         Task DecrementLikeCountAsync(long postId);
-        Task<bool> ToggleLikeAsync(int userId, Like like);
+        Task<bool> ToggleLikeAsync(long userId, Like like);
     }
     
     public class LikeRepository: ILikeRepository
@@ -50,7 +50,7 @@ namespace PostService.Repositories
         /// <param name="userId">用户ID</param>
         /// <param name="like">点赞请求（包含 TargetId、Type、IsLike）</param>
         /// <returns>是否有状态变化（true = 点赞/取消点赞成功，false = 没有变化）</returns>
-        public async Task<bool> ToggleLikeAsync(int userId, Like like)
+        public async Task<bool> ToggleLikeAsync(long userId, Like like)
         {
             var existing = await _context.Set<Like>()
                 .FirstOrDefaultAsync(l => l.UserId == userId && l.TargetId == like.TargetId && l.TargetType == like.TargetType);

@@ -16,12 +16,15 @@ public class PostController : ControllerBase
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
     private readonly IShareService _shareService;
+    private readonly ILikeService _service;
 
-    public PostController(IPostService postService, ICommentService commentService, IShareService shareService)
+
+    public PostController(IPostService postService, ICommentService commentService, IShareService shareService, ILikeService service)
     {
         _postService = postService;
         _commentService = commentService;
         _shareService = shareService;
+        _service = service;
     }
 
     [HttpGet]
@@ -102,7 +105,7 @@ public class PostController : ControllerBase
             Likes = post.Likes ?? 0
         };
     }
-    
+
     [HttpGet("list")]
     public async Task<BaseHttpResponse<List<PostResponse>>> List(
         [FromQuery] long? lastId,
@@ -386,30 +389,46 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, "An error occurred.");
         }
     }
+
+    [HttpPost("{post_id}/share")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
+    {
+        try
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+            }
+
+            long userId = long.Parse(userIdClaim.Value);
+
+            await _shareService.SharePostAsync(userId, post_id);
+
+            return BaseHttpResponse<object?>.Success(null, "分享成功");
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<object?>.Fail(500, "分享失败：" + ex.Message);
+        }
+    }
     
-[HttpPost("{post_id}/share")]
-[Authorize(AuthenticationSchemes = "Bearer")]
-public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
-{
-    try
+    [HttpPost("like")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<IActionResult> LikePost([FromBody] LikeRequest request)
     {
         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
         if (userIdClaim == null)
         {
-            return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+            return (IActionResult)BaseHttpResponse<PostPublishResponse>.Fail(401, "无法从Token中提取用户信息");
         }
 
         long userId = long.Parse(userIdClaim.Value);
 
-        await _shareService.SharePostAsync(userId, post_id);
-
-        return BaseHttpResponse<object?>.Success(null, "分享成功");
+        await _service.ToggleLikeAsync(userId, request);
+        return Ok(new { code = 200, msg = (string)null, data = (object)null });
     }
-    catch (Exception ex)
-    {
-        return BaseHttpResponse<object?>.Fail(500, "分享失败：" + ex.Message);
-    }
-}
 
 
 }

@@ -3,7 +3,6 @@ export type ToggleLikeRequest = {
   type: 'post' | 'comment' | 'reply';
   targetId: number;
   like: boolean;      // true=点赞，false=取消点赞
-  userId: number;    // 点赞用户ID
 };
 
 // 标准响应

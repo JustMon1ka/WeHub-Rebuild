@@ -71,26 +71,47 @@ const handleLike = async () => {
   try {
     const targetId = props.comment.comment_id || props.comment.reply_id;
     const userId = currentUser.value?.id;
-    if (!targetId || userId === undefined) return;
     
-    // 修正点赞API调用
+    if (!targetId || userId === undefined) {
+      console.error('缺少必要的参数:', { targetId, userId });
+      return;
+    }
+
+    console.log('👍 点赞请求参数:', {
+      type: props.comment.type,
+      targetId: targetId,      // 小驼峰
+      like: !isLiked.value,
+      userId: userId           // 小驼峰
+    });
+
+    // 使用小驼峰命名规范
     const result = await postService.toggleLike({
       type: props.comment.type === 'comment' ? 'comment' : 'reply',
-      targetId: targetId,
+      targetId: targetId,      // 小驼峰
       like: !isLiked.value,
-      userId: userId
+      userId: userId           // 小驼峰
     });
+
+    console.log('✅ 点赞响应:', result);
 
     if (result.code === 200) {
       isLiked.value = !isLiked.value;
       const updatedComment = {
         ...props.comment,
-        likes: isLiked.value ? (props.comment.likes || 0) + 1 : Math.max(0, (props.comment.likes || 0) - 1)
+        likes: isLiked.value ? (props.comment.likes || 0) + 1 : Math.max(0, (props.comment.likes || 0) - 1),
+        isLiked: isLiked.value  // 也改为小驼峰
       };
       emit('update:comment', updatedComment);
+    } else {
+      console.error('点赞操作失败，返回码:', result.code, '消息:', result.msg);
     }
   } catch (error) {
     console.error('点赞失败:', error);
+    
+    // 显示详细的错误信息
+    if (error.response?.data) {
+      console.error('后端错误详情:', error.response.data);
+    }
   }
 };
 
