@@ -12,7 +12,7 @@
           <img src="@/modules/core/assets/home.svg" alt="Home" class="svg">
           首页
         </router-link></li>
-        <li><router-link to="/discover" class="router-link">
+        <li><router-link to="/founding" class="router-link">
           <img src="@/modules/core/assets/discover.svg" alt="Discover" class="svg">
           发现
         </router-link></li>
