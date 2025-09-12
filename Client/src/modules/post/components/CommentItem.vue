@@ -70,13 +70,15 @@ const handleReply = () => {
 const handleLike = async () => {
   try {
     const targetId = props.comment.comment_id || props.comment.reply_id;
-    if (!targetId) return;
-
+    const userId = currentUser.value?.id;
+    if (!targetId || userId === undefined) return;
+    
     // 修正点赞API调用
     const result = await postService.toggleLike({
       type: props.comment.type === 'comment' ? 'comment' : 'reply',
       targetId: targetId,
-      like: !isLiked.value
+      like: !isLiked.value,
+      userId: userId
     });
 
     if (result.code === 200) {
