@@ -9,6 +9,11 @@ import {
 } from '@/modules/auth/scripts/UserAuthAPI.ts'
 import { setUserAuthDataAPI } from '@/modules/user/scripts/UserDataAPI.ts'
 import { ref, type Ref } from 'vue'
+import {
+  addFollowingAPI,
+  getFollowCountAPI,
+  getFollowingAPI, removeFollowingAPI
+} from '@/modules/user/scripts/FollowAPI.ts'
 
 interface resultState {
   success: boolean;
@@ -252,6 +257,7 @@ class User {
 
     setTimeout(async () => {
       await this.userInfo.value.loadUserData();
+      await this.loadFollowList();
     }, 0);
   }
 
@@ -293,14 +299,49 @@ class User {
     }
   }
 
+  async loadFollowList() {
+    try {
+      const followCountResult = await getFollowCountAPI(this.#userId);
+      const followingCount = followCountResult.followingCount;
+      const followerCount = followCountResult.followerCount;
+
+      if (followingCount) {
+        const followingResult = await getFollowingAPI(1, followingCount, this.#userId)
+        for (const followData of followingResult.items) {
+          this.followingList.add(followData.followeeId.toString());
+        }
+      }
+
+      if (followerCount) {
+        const followerResult = await getFollowingAPI(1, followerCount, this.#userId)
+        for (const followData of followerResult.items) {
+          this.followerList.add(followData.followerId.toString());
+        }
+      }
+
+    } catch (error: any) {
+      return User.handleError(error);
+    }
+  }
+
   followUser(userId: string) {
-    this.followingList.add(userId);
-    // TODO: 这里可以添加发送关注请求的逻辑
+    try {
+      const result = addFollowingAPI(userId);
+      console.log(result);
+      this.followingList.add(userId);
+    } catch (error: any) {
+      return User.handleError(error);
+    }
   }
 
   unfollowUser(userId: string) {
-    this.followingList.delete(userId);
-    // TODO: 这里可以添加发送取消关注请求的逻辑
+    try {
+      const result = removeFollowingAPI(userId);
+      console.log(result);
+      this.followingList.delete(userId);
+    } catch (error: any) {
+      return User.handleError(error);
+    }
   }
 }
 

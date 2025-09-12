@@ -114,14 +114,14 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
       <div class="flex flex-row items-center justify-between w-full">
         <!-- User info -->
         <div class="flex flex-col space-x-4 text-left">
-          <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
+          <router-link :to="{ name: 'UserPage', params: { userId_p: userId.toString() } }"
                        @mouseenter="moveIn($event, 'name')"
                        @mouseleave="moveOut($event, 'name')"
                        class="font-bold text-left text-xl hover:underline">{{ userInfo.nickname }}</router-link>
           <p class="text-slate-500">@{{ userInfo.username }}</p>
         </div>
 
-        <FollowButton v-if="followBtn" :user-id="userId" class="w-24 mr-2"
+        <FollowButton v-if="followBtn" :user-id="userId.toString()" class="w-24 mr-2"
                       @followed="userInfo.followerCount += 1"
                       @unfollowed="userInfo.followerCount -= 1" />
       </div>

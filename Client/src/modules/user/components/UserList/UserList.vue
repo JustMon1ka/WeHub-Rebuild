@@ -105,7 +105,7 @@ function errorCounter() {
     <!-- 用户列表 -->
     <div v-for="(user, index) in users" :key="user"
          class="flex items-start space-x-4 hover:bg-slate-800/50 transition-colors duration-200">
-      <UserCardList @error="errorCounter" :user-id="user" :follow-btn="followBtn"/>
+      <UserCardList @error="errorCounter" :user-id="user.toString()" :follow-btn="followBtn"/>
     </div>
 
     <!-- 加载组件 -->
