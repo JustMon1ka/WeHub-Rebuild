@@ -16,32 +16,36 @@ namespace MessageService.Services
             _messageRepository = messageRepository;
         }
 
-        public async Task<IEnumerable<ConversationDto>> GetConversationsAsync(string currentUserId)
+        public async Task<IEnumerable<ConversationDto>> GetConversationsAsync(int currentUserId)
         {
-            if (string.IsNullOrEmpty(currentUserId))
-                throw new ArgumentException("用户ID不能为空");
+            if (currentUserId <= 0)
+                throw new ArgumentException("用户ID不能为空或无效");
 
-            return await _messageRepository.GetConversationsAsync(int.Parse(currentUserId));
+            return await _messageRepository.GetConversationsAsync(currentUserId);
         }
 
-        public async Task<IEnumerable<MessageDto>> GetMessagesAsync(string currentUserId, int otherUserId)
+        public async Task<IEnumerable<MessageDto>> GetMessagesAsync(int currentUserId, int otherUserId)
         {
-            if (string.IsNullOrEmpty(currentUserId))
-                throw new ArgumentException("用户ID不能为空");
+            if (currentUserId <= 0)
+                throw new ArgumentException("当前用户ID不能为空或无效");
+            if (otherUserId <= 0)
+                throw new ArgumentException("对方用户ID不能为空或无效");
 
-            return await _messageRepository.GetMessagesAsync(int.Parse(currentUserId), otherUserId);
+            return await _messageRepository.GetMessagesAsync(currentUserId, otherUserId);
         }
 
-        public async Task<MessageDto> SendMessageAsync(string senderId, int receiverId, string content)
+        public async Task<MessageDto> SendMessageAsync(int senderId, int receiverId, string content)
         {
-            if (string.IsNullOrEmpty(senderId))
-                throw new ArgumentException("发送者ID不能为空");
-            if (string.IsNullOrEmpty(content))
+            if (senderId <= 0)
+                throw new ArgumentException("发送者ID不能为空或无效");
+            if (receiverId <= 0)
+                throw new ArgumentException("接收者ID不能为空或无效");
+            if (string.IsNullOrWhiteSpace(content))
                 throw new ArgumentException("消息内容不能为空");
 
             var message = new Message
             {
-                SenderId = int.Parse(senderId),
+                SenderId = senderId,
                 ReceiverId = receiverId,
                 Content = content,
                 SentAt = DateTime.UtcNow,
@@ -60,12 +64,14 @@ namespace MessageService.Services
             };
         }
 
-        public async Task MarkAsReadAsync(string currentUserId, int otherUserId)
+        public async Task MarkAsReadAsync(int currentUserId, int otherUserId)
         {
-            if (string.IsNullOrEmpty(currentUserId))
-                throw new ArgumentException("用户ID不能为空");
+            if (currentUserId <= 0)
+                throw new ArgumentException("当前用户ID不能为空或无效");
+            if (otherUserId <= 0)
+                throw new ArgumentException("对方用户ID不能为空或无效");
 
-            await _messageRepository.MarkAsReadAsync(int.Parse(currentUserId), otherUserId);
+            await _messageRepository.MarkAsReadAsync(currentUserId, otherUserId);
         }
     }
 }
