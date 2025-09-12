@@ -88,9 +88,9 @@ export const postService = {
   // 删除评论 - 修正参数传递方式
   async deleteComment(type: 'comment' | 'reply', targetId: number): Promise<boolean> {
     const resp = await axios.delete("/posts/comment", {
-      params: { 
+      params: {
         type: type,
-        target_id: targetId 
+        target_id: targetId
       }
     });
     const data = unwrap<any>(resp.data);
@@ -118,6 +118,11 @@ export async function getPostList(num: number, tailPostId?: number): Promise<Pos
   const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts/list", {
     params: { num, lastId: tailPostId }
   });
+  return unwrap<PostListItem[]>(resp.data);
+}
+
+export async function getPosts(ids?: string, userId?: number): Promise<PostListItem[]>{
+  const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts", {params: {ids, userId}});
   return unwrap<PostListItem[]>(resp.data);
 }
 
