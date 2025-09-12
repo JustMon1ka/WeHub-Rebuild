@@ -1,1 +1,6 @@
-# For more info on HTTP files go to https://aka.ms/vs/httpfile
+@MessageService_HostAddress = http://localhost:5113
+
+GET {{MessageService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

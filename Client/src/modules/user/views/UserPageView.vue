@@ -10,6 +10,7 @@ import FollowList from '@/modules/user/components/UserPage/FollowList.vue'
 import router from '@/router.ts'
 import PrivacyView from '@/modules/auth/views/PrivacyView.vue'
 import { toggleLoginHover } from '@/router.ts'
+import MyPostList from '@/modules/post/components/MyPostList.vue'
 
 const { userId_p } = defineProps<{
   userId_p: string;
@@ -73,14 +74,16 @@ watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
 
 function onCancel(){
   if (userInfoTemp.value.changed){
-    userInfoTemp.value = userInfo.value.copy()
+    userInfoTemp.value = userInfo.value.copy();
   }
-  editMode.value = false
+  editMode.value = false;
 }
 
 function onSave(){
-  userInfo.value = userInfoTemp.value.copy(userInfo.value);
+  userInfo.value = new UserInfo(userId);
+  userInfo.value.loadUserData(); // 重新加载用户数据
   editMode.value = false;
+  tempCopied.value = false;
   if (userInfo.value.isMe) {
     User.getInstance()?.reloadUserInfo();
   }
@@ -135,10 +138,12 @@ function onSave(){
         </button>
       </div>
       <!-- Tab 切换 -->
+
       <div v-for="( tab , index) in Tabs.tablabels" :key="index">
         <div v-show="Tabs.currentTab === index">
           <!-- 内容切换 Tab -->
-          <privacy-view :key="'post'+index+userId"/>
+          <!--<privacy-view :key="'post'+index+userId"/>-->
+          <MyPostList />
         </div>
       </div>
     </div>

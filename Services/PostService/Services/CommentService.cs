@@ -143,6 +143,7 @@ public class CommentService : ICommentService
                 Id = c.CommentId,
                 TargetId = c.PostId,
                 UserId = c.UserId,
+                NickName = c.User?.UserProfile?.Nickname,
                 UserName = c.User?.Username, // 安全访问已加载的 User
                 AvatarUrl = c.User?.UserProfile?.AvatarUrl, // 安全访问已加载的 UserProfile
                 Content = c.Content,
@@ -160,6 +161,7 @@ public class CommentService : ICommentService
                     TargetId = r.CommentId,
                     UserId = r.UserId,
                     UserName = r.User?.Username, // 安全访问已加载的 User
+                    NickName = r.User?.UserProfile?.Nickname,
                     AvatarUrl = r.User?.UserProfile?.AvatarUrl, // 安全访问已加载的 UserProfile
                     Content = r.Content,
                     CreatedAt = r.CreatedAt,
@@ -192,6 +194,7 @@ public class CommentService : ICommentService
                 PostTitle = c.Post?.Title, // 从导航属性获取帖子标题
                 UserId = c.UserId,
                 UserName = c.User?.Username,
+                NickName = c.User?.UserProfile?.Nickname,
                 AvatarUrl = c.User?.UserProfile?.AvatarUrl,
                 Content = c.Content,
                 CreatedAt = c.CreatedAt,
@@ -210,6 +213,7 @@ public class CommentService : ICommentService
                 PostTitle = r.Comment?.Post?.Title, // 通过评论导航属性获取帖子标题
                 UserId = r.UserId,
                 UserName = r.User?.Username,
+                NickName = r.User?.UserProfile?.Nickname,
                 AvatarUrl = r.User?.UserProfile?.AvatarUrl,
                 Content = r.Content,
                 CreatedAt = r.CreatedAt,
@@ -235,6 +239,7 @@ public class CommentService : ICommentService
                 TargetId = c.PostId, // 假设 TargetId 是 PostId
                 UserId = c.UserId,
                 UserName = c.User?.Username,
+                NickName = c.User?.UserProfile?.Nickname,
                 AvatarUrl = c.User?.UserProfile?.AvatarUrl,
                 Content = c.Content,
                 CreatedAt = c.CreatedAt,
@@ -252,6 +257,7 @@ public class CommentService : ICommentService
                 TargetId = r.CommentId, // 假设 TargetId 是 CommentId
                 UserId = r.UserId,
                 UserName = r.User?.Username,
+                NickName = r.User?.UserProfile?.Nickname,
                 AvatarUrl = r.User?.UserProfile?.AvatarUrl,
                 Content = r.Content,
                 CreatedAt = r.CreatedAt,

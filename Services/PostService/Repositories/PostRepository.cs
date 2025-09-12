@@ -5,6 +5,7 @@ using PostService.DTOs;
 using PostService.Utils;
 using JiebaNet.Segmenter;
 using LinqKit;
+using Oracle.ManagedDataAccess.Client;
 
 namespace PostService.Repositories
 {
@@ -16,7 +17,11 @@ namespace PostService.Repositories
         Task MarkAsDeletedAsync(long postId);
         Task<Post> InsertPostAsync(long userId, long circleId, string title, string content, List<long> tags);
         Task<List<string>> GetTagNamesByPostIdAsync(long postId);
-        Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true);
+        Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default);
+        Task<List<Post>> GetByAuthorNotDeletedAsync(long authorId, CancellationToken ct = default);
+        Task<(bool Exists, bool Owned, bool Updated, int CurrentHidden)> SetHiddenAsync(long postId, long ownerId, bool next, CancellationToken ct = default);
+        Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true, int PostMode = 0, string? tagName = null);
+        Task<(bool Exists, bool Owned, bool Allowed, bool Updated, string? ReasonConflict, Post? Post)> UpdatePostAsync(PostUpdateRequest req, long editorUserId, CancellationToken ct = default);
         /// <summary>
         /// 使用 Oracle Text CONTAINS 做全文候选检索，返回按 oracle_score 降序的候选（不做最终排序）
         /// maxCandidates: 若为 null 则返回全部 Oracle Text 命中的结果（慎用）
@@ -178,42 +183,92 @@ namespace PostService.Repositories
                 .ToListAsync();
         }
         
-        public async Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true)
+        public async Task<List<Post>> GetPagedAsync(
+            long? lastId,
+            int num,
+            bool desc = true,
+            int PostMode = 0,
+            string? tagName = null)   // ✅ 新增参数
         {
             await using var context = _contextFactory.CreateDbContext();
 
-            var q = context.Posts.Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
+            // 基础条件：必须未删除未隐藏
+            var q = context.Posts
+                .Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
 
-            if (desc)
+            // ✅ 如果传了 tagName，就只取包含该标签的帖子
+            if (!string.IsNullOrEmpty(tagName))
             {
-                if (lastId.HasValue && lastId.Value > 0)
-                {
-                    q = q.Where(p => p.PostId < lastId.Value);
-                }
-                q = q.OrderByDescending(p => p.PostId);
-            }
-            else
-            {
-                if (lastId.HasValue && lastId.Value > 0)
-                {
-                    q = q.Where(p => p.PostId > lastId.Value);
-                }
-                q = q.OrderBy(p => p.PostId);
+                q = q.Where(p => p.PostTags.Any(pt => pt.Tag != null && pt.Tag.TagName == tagName));
             }
 
-            // 取一页
+            // 排序逻辑
+            switch (PostMode)
+            {
+                case 1: // 按浏览量 Views 排序
+                    if (lastId.HasValue && lastId.Value > 0)
+                    {
+                        var lastPost = await context.Posts
+                            .Where(p => p.PostId == lastId.Value)
+                            .Select(p => new { p.Views, p.PostId })
+                            .FirstOrDefaultAsync();
+
+                        if (lastPost != null)
+                        {
+                            q = q.Where(p =>
+                                (p.Views < lastPost.Views) ||
+                                (p.Views == lastPost.Views && p.PostId < lastPost.PostId));
+                        }
+                    }
+                    q = q.OrderByDescending(p => p.Views ?? 0)
+                        .ThenByDescending(p => p.PostId);
+                    break;
+
+                case 2: // 按点赞 Likes 排序
+                    if (lastId.HasValue && lastId.Value > 0)
+                    {
+                        var lastPost = await context.Posts
+                            .Where(p => p.PostId == lastId.Value)
+                            .Select(p => new { p.Likes, p.PostId })
+                            .FirstOrDefaultAsync();
+
+                        if (lastPost != null)
+                        {
+                            q = q.Where(p =>
+                                (p.Likes < lastPost.Likes) ||
+                                (p.Likes == lastPost.Likes && p.PostId < lastPost.PostId));
+                        }
+                    }
+                    q = q.OrderByDescending(p => p.Likes ?? 0)
+                        .ThenByDescending(p => p.PostId);
+                    break;
+
+                default: // 按时间（PostId）
+                    if (desc)
+                    {
+                        if (lastId.HasValue && lastId.Value > 0)
+                            q = q.Where(p => p.PostId < lastId.Value);
+                        q = q.OrderByDescending(p => p.PostId);
+                    }
+                    else
+                    {
+                        if (lastId.HasValue && lastId.Value > 0)
+                            q = q.Where(p => p.PostId > lastId.Value);
+                        q = q.OrderBy(p => p.PostId);
+                    }
+                    break;
+            }
+
+            // 分页
             var posts = await q.Take(num).ToListAsync();
-            if (!posts.Any())
-            {
-                return posts;
-            }
+            if (!posts.Any()) return posts;
 
-            // 填充 TagNames（与现有 GetPostsByIdsAsync 的做法保持一致）
+            // 填充标签
             var ids = posts.Select(p => p.PostId).ToList();
             var postTags = await (from pt in context.PostTags
-                join t in context.Tags on pt.TagId equals t.TagId
-                where ids.Contains(pt.PostId)
-                select new { pt.PostId, t.TagName }).ToListAsync();
+                                join t in context.Tags on pt.TagId equals t.TagId
+                                where ids.Contains(pt.PostId)
+                                select new { pt.PostId, t.TagName }).ToListAsync();
 
             var tagLookup = postTags
                 .GroupBy(x => x.PostId)
@@ -221,6 +276,56 @@ namespace PostService.Repositories
 
             foreach (var p in posts)
                 if (tagLookup.TryGetValue(p.PostId, out var tags)) p.TagNames = tags;
+
+            return posts;
+        }
+        
+        public async Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default)
+        {
+            await using var ctx=_contextFactory.CreateDbContext();
+
+            // ① 原子自增（Oracle）
+            var affected=await ctx.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE POST SET VIEWS=NVL(VIEWS,0)+1 WHERE POST_ID={postId}", ct);
+            if(affected==0) return null; // 不存在该帖子
+
+            // ② 读回最新值（便于前端拿到当前阅读数；也可不返回）
+            var current=await ctx.Posts
+                .Where(p=>p.PostId==postId)
+                .Select(p=>(int?)((p.Views??0)))
+                .FirstOrDefaultAsync(ct);
+
+            return current;
+        }
+        
+        public async Task<List<Post>> GetByAuthorNotDeletedAsync(long authorId, CancellationToken ct = default)
+        {
+            await using var ctx = _contextFactory.CreateDbContext();
+
+            // 仅取本人且未删除的帖子；排序按 PostId 倒序（= 最新优先）
+            var query = ctx.Posts
+                .Where(p => (p.UserId ?? -1) == authorId && p.IsDeleted == 0)
+                .OrderByDescending(p => p.PostId);
+
+            var posts = await query.ToListAsync(ct);
+            if (posts.Count == 0) return posts;
+
+            // 一次性取回标签并回填（与现有风格一致）
+            var ids = posts.Select(p => p.PostId).ToList();
+            var postTags = await (
+                from pt in ctx.PostTags
+                join t in ctx.Tags on pt.TagId equals t.TagId
+                where ids.Contains(pt.PostId)
+                select new { pt.PostId, t.TagName }
+            ).ToListAsync(ct);
+
+            var map = postTags
+                .GroupBy(x => x.PostId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.TagName).ToList());
+
+            foreach (var p in posts)
+                if (map.TryGetValue(p.PostId, out var tags))
+                    p.TagNames = tags;
 
             return posts;
         }
@@ -248,34 +353,30 @@ namespace PostService.Repositories
                 return new List<Post>();
             }
 
-            // 2. 在数据库中构建 OR 查询：只要标题或内容包含任何一个关键词，就返回
-            var postsQuery = context.Posts
-                .Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
+            // 2. 构建 SQL 条件
+            var whereConditions = new List<string>();
+            var sqlParameters = new List<object>();
 
-            // 构建动态的 OR 条件
-            var predicate = PredicateBuilder.False<Post>();
-            foreach (var token in tokens)
+            for (int i = 0; i < tokens.Count; i++)
             {
-                // EF Core 的 LIKE 语法
-                predicate = predicate.Or(p => p.Title != null && p.Title.Contains(token))
-                    .Or(p => p.Content != null && p.Content.Contains(token));
-            }
-        
-            // 应用构建的谓词
-            postsQuery = postsQuery.Where(predicate);
-
-            // 3. 限制返回条目数
-            if (maxCandidates.HasValue && maxCandidates.Value > 0)
-            {
-                postsQuery = postsQuery.Take(maxCandidates.Value);
+                string paramName = $":p{i}";
+                whereConditions.Add($"Title LIKE '%' || {paramName} || '%' OR Content LIKE '%' || {paramName} || '%'");
+                sqlParameters.Add(new OracleParameter(paramName, tokens[i]));
             }
 
-            // 4. 包含关联数据并执行查询
-            return await postsQuery
-                .Include(p => p.PostTags!).ThenInclude(pt => pt.Tag!)
-                .Include(p => p.User!)
-                .Include(p => p.Circle!)
+            string sql = $@"
+SELECT *
+FROM Post
+WHERE Is_Deleted = 0 AND Is_Hidden = 0
+  AND ({string.Join(" OR ", whereConditions)})
+ORDER BY Post_Id
+";
+            
+            var posts = await context.Posts
+                .FromSqlRaw(sql, sqlParameters.ToArray())
                 .ToListAsync();
+
+            return posts;
         }
         
         /// <summary>
@@ -367,6 +468,134 @@ namespace PostService.Repositories
                     Type = SearchSuggestResponse.KeywordType.Circle
                 })
                 .ToListAsync();
+        }
+        
+        public async Task<(bool Exists, bool Owned, bool Updated, int CurrentHidden)> SetHiddenAsync(
+            long postId, long ownerId, bool next, CancellationToken ct = default)
+        {
+            await using var context = _contextFactory.CreateDbContext();
+
+            // 先查最小必要信息：是否存在、是否本人、是否已删除、当前隐藏值
+            var row = await context.Posts
+                .Where(p => p.PostId == postId)
+                .Select(p => new { p.UserId, IsDeleted = p.IsDeleted, IsHidden = p.IsHidden })
+                .FirstOrDefaultAsync(ct);
+
+            if (row == null)
+                return (Exists: false, Owned: false, Updated: false, CurrentHidden: 0); // 404 不存在
+
+            var isOwner = (row.UserId ?? -1) == ownerId;
+            if (!isOwner)
+                return (Exists: true, Owned: false, Updated: false, CurrentHidden: row.IsHidden); // 403 非本人
+
+            if (row.IsDeleted != 0)
+                return (Exists: true, Owned: true, Updated: false, CurrentHidden: row.IsHidden); // 已删除，不允许改
+
+            var target = next ? 1 : 0;
+            if (row.IsHidden == target)
+                return (Exists: true, Owned: true, Updated: false, CurrentHidden: row.IsHidden); // 幂等：无需写库
+
+            // 原子更新（本人 + 未删除）
+            var pVal = new OracleParameter("p_val", OracleDbType.Int32) { Value = target };
+            var pId  = new OracleParameter("p_id",  OracleDbType.Int64) { Value = postId };
+            var pUid = new OracleParameter("p_uid", OracleDbType.Int64) { Value = ownerId };
+
+            var sql = "UPDATE POST SET IS_HIDDEN = :p_val " +
+                      "WHERE POST_ID = :p_id AND USER_ID = :p_uid AND NVL(IS_DELETED,0) = 0";
+
+            var affected = await context.Database.ExecuteSqlRawAsync(sql, new[] { pVal, pId, pUid }, ct);
+
+            return (Exists: true, Owned: true, Updated: affected > 0, CurrentHidden: target);
+        }
+        
+        public async Task<(bool Exists, bool Owned, bool Allowed, bool Updated, string? ReasonConflict, Post? Post)>
+            UpdatePostAsync(PostUpdateRequest req, long editorUserId, CancellationToken ct = default)
+        {
+            await using var ctx = _contextFactory.CreateDbContext();
+
+            // 1) 基本信息 & 权限检查
+            var row = ctx.Posts
+                .Where(p => p.PostId == req.PostId)
+                .Select(p => new {
+                    p.PostId, p.UserId, IsDeleted = p.IsDeleted, IsHidden = p.IsHidden
+                })
+                .FirstOrDefaultAsync(ct);
+
+            if (row == null) return (Exists:false, Owned:false, Allowed:false, Updated:false, ReasonConflict:null, Post:null);
+
+            var owned = (row.Result.UserId ?? -1) == editorUserId;
+            if (!owned) return (Exists:true, Owned:false, Allowed:false, Updated:false, ReasonConflict:null, Post:null);
+
+            // 允许编辑：未删除；隐藏与否不影响帖主编辑
+            var allowed = (row.Result.IsDeleted == 0);
+            if (!allowed) return (Exists:true, Owned:true, Allowed:false, Updated:false, ReasonConflict:"Post deleted", Post:null);
+
+            // 2) 开启事务：更新主表 + 标签（差异）
+            using var tx = await ctx.Database.BeginTransactionAsync(ct);
+
+            // 2.1 更新 POST（Title/Content/CircleId/UpdatedAt/可选 SearchText）
+            var pId = new OracleParameter("p_id",  OracleDbType.Int64){ Value = req.PostId };
+            var pTitle = new OracleParameter("p_title", OracleDbType.NVarchar2){ Value = (object)(req.Title ?? "") };
+            var pContent = new OracleParameter("p_content", OracleDbType.NClob){ Value = (object)(req.Content ?? "") };
+            var pCircle = new OracleParameter("p_circle", OracleDbType.Int64){ Value = (object?)req.CircleId ?? DBNull.Value };
+
+            var sqlUpdate = @"UPDATE POST
+                              SET TITLE = :p_title,
+                                  CONTENT = :p_content,
+                                  CIRCLE_ID = :p_circle
+                              WHERE POST_ID = :p_id";
+            var affected = await ctx.Database.ExecuteSqlRawAsync(sqlUpdate, new[] { pTitle, pContent, pCircle, pId }, ct);
+            if (affected == 0) { await tx.RollbackAsync(ct); return (true, true, false, false, "Update failed", null); }
+
+            // 2.2 标签差异更新（以 tagId 列表为准）
+            // 现有 tagId 集合
+            var currentTagIds = await (from pt in ctx.PostTags
+                                       where pt.PostId == req.PostId
+                                       select pt.TagId).ToListAsync(ct);
+
+            var newTagIds = (req.Tags ?? new()).Distinct().ToList();
+
+            var toRemove = currentTagIds.Except(newTagIds).ToList();
+            var toAdd    = newTagIds.Except(currentTagIds).ToList();
+
+            if (toRemove.Count > 0)
+            {
+                await ctx.Database.ExecuteSqlRawAsync(
+                    "DELETE FROM POSTTAG WHERE POST_ID = :p_id AND TAG_ID IN (" +
+                    string.Join(",", toRemove.Select((_,i)=>$":t{i}")) + ")",
+                    new OracleParameter[]{ pId }.Concat(
+                        toRemove.Select((id,i)=> new OracleParameter($"t{i}", OracleDbType.Int64){ Value = id })
+                    ).ToArray(), ct);
+                // 可选：同步 TAG.COUNT -= removedCount（如你们有维护）
+            }
+
+            if (toAdd.Count > 0)
+            {
+                // 批量插入（简单起见逐条；如需批量可用数组绑定）
+                foreach (var tagId in toAdd)
+                {
+                    var pTag = new OracleParameter("p_tag", OracleDbType.Int64){ Value = tagId };
+                    await ctx.Database.ExecuteSqlRawAsync(
+                        "INSERT INTO POSTTAG(POST_ID, TAG_ID) VALUES(:p_id, :p_tag)",
+                        new OracleParameter[]{ pId, pTag }, ct);
+                    // 可选：同步 TAG.COUNT += 1
+                }
+            }
+
+            await tx.CommitAsync(ct);
+
+            // 3) 读回最新帖子（含 TagNames）
+            var post = await ctx.Posts.FirstOrDefaultAsync(p => p.PostId == req.PostId, ct);
+            if (post != null)
+            {
+                var tags = await (from pt in ctx.PostTags
+                                  join t in ctx.Tags on pt.TagId equals t.TagId
+                                  where pt.PostId == req.PostId
+                                  select t.TagName).ToListAsync(ct);
+                post.TagNames = tags;
+            }
+
+            return (Exists:true, Owned:true, Allowed:true, Updated:true, ReasonConflict:null, Post:post);
         }
     }
 }

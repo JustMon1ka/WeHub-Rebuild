@@ -6,7 +6,7 @@ namespace PostService.Models
     [Table("Likes")]
     public class Like
     {
-        public int UserId { get; set; }
+        public long UserId { get; set; }
 
         public int TargetId { get; set; }
 

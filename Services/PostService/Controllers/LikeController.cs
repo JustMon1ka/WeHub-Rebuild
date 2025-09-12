@@ -5,7 +5,7 @@ using PostService.Services;
 
 namespace PostService.Controllers
 {
-    [ApiController]
+    /*[ApiController]
     [Route("api/posts/like")]
     public class LikeController : ControllerBase
     {
@@ -24,5 +24,5 @@ namespace PostService.Controllers
             await _service.ToggleLikeAsync(userId, request);
             return Ok(new { code = 200, msg = (string)null, data = (object)null });
         }
-    }
+    }*/
 }

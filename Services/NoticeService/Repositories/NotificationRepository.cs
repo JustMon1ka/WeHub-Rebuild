@@ -55,47 +55,54 @@ namespace NoticeService.Repositories
                 .Select(id => JsonSerializer.Deserialize<(int UserId, string TargetType, int TargetId)>(id))
                 .ToList();
 
+            // 先获取所有数据，然后在内存中处理
+            var allLikes = await _context.Likes
+                .Where(l => l.TargetUserId == userId)
+                .ToListAsync();
+
             var unreadLikes = new List<Like>();
             if (unreadLikeIds.Any())
             {
-                var unreadQuery = _context.Likes
-                    .Where(l => l.TargetUserId == userId && unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
+                var unreadLikesData = allLikes.Where(l =>
+                    unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId))
+                    .ToList();
 
-                unreadLikes = await unreadQuery
+                unreadLikes = unreadLikesData
                     .GroupBy(l => new { l.TargetType, l.TargetId })
                     .Select(g => new Like
                     {
                         TargetType = g.Key.TargetType,
                         TargetId = g.Key.TargetId,
-                        CreatedAt = g.Max(l => l.CreatedAt),
+                        LikeTime = g.Max(l => l.LikeTime),
                         UserId = g.Count(),
                         LikerIds = g.Select(l => l.UserId).Take(10).ToList()
                     })
-                    .OrderByDescending(l => l.CreatedAt)
-                    .ToListAsync();
-            }            
+                    .OrderByDescending(l => l.LikeTime)
+                    .ToList();
+            }
 
-            var allLikesQuery = _context.Likes
-                .Where(l => l.TargetUserId == userId && !unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId));
+            var readLikesData = allLikes.Where(l =>
+                !unreadLikeIds.Any(id => id.UserId == l.UserId && id.TargetType == l.TargetType && id.TargetId == l.TargetId))
+                .ToList();
 
-            var readTotal = await allLikesQuery
+            var readTotal = readLikesData
                 .GroupBy(l => new { l.TargetType, l.TargetId })
-                .CountAsync();
+                .Count();
 
-            var readLikes = await allLikesQuery
+            var readLikes = readLikesData
                 .GroupBy(l => new { l.TargetType, l.TargetId })
                 .Select(g => new Like
                 {
                     TargetType = g.Key.TargetType,
                     TargetId = g.Key.TargetId,
-                    CreatedAt = g.Max(l => l.CreatedAt),
+                    LikeTime = g.Max(l => l.LikeTime),
                     UserId = g.Count(),
                     LikerIds = g.Select(l => l.UserId).Take(10).ToList()
                 })
-                .OrderByDescending(l => l.CreatedAt)
+                .OrderByDescending(l => l.LikeTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToList();
 
             return (unreadLikes, (readLikes, readTotal));
         }
@@ -108,19 +115,25 @@ namespace NoticeService.Repositories
             var unreadReplyIds = (await redis.ListRangeAsync(replyKey, 0, -1, CommandFlags.None))
                 .Select(id => int.Parse(id)).ToList();
 
-            var query = _context.Replies
-                .Where(r => r.TargetUserId == userId && !r.IsDeleted);
+            // 先获取所有数据，然后在内存中处理
+            var allReplies = await _context.Replies
+                .Where(r => r.TargetUserId == userId)
+                .ToListAsync();
 
+            // 在内存中过滤已删除的回复
+            var filteredReplies = allReplies.Where(r => !r.IsDeleted).ToList();
+
+            List<Reply> result;
             if (unreadOnly)
-                query = query.Where(r => unreadReplyIds.Contains(r.ReplyId));
+                result = filteredReplies.Where(r => unreadReplyIds.Contains(r.ReplyId)).ToList();
             else
-                query = query.Where(r => !unreadReplyIds.Contains(r.ReplyId) || unreadReplyIds.Contains(r.ReplyId));
+                result = filteredReplies.Where(r => !unreadReplyIds.Contains(r.ReplyId) || unreadReplyIds.Contains(r.ReplyId)).ToList();
 
-            return await query
+            return result
                 .OrderByDescending(r => r.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<List<Repost>> GetRepostsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis)
@@ -131,19 +144,22 @@ namespace NoticeService.Repositories
             var unreadRepostIds = (await redis.ListRangeAsync(repostKey, 0, -1, CommandFlags.None))
                 .Select(id => int.Parse(id)).ToList();
 
-            var query = _context.Reposts
-                .Where(rp => rp.TargetUserId == userId);
+            // 先获取所有数据，然后在内存中处理
+            var allReposts = await _context.Reposts
+                .Where(rp => rp.TargetUserId == userId)
+                .ToListAsync();
 
+            List<Repost> result;
             if (unreadOnly)
-                query = query.Where(rp => unreadRepostIds.Contains(rp.RepostId));
+                result = allReposts.Where(rp => unreadRepostIds.Contains(rp.RepostId)).ToList();
             else
-                query = query.Where(rp => !unreadRepostIds.Contains(rp.RepostId) || unreadRepostIds.Contains(rp.RepostId));
+                result = allReposts.Where(rp => !unreadRepostIds.Contains(rp.RepostId) || unreadRepostIds.Contains(rp.RepostId)).ToList();
 
-            return await query
+            return result
                 .OrderByDescending(rp => rp.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<List<Mention>> GetMentionsAsync(int userId, int page, int pageSize, bool unreadOnly, IDatabase redis)
@@ -155,20 +171,23 @@ namespace NoticeService.Repositories
                 .Select(id => JsonSerializer.Deserialize<(int UserId, string TargetType, int TargetId)>(id))
                 .ToList();
 
-            var query = _context.Mentions
-                .Where(m => m.TargetUserId == userId);
+            // 先获取所有数据，然后在内存中处理
+            var allMentions = await _context.Mentions
+                .Where(m => m.TargetUserId == userId)
+                .ToListAsync();
 
+            List<Mention> result;
             if (unreadOnly)
-                query = query.Where(m => unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId));
+                result = allMentions.Where(m => unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId)).ToList();
             else
-                query = query.Where(m => !unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId) ||
-                    unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId));
+                result = allMentions.Where(m => !unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId) ||
+                    unreadMentionIds.Any(id => id.UserId == m.UserId && id.TargetType == m.TargetType && id.TargetId == m.TargetId)).ToList();
 
-            return await query
+            return result
                 .OrderByDescending(m => m.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task<(List<int> Items, int Total)> GetTargetLikersAsync(int userId, string targetType, int targetId, int page, int pageSize)
@@ -179,7 +198,7 @@ namespace NoticeService.Repositories
             var total = await query.CountAsync();
 
             var likerIds = await query
-                .OrderByDescending(l => l.CreatedAt)
+                .OrderByDescending(l => l.LikeTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(l => l.UserId)
@@ -194,19 +213,25 @@ namespace NoticeService.Repositories
             var unreadCommentIds = (await redis.ListRangeAsync(commentKey, 0, -1, CommandFlags.None))
                 .Select(id => int.Parse(id)).ToList();
 
-            var query = _context.Comments
-                .Where(c => c.TargetUserId == userId && !c.IsDeleted);
+            // 先获取所有数据，然后在内存中处理
+            var allComments = await _context.Comments
+                .Where(c => c.TargetUserId == userId)
+                .ToListAsync();
 
+            // 在内存中过滤已删除的评论
+            var filteredComments = allComments.Where(c => !c.IsDeleted).ToList();
+
+            List<Comment> result;
             if (unreadOnly)
-                query = query.Where(c => unreadCommentIds.Contains(c.CommentId));
+                result = filteredComments.Where(c => unreadCommentIds.Contains(c.CommentId)).ToList();
             else
-                query = query.Where(c => !unreadCommentIds.Contains(c.CommentId) || unreadCommentIds.Contains(c.CommentId));
+                result = filteredComments.Where(c => !unreadCommentIds.Contains(c.CommentId) || unreadCommentIds.Contains(c.CommentId)).ToList();
 
-            return await query
+            return result
                 .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToList();
         }
     }
 }

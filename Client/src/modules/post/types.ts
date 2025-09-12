@@ -1,8 +1,12 @@
 // 点赞请求体（按你们后端 LikeRequest）
 export type ToggleLikeRequest = {
-  type: 'post' | 'comment' | 'reply';       // 如果后续要点赞评论，可传 'comment'
-  target_id: number;
+  type: 'post' | 'comment' | 'reply';
+  targetId: number;
   like: boolean;      // true=点赞，false=取消点赞
+};
+
+export type ToggleLikeResponse = {
+  Liked: boolean;    // 当前状态，true=已点赞，false=未点赞
 };
 
 // 标准响应
@@ -48,6 +52,20 @@ export type SearchResponse = BaseResp<{
   content: string
 }[]>;
 
+// 帖子列表项
+export type PostListItem = {
+  postId: number;
+  userId: number;
+  title: string;
+  content?: string;
+  tags?: string[];
+  createdAt: string; // ISO 时间字符串
+  isHidden: boolean;
+  views?: number;
+  likes: number;
+  circleId?: number | null;
+};
+
 export interface PostDetail {
   postId: number;
   userId: number;
@@ -55,6 +73,7 @@ export interface PostDetail {
   content: string;
   tags: string[];
   createdAt: string | Date;
+  isHidden: boolean;
   views: number;
   likes: number;
   circleId?: number | null;
@@ -73,6 +92,7 @@ export interface User {
   name: string;
   username: string;
   avatar: string;
+  nickName: string;
 }
 
 export interface Comment {
@@ -80,10 +100,19 @@ export interface Comment {
   comment_id?: number;
   reply_id?: number;
   user_id: number;
-  created_at: string;
+  user?: {
+    id: number;
+    name: string;
+    username: string;
+    avatar: string;
+    nickName: string;
+  };
   content: string;
+  created_at: string;
   likes: number;
-  user?: User; // 前端扩展字段
+  parent_id?: number;
+  reply_to_user_id?: number;
+  replies?: Comment[];
 }
 
 export interface Post {
@@ -101,7 +130,68 @@ export interface Post {
 }
 
 export interface CommentRequest {
-  type: 'comment' | 'reply';
-  target_id?: number;
+  type: number;        // 使用数字：0 = Comment, 1 = Reply
+  targetId: number;    // 目标ID
+  content: string;     // 内容不能为空
+}
+
+// 添加枚举常量
+export const CommentType = {
+  Comment: 0,
+  Reply: 1
+} as const;
+
+// 后端返回的评论响应类型
+export interface CommentResponse {
+  type: number;
+  id: number;
+  targetId: number;
+  userId: number;
+  userName: string;        // 添加 userName
+  avatarUrl: string | null; // 添加 avatarUrl
   content: string;
+  createdAt: string;
+  likes: number;
+  postTitle: string | null;
+  nickName: string;
+}
+
+
+export function convertCommentResponseToFrontend(response: CommentResponse): Comment {
+  // 构建完整的用户信息
+  const userInfo = {
+    id: response.userId,
+    name: response.nickName || response.userName, // 显示用：优先nickName
+    username: response.userName,                  // 用户名：保持原样
+    nickName: response.nickName,                  // 保留nickName字段
+    avatar: response.avatarUrl || getDefaultAvatar(response.userId),
+    email: '' // 可选
+  };
+  
+  return {
+    type: response.type === 1 ? 'reply' : 'comment',
+    comment_id: response.id,
+    reply_id: response.type === 1 ? response.id : undefined,
+    user_id: response.userId,
+    user: userInfo,
+    content: response.content,
+    created_at: response.createdAt,
+    likes: response.likes || 0,
+  };
+}
+
+// 确保默认头像函数可用
+export function getDefaultAvatar(userId: number): string {
+  const colors = ['7dd3fc', 'ec4899', '8b5cf6', '34d399', 'facc15'];
+  const color = colors[userId % colors.length];
+  return `https://placehold.co/100x100/${color}/0f172a?text=用户${userId}`;
+}
+
+// 转换函数：将前端Comment转换为后端CommentRequest
+export function convertCommentToBackendRequest(comment: Partial<Comment>): CommentRequest {
+  return {
+    type: comment.type === 'reply' ? CommentType.Reply : CommentType.Comment,
+    targetId: comment.comment_id || comment.reply_id || 0,
+    content: comment.content || ''
+  };
 }

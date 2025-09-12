@@ -1,4 +1,5 @@
 import HomeView from './views/HomeView.vue'
+import MainPage from './components/MainPage.vue'
 
 export default {
   getRoutes() {
@@ -13,10 +14,14 @@ export default {
         path: '/about',
         name: 'about',
         // route level code-splitting
-        // this generates a separate chunk (About.[hash].js) for this route
-        // which is lazy-loaded when the route is visited.
         component: () => import('./views/AboutView.vue'),
         meta: { title: 'About', navi: true, recommend: true, requireLogin: false },
+      },
+      {
+        path: '/mainPage',
+        name: 'mainPage',
+        component: MainPage,
+        meta: { title: 'Main Page', navi: true, recommend: true, requireLogin: true },
       },
     ]
   }

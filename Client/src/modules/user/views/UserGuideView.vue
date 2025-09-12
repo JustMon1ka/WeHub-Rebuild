@@ -8,8 +8,8 @@ const counter = ref(0);
 const selectedTags : Ref<Map<string, string>> = ref(new Map<string, string>());
 async function onSave() {
   if (User.getInstance()?.userInfo?.userTags)
-    User.getInstance().userInfo.userTags = selectedTags.value;
-  User.getInstance()?.userInfo?.updateTags();
+    User.getInstance().userInfo.newTagNames = new Set(selectedTags.value.values());
+    User.getInstance()?.userInfo?.updateTags();
   await router.push('/');
 }
 </script>

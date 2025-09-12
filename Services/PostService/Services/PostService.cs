@@ -17,7 +17,11 @@ namespace PostService.Services
         Task<List<SearchResponse>> SearchPostsAsync(string? query, int? limits);
         Task<List<SearchSuggestResponse>> GetSearchSuggestionsAsync(string? keyword, int limits);
         Task<List<Post>> GetPostsByUserIdAsync(long userId);
-        Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true);
+        Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default);
+        Task<(bool Exists, bool Owned, bool Updated, int CurrentHidden)> SetHiddenAsync(long postId, long ownerId, bool next, CancellationToken ct = default);
+        Task<List<Post>> GetMyPostsAsync(long authorId, CancellationToken ct = default);
+        Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true, int PostMode = 0, string? tagName = null);
+        Task<(int Code, string? Error, PostResponse? Data)> UpdatePostAsync(PostUpdateRequest req, long editorUserId, CancellationToken ct = default);
     }
     
     public class PostService : IPostService
@@ -249,7 +253,7 @@ namespace PostService.Services
             return await _postRepository.GetPostsByUserIdAsync(userId);
         }
         
-        public async Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true)
+        public async Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true, int PostMode = 0, string? tagName = null)
         {
             // 兜底：限制 num 防止一次取过多
             if (num <= 0)
@@ -260,7 +264,45 @@ namespace PostService.Services
             {
                 num = 20;
             }
-            return await _postRepository.GetPagedAsync(lastId, num, desc);
+            return await _postRepository.GetPagedAsync(lastId, num, desc, PostMode, tagName);
+        }
+        
+        public Task<(bool Exists, bool Owned, bool Updated, int CurrentHidden)> SetHiddenAsync(
+            long postId, long ownerId, bool next, CancellationToken ct = default)
+            => _postRepository.SetHiddenAsync(postId, ownerId, next, ct);
+        
+        public Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default)
+            => _postRepository.IncrementViewsAsync(postId, ct);
+        
+        public Task<List<Post>> GetMyPostsAsync(long authorId, CancellationToken ct = default)
+            => _postRepository.GetByAuthorNotDeletedAsync(authorId, ct);
+        
+        // Services/PostService/Services/PostService.cs
+        public async Task<(int Code, string? Error, PostResponse? Data)>
+            UpdatePostAsync(PostUpdateRequest req, long editorUserId, CancellationToken ct = default)
+        {
+            // 交给仓储做存在性/权限/删除态检查与实际更新（含标签 diff）
+            var r = await _postRepository.UpdatePostAsync(req, editorUserId, ct);
+
+            if (!r.Exists) return (404, null, null);
+            if (!r.Owned)  return (403, null, null);
+            if (!r.Allowed) return (403, null, null);
+            if (!r.Updated && r.ReasonConflict != null) return (409, r.ReasonConflict, null);
+
+            // 映射为对外 DTO
+            var p = r.Post!;
+            var dto = new PostResponse{
+                PostId = p.PostId,
+                UserId = p.UserId ?? 0,
+                Title = p.Title ?? "",
+                Content = p.Content ?? "",
+                Tags = p.TagNames ?? new List<string>(),
+                CreatedAt = p.CreatedAt ?? DateTime.MinValue,
+                Views = p.Views ?? 0,
+                Likes = p.Likes ?? 0,
+                CircleId = p.CircleId
+            };
+            return (200, null, dto);
         }
     }
 }

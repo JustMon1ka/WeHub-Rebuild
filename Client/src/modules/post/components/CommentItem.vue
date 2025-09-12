@@ -1,11 +1,12 @@
 <template>
   <article class="p-4" :data-comment-id="comment.comment_id || comment.reply_id" :data-type="comment.type">
     <div class="flex space-x-4">
-      <img class="w-10 h-10 rounded-full flex-shrink-0" :src="comment.user?.avatar || getDefaultAvatar(comment.user_id)" 
-           :alt="comment.user?.name || `用户${comment.user_id}`">
+      <img class="w-10 h-10 rounded-full flex-shrink-0" :src="comment.user?.avatar || getDefaultAvatar(comment.user_id)"
+           :alt="comment.user?.nickName || comment.user?.username || `用户${comment.user_id}`">
       <div class="flex-1">
         <div class="flex items-baseline space-x-2">
-          <p class="font-bold">{{ comment.user?.name || `用户${comment.user_id}` }}</p>
+          <!-- 主要修改这里：username → nickname -->
+          <p class="font-bold">{{ comment.user?.nickName || comment.user?.username || `用户${comment.user_id}` }}</p>
           <p class="text-slate-400 text-sm">{{ formatTime(comment.created_at) }}</p>
         </div>
         <p class="mt-2 text-slate-300">{{ comment.content }}</p>
@@ -39,6 +40,7 @@ const emit = defineEmits<{
 const { currentUser } = useAuthState();
 const isLiked = ref(false);
 
+
 const isCurrentUser = computed(() => {
   return currentUser.value?.id === props.comment.user_id;
 });
@@ -51,7 +53,7 @@ const formatTime = (timestamp: string) => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   if (diff < 60000) {
     return '刚刚';
   } else if (diff < 3600000) {
@@ -70,35 +72,56 @@ const handleReply = () => {
 const handleLike = async () => {
   try {
     const targetId = props.comment.comment_id || props.comment.reply_id;
-    if (!targetId) return;
     
-    const type = props.comment.type === 'comment' ? 'comment' : 'reply';
-    const success = await postService.toggleLike({
-      type,
-      target_id: targetId,
-      like: !isLiked.value
+    if (!targetId) {
+      console.error('缺少必要的参数:', { targetId });
+      return;
+    }
+
+    console.log('👍 点赞请求参数:', {
+      type: props.comment.type,
+      targetId: targetId,      // 小驼峰
+      like: !isLiked.value,
     });
-    
-    if (success) {
+
+    // 使用小驼峰命名规范
+    const result = await postService.toggleLike({
+      type: props.comment.type === 'comment' ? 'comment' : 'reply',
+      targetId: targetId,      // 小驼峰
+      like: !isLiked.value,
+    });
+
+    console.log('✅ 点赞响应:', result);
+
+    if (result.code === 200) {
       isLiked.value = !isLiked.value;
       const updatedComment = {
         ...props.comment,
-        likes: isLiked.value ? props.comment.likes + 1 : props.comment.likes - 1
+        likes: isLiked.value ? (props.comment.likes || 0) + 1 : Math.max(0, (props.comment.likes || 0) - 1),
+        isLiked: isLiked.value  // 也改为小驼峰
       };
       emit('update:comment', updatedComment);
+    } else {
+      console.error('点赞操作失败，返回码:', result.code, '消息:', result.msg);
     }
   } catch (error) {
     console.error('点赞失败:', error);
+    
+    // 显示详细的错误信息
+    if (error.response?.data) {
+      console.error('后端错误详情:', error.response.data);
+    }
   }
 };
 
 const handleDelete = async () => {
   if (!confirm('确定要删除吗？')) return;
-  
+
   try {
     const targetId = props.comment.comment_id || props.comment.reply_id;
     if (!targetId) return;
-    
+
+    // 修正删除API调用
     const success = await postService.deleteComment(props.comment.type, targetId);
     if (success) {
       emit('delete', props.comment);

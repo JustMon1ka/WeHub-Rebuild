@@ -10,21 +10,21 @@ using ReportService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Ìí¼Ó·şÎñµ½ÈİÆ÷
+// æ·»åŠ æœåŠ¡åˆ°å®¹å™¨
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ÅäÖÃÊı¾İ¿âÉÏÏÂÎÄ£¨Oracle£©
+// é…ç½®æ•°æ®åº“ä¸Šä¸‹æ–‡ï¼ˆOracleï¼‰
 builder.Services.AddDbContext<ReportDbContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ×¢²á²Ö´¢ºÍ·şÎñ
+// æ³¨å†Œä»“å‚¨å’ŒæœåŠ¡
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IReportService, ReportService.Services.ReportService>();
 builder.Services.AddHttpContextAccessor();
 
-// ÅäÖÃ JWT ÈÏÖ¤
+// é…ç½® JWT è®¤è¯
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,19 +40,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// ÅäÖÃ Swagger
+// é…ç½® Swagger
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "ReportService API",
         Version = "v1",
-        Description = "ReportService API ÎÄµµ"
+        Description = "ReportService API æ–‡æ¡£"
     });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "ÇëÊäÈë JWT ÁîÅÆ£¨¸ñÊ½£ºBearer {token}£©",
+        Description = "è¯·è¾“å…¥ JWT ä»¤ç‰Œï¼ˆæ ¼å¼ï¼šBearer {token}ï¼‰",
         Name = "Authorization",
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
@@ -73,13 +73,10 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ÅäÖÃ YARP Reverse Proxy
-builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 var app = builder.Build();
 
-// ÅäÖÃ HTTP ÇëÇó¹ÜµÀ
+// é…ç½® HTTP è¯·æ±‚ç®¡é“
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -93,7 +90,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapReverseProxy(); // YARP ÖĞ¼ä¼ş
 app.MapControllers();
 
 app.Run();

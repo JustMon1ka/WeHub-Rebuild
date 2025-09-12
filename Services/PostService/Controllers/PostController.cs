@@ -16,12 +16,14 @@ public class PostController : ControllerBase
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
     private readonly IShareService _shareService;
+    private readonly ILikeService _likeService;
 
-    public PostController(IPostService postService, ICommentService commentService, IShareService shareService)
+    public PostController(IPostService postService, ICommentService commentService, IShareService shareService, ILikeService likeService)
     {
         _postService = postService;
         _commentService = commentService;
         _shareService = shareService;
+        _likeService = likeService;
     }
 
     [HttpGet]
@@ -102,19 +104,26 @@ public class PostController : ControllerBase
             Likes = post.Likes ?? 0
         };
     }
-    
+
     [HttpGet("list")]
     public async Task<BaseHttpResponse<List<PostResponse>>> List(
         [FromQuery] long? lastId,
-        [FromQuery] int? num)
+        [FromQuery] int? num,
+        [FromQuery] int? PostMode,
+        [FromQuery] string? tagName)
     {
         try
         {
             int take = num.GetValueOrDefault(10);
             if (take <= 0) take = 10;
             if (take > 100) take = 100;
+            
+            int take_PostMode = PostMode.GetValueOrDefault(0);
+            if (take_PostMode < 0 || take_PostMode > 2) take_PostMode = 0;
 
-            var posts = await _postService.GetPagedPostsAsync(lastId, take, desc: true);
+            Console.WriteLine($"Controller 接收到 tagName={tagName}");
+
+            var posts = await _postService.GetPagedPostsAsync(lastId, take, true, take_PostMode, tagName);
 
             var data = posts.Select(p => new PostResponse
             {
@@ -198,6 +207,7 @@ public class PostController : ControllerBase
                 Content = post.Content ?? "",
                 Tags = tagNames,   // ✅ 填充标签
                 CreatedAt = post.CreatedAt ?? DateTime.MinValue,
+                IsHidden = post.IsHidden,
                 Views = post.Views ?? 0,
                 Likes = post.Likes ?? 0,
                 CircleId = post.CircleId
@@ -386,30 +396,194 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, "An error occurred.");
         }
     }
-    
-[HttpPost("{post_id}/share")]
-[Authorize(AuthenticationSchemes = "Bearer")]
-public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
-{
-    try
+
+    [HttpPost("{post_id}/share")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
+    {
+        try
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+            }
+
+            long userId = long.Parse(userIdClaim.Value);
+
+            await _shareService.SharePostAsync(userId, post_id);
+
+            return BaseHttpResponse<object?>.Success(null, "分享成功");
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<object?>.Fail(500, "分享失败：" + ex.Message);
+        }
+    }
+
+    [HttpPost("{postId:long}/views/increment")]
+    [AllowAnonymous]
+    public async Task<BaseHttpResponse<object>> IncrementViews([FromRoute] long postId, CancellationToken ct)
+    {
+        try
+        {
+            var views = await _postService.IncrementViewsAsync(postId, ct);
+            if (views is null)
+                return BaseHttpResponse<object>.Fail(404, "Post not found");
+
+            return BaseHttpResponse<object>.Success(new { postId, views });
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<object>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
+    }
+
+    [HttpPost("like")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<IActionResult> LikePost([FromBody] LikeRequest request)
     {
         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
         if (userIdClaim == null)
         {
-            return BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+            return (IActionResult)BaseHttpResponse<object?>.Fail(401, "未认证的用户");
         }
 
-        long userId = long.Parse(userIdClaim.Value);
-
-        await _shareService.SharePostAsync(userId, post_id);
-
-        return BaseHttpResponse<object?>.Success(null, "分享成功");
+        var userId = long.Parse(userIdClaim.Value);
+        await _likeService.ToggleLikeAsync(userId, request);
+        return Ok(new { code = 200, msg = (string)null, data = (object)null });
     }
-    catch (Exception ex)
+
+    [HttpPost("CheckLike")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<CheckLikeResponse>> CheckLike([FromBody] CheckLikeRequest request)
     {
-        return BaseHttpResponse<object?>.Fail(500, "分享失败：" + ex.Message);
+        try
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return BaseHttpResponse<CheckLikeResponse>.Fail(401, "未认证的用户");
+            }
+
+            var userId = long.Parse(userIdClaim.Value);
+            var isLiked = await _likeService.GetLikeStatusAsync(userId, request.Type, request.TargetId);
+            var response = new { isLiked };
+            return BaseHttpResponse<CheckLikeResponse>.Success(new CheckLikeResponse { IsLiked = isLiked });
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<CheckLikeResponse>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
     }
-}
+    
+    [HttpGet("mine")]
+    [Authorize(AuthenticationSchemes = "Bearer")] // 需要登录；未登录将被框架拦截为 401
+    public async Task<BaseHttpResponse<List<PostResponse>>> GetMyPosts(CancellationToken ct)
+    {
+        try
+        {
+            // ✅ 参考 DeletePost 的写法：从 JWT 取当前用户 Id
+            // 常见 Claim：NameIdentifier / "userId" / "uid" / sub（按你们 DeletePost 的实现来）
+            // 从JWT token中提取用户ID（你可能需要配置Claims）
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return BaseHttpResponse<List<PostResponse>>.Fail(401, "未认证的用户");
+            }
 
+            var userId = long.Parse(userIdClaim.Value);
 
+            var posts = await _postService.GetMyPostsAsync(userId, ct);
+
+            var data = posts.Select(p => new PostResponse
+            {
+                PostId   = p.PostId,
+                UserId   = p.UserId ?? 0,
+                Title    = p.Title ?? "",
+                Tags     = p.TagNames ?? new List<string>(),
+                CreatedAt= p.CreatedAt ?? DateTime.MinValue,
+                IsHidden = p.IsHidden,
+                Views    = p.Views ?? 0,
+                Likes    = p.Likes ?? 0,
+                CircleId = p.CircleId
+            }).ToList();
+
+            return BaseHttpResponse<List<PostResponse>>.Success(data);
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<List<PostResponse>>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
+    }
+    
+    [HttpPut("{postId:long}/hidden")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<object>> SetHidden(
+        long postId,
+        [FromQuery] bool next,
+        CancellationToken ct)
+    {
+        try
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return BaseHttpResponse<object>.Fail(401, "未认证的用户");
+
+            if (!long.TryParse(userIdClaim.Value, out var userId) || userId <= 0)
+                return BaseHttpResponse<object>.Fail(401, "未认证的用户");
+
+            var (exists, owned, updated, currentHidden) =
+                await _postService.SetHiddenAsync(postId, userId, next, ct);
+
+            if (!exists) return BaseHttpResponse<object>.Fail(404, "帖子不存在");
+            if (!owned)  return BaseHttpResponse<object>.Fail(403, "无权限修改他人帖子");
+
+            return BaseHttpResponse<object>.Success(new {
+                postId,
+                isHidden = currentHidden != 0,
+                updated  // true=这次确实写库；false=本来就是该状态（幂等）
+            });
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<object>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
+    }
+    
+    [HttpPut]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<PostResponse>> Update(
+        [FromBody] PostUpdateRequest req,
+        CancellationToken ct)
+    {
+        try
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return BaseHttpResponse<PostResponse>.Fail(401, "未认证的用户");
+            }
+            var userId = long.Parse(userIdClaim.Value);
+
+            // 最小校验（也可用 FluentValidation）
+            if (string.IsNullOrWhiteSpace(req.Title))
+                return BaseHttpResponse<PostResponse>.Fail(400, "Title is required");
+
+            var result = await _postService.UpdatePostAsync(req, userId, ct);
+
+            return result.Code switch
+            {
+                200 => BaseHttpResponse<PostResponse>.Success(result.Data!),
+                403 => BaseHttpResponse<PostResponse>.Fail(403, "Forbidden"),
+                404 => BaseHttpResponse<PostResponse>.Fail(404, "Post not found"),
+                409 => BaseHttpResponse<PostResponse>.Fail(409, result.Error ?? "Conflict"),
+                _   => BaseHttpResponse<PostResponse>.Fail(500, result.Error ?? "Server error")
+            };
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<PostResponse>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
+    }
 }

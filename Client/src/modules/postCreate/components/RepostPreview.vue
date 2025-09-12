@@ -38,7 +38,7 @@ const props = defineProps<{
 }>();
 
 // 此处假设您的帖子路由为 /posts/:id，请根据您的实际情况修改
-const postUrl = computed(() => `/posts/${props.postId}`);
+const postUrl = computed(() => `/post/${props.postId}`);
 </script>
 
 <style scoped>

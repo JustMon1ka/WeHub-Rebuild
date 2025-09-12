@@ -15,12 +15,12 @@ export interface user {
 
 // 消息
 export interface message {
-    MessageId: number; // id
-    SenderId: number; // 发送者id
-    ReceiverId: number; // 接收者id
-    Content: string; // 内容
-    SendAt: string; // 发送时间
-    IsRead: boolean; // 是否已读
+    messageId: number; // id (注意：后端返回的是messageId，不是MessageId)
+    senderId: number; // 发送者id (注意：后端返回的是senderId，不是SenderId)
+    receiverId: number; // 接收者id (注意：后端返回的是receiverId，不是ReceiverId)
+    content: string; // 内容 (注意：后端返回的是content，不是Content)
+    sentAt: string; // 发送时间 (注意：后端返回的是sentAt，不是SentAt)
+    isRead: boolean; // 是否已读 (注意：后端返回的是isRead，不是IsRead)
 }
 
 // 扩展的消息类型（用于前端显示）
@@ -36,9 +36,9 @@ export interface messageDisplay extends message {
 
 // 会话
 export interface conversation {
-    OtherUserId: number; // 其他用户id
-    lastMessage: message; // 最新消息
-    UnreadCount: number; // 未读消息数
+    otherUserId: number; // 其他用户id (注意：后端返回的是otherUserId，不是OtherUserId)
+    lastMessage: message; // 最新消息 (注意：后端返回的是lastMessage，不是LastMessage)
+    unreadCount: number; // 未读消息数 (注意：后端返回的是unreadCount，不是UnreadCount)
     // 添加前端显示需要的字段
     contactUser?: user; // 联系人用户信息
     newestMessage?: string; // 最新消息内容（用于显示）
