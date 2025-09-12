@@ -3,6 +3,16 @@
     <div class="input-tool">
       <button ref="emojiButtonRef" class="emoji-button" @click="showEmoji = !showEmoji">😊</button>
       <button class="image-button" @click="handleImageClick">🖼️</button>
+      <div class="w-full"></div>
+      <button
+        class="send-button"
+        :disabled="!text.trim()"
+        :class="{ active: text.trim() }"
+        type="button"
+        @click="handleSendClick"
+      >
+        发送
+      </button>
       <input
         ref="fileInput"
         type="file"
@@ -11,8 +21,10 @@
         @change="handleImageChange"
       />
     </div>
-    <div v-if="showEmoji" ref="emojiListRef" class="emoji-list">
-      <span v-for="emoji in emojis" :key="emoji" @click="addEmoji(emoji)">{{ emoji }}</span>
+    <div v-if="showEmoji" ref="emojiListRef" class="emoji-list bg-slate-800 h-fit">
+      <span v-for="emoji in emojis" :key="emoji" @click="addEmoji(emoji)">
+        {{ emoji }}
+      </span>
     </div>
     <div class="input-text">
       <textarea
@@ -24,17 +36,6 @@
         @input="autoResize"
         @keydown.enter.exact.prevent="handleSendClick"
       ></textarea>
-    </div>
-    <div class="send-button-row">
-      <button
-        class="send-button"
-        :disabled="!text.trim()"
-        :class="{ active: text.trim() }"
-        type="button"
-        @click="handleSendClick"
-      >
-        发送
-      </button>
     </div>
   </div>
 </template>
@@ -99,8 +100,7 @@ function autoResize() {
 
       // 计算可用高度（减去工具区域和发送按钮区域的高度）
       const toolHeight = 50 // 工具区域高度（包括padding）
-      const sendButtonHeight = 50 // 发送按钮区域高度（包括padding）
-      const availableHeight = containerHeight - toolHeight - sendButtonHeight
+      const availableHeight = containerHeight - toolHeight
 
       // 设置最小高度和最大高度，添加安全边距
       const minHeight = 40
@@ -221,18 +221,15 @@ onUnmounted(() => {
 
 .emoji-button:hover,
 .image-button:hover {
-  background: #f0f0f0;
+  background: #374151;
 }
 
 .input-text {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: center;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding: 8px 12px;
   min-height: 0; /* 允许flex子元素收缩 */
   overflow: hidden; /* 防止内容溢出 */
 }
@@ -250,19 +247,12 @@ onUnmounted(() => {
   transition: height 0.1s;
 }
 
-.send-button-row {
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px 16px 8px 0;
-  flex-shrink: 0; /* 防止发送按钮区域被压缩 */
-  min-height: 40px; /* 确保发送按钮区域有足够空间 */
-}
-
 .send-button {
   background: #00aeec;
   border: none;
   border-radius: 8px;
-  padding: 8px 18px;
+  padding: 4px 8px;
+  width: 5rem;
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
@@ -278,33 +268,35 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
+
+
 .emoji-list {
-  display: flex;
+  display: grid;
   grid-template-columns: repeat(8, 1fr);
   width: 320px;
   flex-wrap: wrap;
   gap: 4px;
-  margin: 0px 0 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
+  margin: 0 0 8px 16px;
+  border-radius: 0.5rem;
   padding: 4px;
   position: absolute;
+  top: 0.5rem;
+  left: 2rem;
   bottom: 100%;
-  z-index: 10;
+  z-index: 9999;
 }
 
 .emoji-list span {
   cursor: pointer;
   font-size: 20px;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: 0.5rem;
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .emoji-list span:hover {
-  background: #f0f0f0;
+  background: #374151;
 }
 </style>

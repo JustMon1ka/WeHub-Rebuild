@@ -116,7 +116,7 @@
       <div class="divider-horizontal"></div>
 
       <!-- 聊天输入框 -->
-      <div class="chat-input bg-slate-800" :style="{ height: chatInputHeight + '%' }">
+      <div class="chat-input bg-slate-900" :style="{ height: chatInputHeight + '%' }">
         <ChatInput @sendMessage="handleSendMessage" />
       </div>
       <div class="divider-horizontal"></div>
@@ -160,8 +160,8 @@ const rightWidth = ref(78) // 右侧面板宽度百分比
 const isResizing = ref(false)
 
 // 水平拖动相关状态
-const chatWindowHeight = ref(70) // 聊天窗口高度百分比
-const chatInputHeight = ref(22) // 聊天输入框高度百分比
+const chatWindowHeight = ref(64) // 聊天窗口高度百分比
+const chatInputHeight = ref(28) // 聊天输入框高度百分比
 const isHorizontalResizing = ref(false)
 
 // 用户信息缓存已迁移到 utils/user.ts
