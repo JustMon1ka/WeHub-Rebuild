@@ -31,7 +31,7 @@ export const showRecommendBar = ref(true)
       <RightAside
         v-show="showRecommendBar && route.name !== 'founding'"
         id="recommend-bar"
-        class="flex-none h-24 overflow-hidden md:h-screen px-5 py-5 z-100"
+        class="flex-none h-24 overflow-hidden md:h-screen z-100"
       />
     </div>
 
