@@ -142,8 +142,6 @@ export async function deletePost(postId: number) {
   return unwrap(resp.data);
 }
 
-
-// ✅ 重点：getPostList —— 永远正确地命中 /api/posts/list
 export async function getPostList(num: number, tailPostId?: number, PostMode?: number, tagName?: string | null): Promise<PostListItem[]> {
   const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts/list", {
     params: { num, lastId: tailPostId, PostMode, tagName }
@@ -154,6 +152,16 @@ export async function getPostList(num: number, tailPostId?: number, PostMode?: n
 export async function increaseViewsById(postId: number): Promise<void> {
   await postHttp.post(`posts/${postId}/views/increment`);
   return;
+}
+
+export async function togglePostHidden(postId: number, next: boolean): Promise<void> {
+  await postHttp.put<BaseResp<BaseResp>>(`posts/${postId}/hidden`,null,{params:{next}});
+  return;
+}
+
+export async function getMyPosts(): Promise<PostListItem[]> {
+  const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts/mine");
+  return unwrap<PostListItem[]>(resp.data);
 }
 
 export async function getPosts(ids?: string, userId?: number): Promise<PostListItem[]>{
@@ -168,7 +176,18 @@ postHttp.interceptors.request.use(cfg => {
 });
 
 export async function checkLike(type: 'post' | 'comment' | 'reply', targetId: number): Promise<boolean> {
-  const resp = await axios.post<BaseResp<{ liked: boolean }>>("/posts/CheckLike", { type, targetId });
+  const resp = await axios.post<BaseResp<{ Liked: boolean }>>("/posts/CheckLike", { type, targetId });
   const data = unwrap<ToggleLikeResponse>(resp.data);
-  return data.isLiked;
+  return data.Liked;
+}
+
+export async function updatePost(payload: {
+  postId: number;
+  circleId: number | null;
+  title: string;
+  content: string;
+  tags: number[];
+}) {
+  const resp = await postHttp.put("/posts", payload);
+  return unwrap(resp.data);
 }
