@@ -47,33 +47,33 @@ namespace FollowService.Controllers
         }
 
         [HttpGet("count")]
-        public async Task<IActionResult> GetFollowCounts()
+        public async Task<IActionResult> GetFollowCounts(int userId)
         {
-            var result = await _followService.GetFollowCountsAsync();
+            var result = await _followService.GetFollowCountsAsync(userId);
             return Ok(result);
         }
 
         [HttpGet("following")]
-        public async Task<IActionResult> GetFollowing([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetFollowing(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page < 1 || pageSize < 1)
             {
                 return BadRequest("分页参数无效");
             }
 
-            var result = await _followService.GetFollowingListAsync(page, pageSize);
+            var result = await _followService.GetFollowingListAsync(userId, page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("followers")]
-        public async Task<IActionResult> GetFollowers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetFollowers(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page < 1 || pageSize < 1)
             {
                 return BadRequest("分页参数无效");
             }
 
-            var result = await _followService.GetFollowersListAsync(page, pageSize);
+            var result = await _followService.GetFollowersListAsync(userId, page, pageSize);
             return Ok(result);
         }
     }
