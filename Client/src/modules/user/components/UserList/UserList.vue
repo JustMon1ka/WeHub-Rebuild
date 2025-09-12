@@ -58,12 +58,26 @@ onMounted(() => {
   const sentinelElement = document.querySelector(`[data-uid="${uid}"]`) as HTMLElement | null;
   if (!sentinelElement) return;
 
+  let intervalId: number | null = null;
+
   observer = new IntersectionObserver(
     (entries) => {
       const [entry] = entries;
-      if (entry.isIntersecting) loadMore();
+      if (entry.isIntersecting) {
+        if (!intervalId) {
+          loadMore();
+          intervalId = window.setInterval(() => {
+            loadMore();
+          }, 200);
+        }
+      } else {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
     },
-    { threshold: 0.1 } // 当哨兵元素 10% 进入视口时触发
+    { threshold: 0.1 }
   );
 
   observer.observe(sentinelElement);

@@ -5,9 +5,10 @@ import { User } from '@/modules/auth/public.ts'
 import { watch } from 'vue'
 import router from '@/router.ts'
 import { toggleLoginHover } from '@/router.ts'
+import { getFollowerAPI, getFollowingAPI } from '@/modules/user/scripts/FollowAPI.ts'
 
-const { userId_p, nickName } = defineProps<{
-  userId_p: string;
+const { userId, nickName } = defineProps<{
+  userId: string;
   nickName: string;
 }>();
 
@@ -16,15 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const curTab = defineModel('curTab', { default: 0 });
-
-let userId = userId_p || 'Me';
-if (userId === 'Me'){
-  userId = User?.getInstance()?.userAuth.userId || 'unknown';
-  if (!userId){
-    toggleLoginHover(true);
-    setTimeout(async () => await router.push('/'), 0);
-  }
-}
 
 const tabLabels : Array<TabLabel> = [
   { key: 'following', label: '正在关注'},
@@ -38,29 +30,39 @@ watch(curTab, (newTab) => {
   Tabs.switchTab(newTab);
 });
 
-// TODO: 将此处替换为实际的FOLLOW和FOLLOWER生成器函数
-const generator: () => AsyncGenerator<Array<string>, string, number> = async function* () {
-  const userId = User.getInstance()?.userAuth.userId || 'unknown';
+const generator: (arg0: boolean) => AsyncGenerator<Array<string>, string, number> = async function* (follower = true) {
   let num: number = yield [];
-  for(let j =0; j< 3; j++){
-    let users: Array<string> = [];
-    for (let i = 0; i < num; i++) {
-      users.push('100248');
+  let page: number = 1;
+  while(true){
+    try {
+      let result;
+      if (follower) {
+        result = await getFollowerAPI(page, num, userId);
+      } else {
+        result = await getFollowingAPI(page, num, userId);
+      }
+
+      let users = [];
+      for (const followData of result.items){
+        if (follower) {
+          users.push(followData.followerId);
+        } else {
+          users.push(followData.followeeId);
+        }
+      }
+      page += 1;
+      num = yield users;
+      if (users.length < num) {
+        return "";
+      }
+
+    } catch (error){
+      return error.message;
     }
-    let result = await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(users);
-      }, 1); // 模拟网络请求延迟，此处可以替换为实际的API调用
-    })
-    if (j > 2) {
-      return "网络错误，请稍后再试";
-    }
-    num = yield users;
   }
-  return "";
 };
 
-const generatorList = [generator(), generator()];
+const generatorList = [generator(false), generator(true)];
 
 </script>
 

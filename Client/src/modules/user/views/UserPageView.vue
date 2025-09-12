@@ -111,7 +111,7 @@ function onSave(){
                 leave-active-class="transition duration-200 ease-in"
                 leave-from-class="opacity-100 translate-y-0"
                 leave-to-class="opacity-100 translate-y-full">
-      <FollowList v-show="followMode" @close="followMode=false" :user-id_p="userId"
+      <FollowList v-show="followMode" @close="followMode=false" :user-id="userId"
                   v-model:curTab="followTab" :nick-name="userInfo.nickname" :key="'follow'+userId"/>
     </transition>
 

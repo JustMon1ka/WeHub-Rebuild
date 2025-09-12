@@ -5,7 +5,8 @@ import {
 } from '@/modules/user/scripts/UserDataAPI.ts'
 import { getTagsAPI, setTagsAPI } from '@/modules/user/scripts/UserTagAPI.ts'
 import { uploadMediaAPI, MEDIA_BASE_URL } from '@/modules/user/scripts/MediaAPI.ts'
-import { addTagsAPI, getTagsNameAPI, type SingleTagData } from '@/modules/user/scripts/TagAPI.ts'
+import { addTagsAPI, getTagsNameAPI } from '@/modules/user/scripts/TagAPI.ts'
+import { getFollowCountAPI } from '@/modules/user/scripts/FollowAPI.ts'
 
 class UserInfo implements UserData{
   static readonly errorMsg = {
@@ -78,10 +79,8 @@ class UserInfo implements UserData{
   errorMsg: string = '';
 
 
-  constructor(userId: string, copy: boolean = false) {
+  constructor(userId: string) {
     this.userId = userId;
-    if (copy) return;
-
     if (userId === User.getInstance()?.userAuth?.userId) {
       this.isMe = true;
     }
@@ -132,7 +131,9 @@ class UserInfo implements UserData{
   }
 
   async loadFollow() {
-    // TODO: Get following and follower count
+    const result = await getFollowCountAPI(this.userId);
+    this.followingCount = result.followingCount;
+    this.followerCount = result.followerCount;
   }
 
   async loadTags() {
@@ -157,7 +158,7 @@ class UserInfo implements UserData{
     this.tagsLoaded = true;
   }
 
-  copy(copyUserInfo: UserInfo = new UserInfo(this.userId, true)): UserInfo {
+  copy(copyUserInfo: UserInfo = new UserInfo(this.userId)): UserInfo {
     // 只需要复制可编辑的字段，
     // 假如传入了一个 UserInfo 实例，则复制到该实例中，防止放弃编辑时错误修改原主页内容
     copyUserInfo.userId = JSON.parse(JSON.stringify(this.userId));
