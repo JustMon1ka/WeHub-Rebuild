@@ -10,6 +10,7 @@ import { getPostDetail, increaseViewsById } from '@/modules/post/api';
 import type { PostDetail } from '@/modules/post/types';
 import UserInfo from '@/modules/user/scripts/UserInfo';
 import { formatTime } from '@/modules/core/utils/time';
+import { checkLike } from '@/modules/post/api';
 
 // 路由参数
 const route = useRoute()
@@ -51,9 +52,11 @@ async function load() {
   errorText.value = '';
   try {
     const detail = await getPostDetail(postId);
+    const isLikedResp = await checkLike('post', postId);
     post.value = detail;
     post.value.views++;
     likeCount.value = detail.likes || 0;
+    isLiked.value = isLikedResp;
     author.value = new UserInfo(String(detail.userId));
     await author.value.loadUserData();
   } catch (e: any) {

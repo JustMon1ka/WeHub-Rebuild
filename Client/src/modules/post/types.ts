@@ -5,6 +5,10 @@ export type ToggleLikeRequest = {
   like: boolean;      // true=点赞，false=取消点赞
 };
 
+export type ToggleLikeResponse = {
+  liked: boolean;    // 当前状态，true=已点赞，false=未点赞
+};
+
 // 标准响应
 export type BaseResp<T = unknown> = {
   code: number;

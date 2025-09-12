@@ -3,10 +3,11 @@ using PostService.Models;
 using PostService.Repositories;
 
 namespace PostService.Services
-{  
+{
     public interface ILikeService
     {
         Task ToggleLikeAsync(long userId, LikeRequest request);
+        Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId);
     }
     public class LikeService : ILikeService
     {
@@ -58,6 +59,11 @@ namespace PostService.Services
                     await _likeRepository.DecrementLikeCountAsync(postId);
                 }
             }
+        }
+
+        public async Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId)
+        {
+            return await _likeRepository.GetLikeStatusAsync(userId, targetType, targetId);
         }
     }
 }

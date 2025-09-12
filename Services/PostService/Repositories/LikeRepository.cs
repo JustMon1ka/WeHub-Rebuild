@@ -10,9 +10,10 @@ namespace PostService.Repositories
         Task IncrementLikeCountAsync(long postId);
         Task DecrementLikeCountAsync(long postId);
         Task<bool> ToggleLikeAsync(long userId, Like like);
+        Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId);
     }
-    
-    public class LikeRepository: ILikeRepository
+
+    public class LikeRepository : ILikeRepository
     {
         private readonly AppDbContext _context;
 
@@ -78,6 +79,13 @@ namespace PostService.Repositories
                 }
                 return false; // 原本就没有点赞，不需要改
             }
+        }
+        
+        public async Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId)
+        {
+            var existing = await _context.Set<Like>()
+                .FirstOrDefaultAsync(l => l.UserId == userId && l.TargetId == targetId && l.TargetType == targetType);
+            return existing != null;
         }
     }
 }

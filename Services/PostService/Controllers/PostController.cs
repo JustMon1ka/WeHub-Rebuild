@@ -16,12 +16,14 @@ public class PostController : ControllerBase
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
     private readonly IShareService _shareService;
+    private readonly ILikeService _likeService;
 
-    public PostController(IPostService postService, ICommentService commentService, IShareService shareService)
+    public PostController(IPostService postService, ICommentService commentService, IShareService shareService, ILikeService likeService)
     {
         _postService = postService;
         _commentService = commentService;
         _shareService = shareService;
+        _likeService = likeService;
     }
 
     [HttpGet]
@@ -102,7 +104,7 @@ public class PostController : ControllerBase
             Likes = post.Likes ?? 0
         };
     }
-    
+
     [HttpGet("list")]
     public async Task<BaseHttpResponse<List<PostResponse>>> List(
         [FromQuery] long? lastId,
@@ -386,7 +388,7 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, "An error occurred.");
         }
     }
-    
+
     [HttpPost("{post_id}/share")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
@@ -410,22 +412,60 @@ public class PostController : ControllerBase
             return BaseHttpResponse<object?>.Fail(500, "分享失败：" + ex.Message);
         }
     }
-    
+
     [HttpPost("{postId:long}/views/increment")]
     [AllowAnonymous]
     public async Task<BaseHttpResponse<object>> IncrementViews([FromRoute] long postId, CancellationToken ct)
     {
         try
         {
-            var views=await _postService.IncrementViewsAsync(postId, ct);
-            if(views is null)
-                return BaseHttpResponse<object>.Fail(404,"Post not found");
+            var views = await _postService.IncrementViewsAsync(postId, ct);
+            if (views is null)
+                return BaseHttpResponse<object>.Fail(404, "Post not found");
 
-            return BaseHttpResponse<object>.Success(new{postId,views});
+            return BaseHttpResponse<object>.Success(new { postId, views });
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            return BaseHttpResponse<object>.Fail(500,"服务器内部错误："+ex.Message);
+            return BaseHttpResponse<object>.Fail(500, "服务器内部错误：" + ex.Message);
+        }
+    }
+
+    [HttpPost("like")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<IActionResult> LikePost([FromBody] LikeRequest request)
+    {
+        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+        {
+            return (IActionResult)BaseHttpResponse<object?>.Fail(401, "未认证的用户");
+        }
+
+        var userId = long.Parse(userIdClaim.Value);
+        await _likeService.ToggleLikeAsync(userId, request);
+        return Ok(new { code = 200, msg = (string)null, data = (object)null });
+    }
+
+    [HttpGet("CheckLike")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<BaseHttpResponse<List<CheckLikeResponse>>> CheckLike([FromBody] CheckLikeRequest request)
+    {
+        try
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                return BaseHttpResponse<List<CheckLikeResponse>>.Fail(401, "未认证的用户");
+            }
+
+            var userId = long.Parse(userIdClaim.Value);
+            var isLiked = await _likeService.GetLikeStatusAsync(userId, request.Type, request.TargetId);
+            var response = new { isLiked };
+            return BaseHttpResponse<List<CheckLikeResponse>>.Success(new List<CheckLikeResponse> { new CheckLikeResponse { IsLiked = isLiked } });
+        }
+        catch (Exception ex)
+        {
+            return BaseHttpResponse<List<CheckLikeResponse>>.Fail(500, "服务器内部错误：" + ex.Message);
         }
     }
 }

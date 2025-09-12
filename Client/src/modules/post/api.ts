@@ -163,3 +163,9 @@ postHttp.interceptors.request.use(cfg => {
   console.debug('[postHttp]', { baseURL: cfg.baseURL, url: cfg.url, params: cfg.params });
   return cfg;
 });
+
+export async function checkLike(type: 'post' | 'comment' | 'reply', targetId: number): Promise<boolean> {
+  const resp = await axios.post<BaseResp<{ liked: boolean }>>("/posts/CheckLike", { type, targetId });
+  const data = unwrap<{ liked: boolean }>(resp.data);
+  return data.liked;
+}
