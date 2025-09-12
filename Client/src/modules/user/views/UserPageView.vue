@@ -10,6 +10,7 @@ import FollowList from '@/modules/user/components/UserPage/FollowList.vue'
 import router from '@/router.ts'
 import PrivacyView from '@/modules/auth/views/PrivacyView.vue'
 import { toggleLoginHover } from '@/router.ts'
+import MyPostList from '@/modules/post/components/MyPostList.vue'
 
 
 const { userId_p } = defineProps<{
@@ -138,10 +139,12 @@ function onSave(){
         </button>
       </div>
       <!-- Tab 切换 -->
+
       <div v-for="( tab , index) in Tabs.tablabels" :key="index">
         <div v-show="Tabs.currentTab === index">
           <!-- 内容切换 Tab -->
-          <privacy-view :key="'post'+index+userId"/>
+          <!--<privacy-view :key="'post'+index+userId"/>-->
+          <MyPostList />
         </div>
       </div>
     </div>

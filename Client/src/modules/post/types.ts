@@ -60,6 +60,7 @@ export type PostListItem = {
   content?: string;
   tags?: string[];
   createdAt: string; // ISO 时间字符串
+  isHidden: boolean;
   views?: number;
   likes: number;
   circleId?: number | null;
@@ -72,6 +73,7 @@ export interface PostDetail {
   content: string;
   tags: string[];
   createdAt: string | Date;
+  isHidden: boolean;
   views: number;
   likes: number;
   circleId?: number | null;

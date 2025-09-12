@@ -30,7 +30,7 @@ export default {
         path: '/create-community',
         name: 'create-community',
         component: CreateCommunity,
-        meta: { title: '创建社区', navi: false, recommend: false, requireLogin: true },
+        meta: { title: '创建社区', navi: false, recommend: false, requireLogin: false },
       },
       // 圈子活动路由
       {
@@ -41,7 +41,7 @@ export default {
           circleId: parseInt(route.params.id),
           canCreateActivity: true, // 这里可以根据用户权限动态设置
         }),
-        meta: { title: '圈子活动', navi: true, recommend: false, requireLogin: true },
+        meta: { title: '圈子活动', navi: true, recommend: false, requireLogin: false },
       },
     ]
   },

@@ -6,7 +6,9 @@
       </div>
 
       <div class="report-content">
-        <span>我要举报的是：{{ reportTargetUserName }}的{{ getReportType(reportTargetType) }}</span>
+        <span style="color: #333"
+          >我要举报的是：{{ reportTargetUserName }}的{{ getReportType(reportTargetType) }}</span
+        >
         <div v-if="reportTargetContent" class="report-target-content">
           <strong>举报内容：</strong>
           <div class="content-preview">{{ reportTargetContent }}</div>
@@ -380,6 +382,7 @@ onMounted(() => {
 
 .dialog-title {
   font-weight: bold;
+  color: #333;
   flex: 1;
   text-align: center;
   display: flex;

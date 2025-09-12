@@ -4,13 +4,13 @@ import { useRoute } from 'vue-router';
 import MarkdownViewer from '@/modules/post/components/MarkdownViewer.vue';
 import LikeButton from '@/modules/post/components/LikeButton.vue';
 import ShareButton from '@/modules/post/components/ShareButton.vue';
-import FavoriteButton from '@/modules/post/components/FavoriteButton.vue';
 import CommentList from '@/modules/post/components/CommentList.vue'; // 导入评论组件
 import { getPostDetail, increaseViewsById } from '@/modules/post/api';
 import type { PostDetail } from '@/modules/post/types';
 import UserInfo from '@/modules/user/scripts/UserInfo';
 import { formatTime } from '@/modules/core/utils/time';
 import { checkLike } from '@/modules/post/api';
+import { User } from '@/modules/auth/public.ts';
 
 // 路由参数
 const route = useRoute()
@@ -25,33 +25,24 @@ const author = ref<UserInfo | null>(null)
 // —— 按钮状态
 const isLiked = ref(false);
 const likeCount = ref(0);
-const isFavorited = ref(false);
-const favoriteCount = ref(0);
 const commentCount = ref(0); // 添加评论数状态
-
-// 仅在“非代码块”中把 $$...$$ → \[...\]，避免 KaTeX 报错
-function sanitizeMath(md: string): string {
-  if (!md) return '';
-  const parts = md.split(/(```[\s\S]*?```)/g);
-  return parts.map(seg => {
-    const isCode = seg.startsWith('```') && seg.endsWith('```');
-    if (isCode) return seg;
-    return seg.replace(/\$\$([\s\S]*?)\$\$/g, (_m, g1) => `\\[${g1}\\]`);
-  }).join('');
-}
 
 // 衍生显示
 const createdAtLabel = computed(() =>
   post.value?.createdAt ? formatTime(String(post.value.createdAt)) : ''
 )
 const ready = computed(() => !!post.value && typeof post.value.content === 'string');
-const contentMd = computed(() => sanitizeMath(post.value?.content || ''));
+const contentMd = computed(() => post.value?.content || '');
 
 async function load() {
   loading.value = true;
   errorText.value = '';
   try {
+    const userId = User?.getInstance()?.userAuth.userId || '';
     const detail = await getPostDetail(postId);
+    if (detail.isHidden && (!userId || userId !== String(detail.userId))) {
+      window.location.href = "/404";
+    }
     const isLikedResp = await checkLike('post', postId);
     post.value = detail;
     post.value.views++;
@@ -87,23 +78,13 @@ function handleLikeCountUpdate(newCount: number) {
   likeCount.value = newCount;
 }
 
-// 处理收藏状态更新
-function handleFavoriteUpdate(newValue: boolean) {
-  isFavorited.value = newValue;
-}
-
-// 处理收藏数更新
-function handleFavoriteCountUpdate(newCount: number) {
-  favoriteCount.value = newCount;
-}
-
 // 处理评论数更新
 function handleCommentAdded() {
-  commentCount.value = (commentCount.value || 0) + 1;
+  //commentCount.value = (commentCount.value || 0) + 1;
 }
 
 function handleCommentDeleted() {
-  commentCount.value = Math.max(0, (commentCount.value || 0) - 1);
+  //commentCount.value = Math.max(0, (commentCount.value || 0) - 1);
 }
 
 // 处理错误
@@ -179,11 +160,6 @@ function handleError(error: unknown) {
 
         <!-- 分享按钮 -->
         <ShareButton :postId="postId" />
-
-        <!-- 收藏按钮 -->
-        <FavoriteButton :postId="postId" :isFavorited="isFavorited" :favoriteCount="favoriteCount" :showCount="true"
-          @update:isFavorited="handleFavoriteUpdate" @update:favoriteCount="handleFavoriteCountUpdate"
-          @error="handleError" />
       </div>
     </div>
 

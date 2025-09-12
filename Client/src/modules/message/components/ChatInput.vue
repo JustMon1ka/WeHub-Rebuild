@@ -1,13 +1,7 @@
 <template>
-  <div class="chat-input">
+  <div ref="chatInputRef" class="chat-input">
     <div class="input-tool">
-      <button
-        ref="emojiButtonRef"
-        class="emoji-button"
-        @click="showEmoji = !showEmoji"
-      >
-        😊
-      </button>
+      <button ref="emojiButtonRef" class="emoji-button" @click="showEmoji = !showEmoji">😊</button>
       <button class="image-button" @click="handleImageClick">🖼️</button>
       <input
         ref="fileInput"
@@ -18,9 +12,7 @@
       />
     </div>
     <div v-if="showEmoji" ref="emojiListRef" class="emoji-list">
-      <span v-for="emoji in emojis" :key="emoji" @click="addEmoji(emoji)">{{
-        emoji
-      }}</span>
+      <span v-for="emoji in emojis" :key="emoji" @click="addEmoji(emoji)">{{ emoji }}</span>
     </div>
     <div class="input-text">
       <textarea
@@ -48,137 +40,172 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from "vue";
+import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 
-const text = ref("");
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
-const showEmoji = ref(false);
+const text = ref('')
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const showEmoji = ref(false)
 const emojis = [
-  "😊",
-  "😂",
-  "😍",
-  "👍",
-  "🎉",
-  "😢",
-  "😡",
-  "😎",
-  "😭",
-  "😱",
-  "🤔",
-  "😴",
-  "🤗",
-  "😋",
-  "🤩",
-  "😇",
-  "🥰",
-  "😘",
-  "😉",
-  "😌",
-  "😏",
-  "😒",
-  "😞",
-  "😔",
-  "😤",
-  "😠",
-  "😡",
-  "🤬",
-  "😈",
-  "👿",
-  "💀",
-  "👻",
-];
-const fileInput = ref<HTMLInputElement | null>(null);
+  '😊',
+  '😂',
+  '😍',
+  '👍',
+  '🎉',
+  '😢',
+  '😡',
+  '😎',
+  '😭',
+  '😱',
+  '🤔',
+  '😴',
+  '🤗',
+  '😋',
+  '🤩',
+  '😇',
+  '🥰',
+  '😘',
+  '😉',
+  '😌',
+  '😏',
+  '😒',
+  '😞',
+  '😔',
+  '😤',
+  '😠',
+  '😡',
+  '🤬',
+  '😈',
+  '👿',
+  '💀',
+  '👻',
+]
+const fileInput = ref<HTMLInputElement | null>(null)
 const emit = defineEmits<{
-  sendMessage: [content: string, type: "text" | "image"];
-}>();
-const emojiListRef = ref<HTMLDivElement | null>(null);
-const emojiButtonRef = ref<HTMLButtonElement | null>(null);
+  sendMessage: [content: string, type: 'text' | 'image']
+}>()
+const emojiListRef = ref<HTMLDivElement | null>(null)
+const emojiButtonRef = ref<HTMLButtonElement | null>(null)
+const chatInputRef = ref<HTMLDivElement | null>(null)
+let resizeObserver: ResizeObserver | null = null
 
 // 自动调整高度
 function autoResize() {
   nextTick(() => {
-    const el = textareaRef.value;
-    if (el) {
-      el.style.height = "auto"; // 先重置高度
-      el.style.height = Math.min(el.scrollHeight, 120) + "px";
-      el.style.overflowY = el.scrollHeight > 120 ? "auto" : "hidden";
+    const el = textareaRef.value
+    const container = chatInputRef.value
+    if (el && container) {
+      // 获取容器高度
+      const containerHeight = container.clientHeight
+
+      // 计算可用高度（减去工具区域和发送按钮区域的高度）
+      const toolHeight = 50 // 工具区域高度（包括padding）
+      const sendButtonHeight = 50 // 发送按钮区域高度（包括padding）
+      const availableHeight = containerHeight - toolHeight - sendButtonHeight
+
+      // 设置最小高度和最大高度，添加安全边距
+      const minHeight = 40
+      const maxHeight = Math.max(availableHeight - 10, minHeight) // 减去10px安全边距
+
+      // 限制最大高度，防止溢出
+      const absoluteMaxHeight = 200 // 绝对最大高度限制
+      const finalMaxHeight = Math.min(maxHeight, absoluteMaxHeight)
+
+      el.style.height = 'auto' // 先重置高度
+      el.style.height = Math.min(el.scrollHeight, finalMaxHeight) + 'px'
+      el.style.overflowY = el.scrollHeight > finalMaxHeight ? 'auto' : 'hidden'
     }
-  });
+  })
 }
 
 onMounted(() => {
-  autoResize();
-});
+  autoResize()
+})
 
 // 插入表情
 function addEmoji(emoji: string) {
-  text.value += emoji;
-  showEmoji.value = false;
-  autoResize();
+  text.value += emoji
+  showEmoji.value = false
+  autoResize()
 }
 
 // 发送图片
 function handleImageClick() {
-  fileInput.value?.click();
+  fileInput.value?.click()
 }
 
 // 处理图片上传
 function handleImageChange(e: Event) {
-  const files = (e.target as HTMLInputElement).files;
+  const files = (e.target as HTMLInputElement).files
   if (files && files[0]) {
-    const file = files[0];
-    const reader = new FileReader();
+    const file = files[0]
+    const reader = new FileReader()
     reader.onload = () => {
-      emit("sendMessage", reader.result as string, "image");
-    };
-    reader.readAsDataURL(file);
-    (e.target as HTMLInputElement).value = "";
+      emit('sendMessage', reader.result as string, 'image')
+    }
+    reader.readAsDataURL(file)
+    ;(e.target as HTMLInputElement).value = ''
   }
 }
 
 // 发送消息
 function handleSendClick() {
   if (text.value.trim()) {
-    emit("sendMessage", text.value.trim(), "text");
-    text.value = "";
-    showEmoji.value = false;
-    autoResize();
+    emit('sendMessage', text.value.trim(), 'text')
+    text.value = ''
+    showEmoji.value = false
+    autoResize()
   }
 }
 
 // 点击外部区域隐藏表情列表
 function handleClickOutside(e: Event) {
-  const target = e.target as Element;
-  const emojiList = emojiListRef.value;
-  const emojiButton = emojiButtonRef.value;
+  const target = e.target as Element
+  const emojiList = emojiListRef.value
+  const emojiButton = emojiButtonRef.value
 
   if (showEmoji.value && emojiList && emojiButton) {
     if (!emojiList.contains(target) && !emojiButton.contains(target)) {
-      showEmoji.value = false;
+      showEmoji.value = false
     }
   }
 }
 
 onMounted(() => {
-  autoResize();
-  document.addEventListener("click", handleClickOutside);
-});
+  autoResize()
+  document.addEventListener('click', handleClickOutside)
+
+  // 监听容器大小变化
+  if (chatInputRef.value && window.ResizeObserver) {
+    resizeObserver = new ResizeObserver(() => {
+      autoResize()
+    })
+    resizeObserver.observe(chatInputRef.value)
+  }
+})
 
 onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
+  document.removeEventListener('click', handleClickOutside)
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+  }
+})
 </script>
 
 <style scoped>
 .chat-input {
   position: relative;
-  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 .input-tool {
   display: flex;
   gap: 8px;
   padding: 8px 16px 0 16px;
+  flex-shrink: 0; /* 防止工具区域被压缩 */
+  min-height: 40px; /* 确保工具区域有足够空间 */
 }
 
 .emoji-button,
@@ -206,6 +233,8 @@ onUnmounted(() => {
   padding-bottom: 8px;
   padding-left: 12px;
   padding-right: 12px;
+  min-height: 0; /* 允许flex子元素收缩 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 .input-area {
@@ -213,25 +242,23 @@ onUnmounted(() => {
   outline: none;
   width: 100%;
   min-height: 40px;
-  max-height: 100px;
   background: transparent;
   resize: none;
   font-size: 16px;
   box-sizing: border-box;
-  overflow-y: hidden;
+  overflow-y: auto; /* 允许垂直滚动 */
   transition: height 0.1s;
 }
 
 .send-button-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: 8px;
+  padding: 8px 16px 8px 0;
+  flex-shrink: 0; /* 防止发送按钮区域被压缩 */
+  min-height: 40px; /* 确保发送按钮区域有足够空间 */
 }
 
 .send-button {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
   background: #e0e0e0;
   border: none;
   border-radius: 8px;
