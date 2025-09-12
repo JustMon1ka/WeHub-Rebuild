@@ -108,7 +108,7 @@ async submitComment(commentData: CommentRequest): Promise<any> {
     console.log('📩 提交评论响应:', resp.data);
     return unwrap(resp.data);
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ 提交评论API错误详情:', error.response?.data || error);
     throw error;
   }
@@ -141,12 +141,16 @@ export async function deletePost(postId: number) {
   return unwrap(resp.data);
 }
 
-// ✅ 重点：getPostList —— 永远正确地命中 /api/posts/list
 export async function getPostList(num: number, tailPostId?: number): Promise<PostListItem[]> {
   const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts/list", {
     params: { num, lastId: tailPostId }
   });
   return unwrap<PostListItem[]>(resp.data);
+}
+
+export async function increaseViewsById(postId: number): Promise<void> {
+  await postHttp.post(`posts/${postId}/views/increment`);
+  return;
 }
 
 export async function getPosts(ids?: string, userId?: number): Promise<PostListItem[]>{

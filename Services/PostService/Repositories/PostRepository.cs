@@ -18,6 +18,7 @@ namespace PostService.Repositories
         Task<Post> InsertPostAsync(long userId, long circleId, string title, string content, List<long> tags);
         Task<List<string>> GetTagNamesByPostIdAsync(long postId);
         Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true);
+        Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default);
         /// <summary>
         /// 使用 Oracle Text CONTAINS 做全文候选检索，返回按 oracle_score 降序的候选（不做最终排序）
         /// maxCandidates: 若为 null 则返回全部 Oracle Text 命中的结果（慎用）
@@ -224,6 +225,24 @@ namespace PostService.Repositories
                 if (tagLookup.TryGetValue(p.PostId, out var tags)) p.TagNames = tags;
 
             return posts;
+        }
+        
+        public async Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default)
+        {
+            await using var ctx=_contextFactory.CreateDbContext();
+
+            // ① 原子自增（Oracle）
+            var affected=await ctx.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE POST SET VIEWS=NVL(VIEWS,0)+1 WHERE POST_ID={postId}", ct);
+            if(affected==0) return null; // 不存在该帖子
+
+            // ② 读回最新值（便于前端拿到当前阅读数；也可不返回）
+            var current=await ctx.Posts
+                .Where(p=>p.PostId==postId)
+                .Select(p=>(int?)((p.Views??0)))
+                .FirstOrDefaultAsync(ct);
+
+            return current;
         }
         
         public async Task<List<Post>> SearchCandidatesByOracleTextAsync(string query, int? maxCandidates)

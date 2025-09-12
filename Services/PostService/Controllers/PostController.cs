@@ -16,15 +16,12 @@ public class PostController : ControllerBase
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
     private readonly IShareService _shareService;
-    private readonly ILikeService _service;
 
-
-    public PostController(IPostService postService, ICommentService commentService, IShareService shareService, ILikeService service)
+    public PostController(IPostService postService, ICommentService commentService, IShareService shareService)
     {
         _postService = postService;
         _commentService = commentService;
         _shareService = shareService;
-        _service = service;
     }
 
     [HttpGet]
@@ -102,11 +99,10 @@ public class PostController : ControllerBase
             Tags = post.TagNames,
             CreatedAt = post.CreatedAt ?? DateTime.MinValue,
             Views = post.Views ?? 0,
-            Likes = post.Likes ?? 0,
-            CircleId = post.CircleId
+            Likes = post.Likes ?? 0
         };
     }
-
+    
     [HttpGet("list")]
     public async Task<BaseHttpResponse<List<PostResponse>>> List(
         [FromQuery] long? lastId,
@@ -390,7 +386,7 @@ public class PostController : ControllerBase
             return BaseHttpResponse<List<GetCommentResponse>>.Fail(500, "An error occurred.");
         }
     }
-
+    
     [HttpPost("{post_id}/share")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<BaseHttpResponse<object?>> SharePost([FromRoute] long post_id)
@@ -415,21 +411,21 @@ public class PostController : ControllerBase
         }
     }
     
-    [HttpPost("like")]
-    [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<IActionResult> LikePost([FromBody] LikeRequest request)
+    [HttpPost("{postId:long}/views/increment")]
+    [AllowAnonymous]
+    public async Task<BaseHttpResponse<object>> IncrementViews([FromRoute] long postId, CancellationToken ct)
     {
-        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-        if (userIdClaim == null)
+        try
         {
-            return (IActionResult)BaseHttpResponse<PostPublishResponse>.Fail(401, "无法从Token中提取用户信息");
+            var views=await _postService.IncrementViewsAsync(postId, ct);
+            if(views is null)
+                return BaseHttpResponse<object>.Fail(404,"Post not found");
+
+            return BaseHttpResponse<object>.Success(new{postId,views});
         }
-
-        long userId = long.Parse(userIdClaim.Value);
-
-        await _service.ToggleLikeAsync(userId, request);
-        return Ok(new { code = 200, msg = (string)null, data = (object)null });
+        catch(Exception ex)
+        {
+            return BaseHttpResponse<object>.Fail(500,"服务器内部错误："+ex.Message);
+        }
     }
-
-
 }
