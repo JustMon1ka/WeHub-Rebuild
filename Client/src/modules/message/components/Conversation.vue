@@ -15,25 +15,23 @@
     </div>
     <div class="content">
       <div class="header">
-        <span class="nickname">{{
-          props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`
-        }}</span>
+        <span class="nickname" v-html="highlightedNickname"></span>
         <span class="time">{{ diffime }}</span>
       </div>
-      <div class="newest-message">
-        {{ props.conversation.newestMessage || props.conversation.lastMessage?.Content || ' ' }}
-      </div>
+      <div class="newest-message" v-html="highlightedMessage"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { formatTime } from '../../core/utils/time'
 import type { conversation } from '../types'
 
 const props = defineProps<{
   conversation: conversation
   selected?: boolean
+  searchTerm?: string
 }>()
 
 const diffime = formatTime(
@@ -46,6 +44,27 @@ function displayUnreadCount(count: number): string {
   if (count <= 99) return count.toString()
   return '99+'
 }
+
+// 高亮搜索关键词
+function highlightSearchTerm(text: string, searchTerm: string): string {
+  if (!searchTerm || !text) return text
+
+  const regex = new RegExp(`(${searchTerm})`, 'gi')
+  return text.replace(regex, '<span class="highlight">$1</span>')
+}
+
+// 计算属性：高亮后的昵称
+const highlightedNickname = computed(() => {
+  const nickname =
+    props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`
+  return highlightSearchTerm(nickname, props.searchTerm || '')
+})
+
+// 计算属性：高亮后的最新消息
+const highlightedMessage = computed(() => {
+  const message = props.conversation.newestMessage || props.conversation.lastMessage?.Content || ' '
+  return highlightSearchTerm(message, props.searchTerm || '')
+})
 </script>
 
 <style scoped>
@@ -60,11 +79,12 @@ function displayUnreadCount(count: number): string {
 }
 
 .conversation-item:hover {
-  background: #f3f4f6;
+  background: #4b5563;
 }
 
 .conversation-item.selected {
-  background: #e0e7ff;
+  background: #374151;
+  border-left: 3px solid #3b82f6;
 }
 
 .avatar {
@@ -100,11 +120,12 @@ function displayUnreadCount(count: number): string {
 .nickname {
   font-weight: bold;
   font-size: 18px;
+  color: #ffffff;
 }
 
 .time {
   font-size: 12px;
-  color: #999;
+  color: #d1d5db;
   margin-left: 14px;
   margin-right: 8px;
 }
@@ -112,7 +133,7 @@ function displayUnreadCount(count: number): string {
 .newest-message {
   margin-top: 4px;
   font-size: 14px;
-  color: #999;
+  color: #d1d5db;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -136,5 +157,14 @@ function displayUnreadCount(count: number): string {
   justify-content: center;
   font-weight: bold;
   transform: translate(15%, -25%);
+}
+
+/* 搜索高亮样式 */
+:deep(.highlight) {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 1px 2px;
+  border-radius: 2px;
+  font-weight: bold;
 }
 </style>
