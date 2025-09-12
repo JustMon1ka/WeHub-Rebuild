@@ -16,7 +16,7 @@ public class TopicsController : ControllerBase
     [HttpGet("{tagName}")]
     public IActionResult GetTopicCount(string tagName)
     {
-        var connStr = _config.GetConnectionString("OracleDb");
+        var connStr = _config.GetConnectionString("DefaultConnection");
 
         try
         {
