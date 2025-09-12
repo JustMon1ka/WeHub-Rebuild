@@ -125,7 +125,7 @@ const dateConfig = ref({
 
         <TagSetForm v-bind:class="styles.input" tabindex="4"
                     v-model:editing="editingTags" @changed="userInfo.changed = true"
-                    v-model:selected-tags="userInfo.userTags"/>
+                    v-model:user-info="userInfo"/>
       </div>
     </form>
   </div>

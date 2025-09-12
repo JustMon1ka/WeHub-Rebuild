@@ -1,13 +1,11 @@
 import { User } from '@/modules/auth/public.ts'
 import {
-  getUserDataAPI, MEDIA_BASE_URL,
-  setUserProfileAPI, uploadMediaAPI,
-  type UserData,
-  type userProfileData
+  getUserDataAPI, setUserProfileAPI,
+  type UserData, type userProfileData
 } from '@/modules/user/scripts/UserDataAPI.ts'
 import { getTagsAPI, setTagsAPI } from '@/modules/user/scripts/UserTagAPI.ts'
-import tags from '@/modules/user/scripts/tags.json'
-import user from '@/modules/auth/scripts/User.ts'
+import { uploadMediaAPI, MEDIA_BASE_URL } from '@/modules/user/scripts/MediaAPI.ts'
+import { addTagsAPI, getTagsNameAPI, type SingleTagData } from '@/modules/user/scripts/TagAPI.ts'
 
 class UserInfo implements UserData{
   static readonly errorMsg = {
@@ -38,37 +36,6 @@ class UserInfo implements UserData{
     ["Failed to update tags", "更新标签失败"],
   ]);
 
-  static TagMap: Map<string, string> = new Map([]);
-
-  static {
-    for (const [tagGroup, tagNames] of Object.entries(tags)) {
-      for (const [tagId, tagName] of Object.entries(tagNames)) {
-        // 使用 tagGroup 作为前缀，保证 tagId 的唯一性
-        UserInfo.TagMap.set(tagId, tagName);
-      }
-    }
-  }
-
-  static async getTagName(tagId: string): Promise<string> {
-    // Get tag name by tag id, if not exist in TagMap, fetch from server
-    if (UserInfo.TagMap.has(tagId)) {
-      return UserInfo.TagMap.get(tagId) || "";
-    } else {
-      // TODO: 从服务器获取标签名
-      return "";
-    }
-  }
-
-  static async getTagId(tagName: string) {
-    for (const [id, name] of UserInfo.TagMap.entries()) {
-      if (name === tagName) {
-        return id;
-      }
-    }
-    return '';
-    // TODO: 如果 TagMap 中没有该标签名，向服务器请求获取或者创建新标签
-  }
-
   // 以下为用户信息
   userId: string;
 
@@ -95,6 +62,8 @@ class UserInfo implements UserData{
   followerCount: number = 0;  // 用户的粉丝人数
 
   userTags :Map<string, string> = new Map(); // Loading only when isMe is true
+  newTagNames: Set<string> = new Set(); // 用于存储新添加的标签名称
+  noConflictId: number = -1; // 用于生成不冲突的标签ID
 
   // 以下为状态量
   profileLoaded: boolean = false;
@@ -133,7 +102,7 @@ class UserInfo implements UserData{
     const result = await getUserDataAPI(this.userId);
     if (result.code !== 200){
       this.error = true;
-      throw new Error(result.message || UserInfo.errorMsg.DefaultError);
+      throw new Error(result.msg || UserInfo.errorMsg.DefaultError);
     }
     const userProfile: UserData = result.data;
 
@@ -169,13 +138,21 @@ class UserInfo implements UserData{
   async loadTags() {
     const result = await getTagsAPI(this.userId);
     if (result.code !== 200) {
-      throw new Error(result.message || UserInfo.errorMsg.DefaultError);
+      throw new Error(result.msg || UserInfo.errorMsg.DefaultError);
     }
-    for (const tag of result.data.tags) {
-      const tagName = await UserInfo.getTagName(tag.toString());
-      if (tagName) {
-        this.userTags.set(tag.toString(), tagName);
-      }
+
+    if (result.data.tags.length === 0) {
+      this.tagsLoaded = true;
+      return;
+    }
+
+    const tagResult = await getTagsNameAPI(result.data.tags);
+    if (tagResult.code !== 200) {
+      throw new Error(tagResult.msg || UserInfo.errorMsg.DefaultError);
+    }
+
+    for (const tag of tagResult.data) {
+      this.userTags.set(tag.tagId.toString(), tag.tagName);
     }
     this.tagsLoaded = true;
   }
@@ -195,8 +172,26 @@ class UserInfo implements UserData{
     copyUserInfo.location = this.location;
     copyUserInfo.bio = this.bio;
 
-    copyUserInfo.userTags = new Map(this.userTags);
+    copyUserInfo.userTags = new Map(JSON.parse(JSON.stringify(Array.from(this.userTags))));
     return copyUserInfo;
+  }
+
+  addTag(newTagName: string) {
+    for (const tagName of this.userTags.values()) {
+      if (tagName === newTagName) {
+        return;
+      }
+    }
+    this.newTagNames.add(newTagName);
+    this.userTags.set(this.noConflictId.toString(), newTagName);
+    this.noConflictId -= 1;
+  }
+
+  removeTag(oldTagId: string, oldTagName: string) {
+    if (this.newTagNames.has(oldTagName)) {
+      this.newTagNames.delete(oldTagName);
+    }
+    this.userTags.delete(oldTagId);
   }
 
   async updateProfile() {
@@ -231,9 +226,7 @@ class UserInfo implements UserData{
         bio: this.bio
       })
 
-      await setTagsAPI(this.userId, {
-        tags: [...this.userTags.keys()].map((tagId) => Number(tagId)),
-      });
+      await this.updateTags();
       this.error = false;
       this.errorMsg = '';
       return true;
@@ -255,7 +248,6 @@ class UserInfo implements UserData{
 
     try {
       const result = await uploadMediaAPI(this.userId, file);
-      console.log(result);
       if (type === 'avatar') {
         this.avatarId = result.data.fileId;
         this.avatarUrl = this.avatarId ? `${MEDIA_BASE_URL}/${this.avatarId}` : '';
@@ -272,18 +264,33 @@ class UserInfo implements UserData{
   }
 
   async updateTags() {
-    try {
-      console.log(...this.userTags.values());
-      const result = await setTagsAPI(this.userId, {
-        tags: [...this.userTags.keys()].map((tagId) => Number(tagId)),
-      });
-    } catch (error : any) {
-      this.handleError(error);
+    const tagId: Set<number> = new Set();
+    for (const tag of this.userTags.keys()){
+      if (Number(tag) > 0) {
+        tagId.add(Number(tag));
+      }
+    }
+
+    if (this.newTagNames.size !== 0) {
+      const tagResult = await addTagsAPI([...this.newTagNames]); // 添加新标签
+      if (tagResult.code !== 200) {
+        throw new Error(tagResult.msg || UserInfo.errorMsg.DefaultError);
+      }
+      for (const tag of tagResult.data)
+        tagId.add(tag.tagId);
+    }
+
+    const result = await setTagsAPI(this.userId, {
+      tags: [...tagId]
+    });
+    if (result.code !== 200) {
+      throw new Error(result.msg || UserInfo.errorMsg.DefaultError);
     }
   }
 
   handleError(error: any) {
     this.error = true;
+    console.error(error);
     if (error.message && UserInfo.msgTranslation.has(error.message)) {
       this.errorMsg = UserInfo.msgTranslation.get(error.message) || UserInfo.errorMsg.DefaultError;
     } else {

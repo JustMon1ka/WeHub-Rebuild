@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import icons from '@/modules/user/scripts/icon.ts'
-import tags from '@/modules/user/scripts/tags.json' // TODO: 这里需要替换为实际的标签id
+import tags from '@/modules/user/scripts/tags.json'
 import type { Ref } from 'vue'
 
 const counter = defineModel<number>(
