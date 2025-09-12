@@ -1,6 +1,6 @@
 <template>
   <input
-    class="search-input"
+    class="search-input bg-slate-800 focus:bg-slate-700 rounded-xl"
     :value="modelValue"
     @input="handleInputChange"
     type="text"
@@ -31,8 +31,7 @@ const handleInputChange = (event: Event) => {
   max-width: 100%;
   margin: 16px 32px;
   padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #6b7280;
   font-size: 14px;
   box-sizing: border-box;
 }

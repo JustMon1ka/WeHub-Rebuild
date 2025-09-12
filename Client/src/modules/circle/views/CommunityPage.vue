@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- 顶部导航 -->
-    <NavBar />
-
     <!-- 主要内容 -->
     <div class="main-container">
       <!-- 中间主内容区 -->
@@ -149,7 +146,7 @@
 
       <!-- 右侧边栏 -->
       <aside class="right-sidebar">
-        <div class="sidebar-content">
+        <div class="sidebar-content space-y-6">
           <!-- 热门社区 -->
           <div class="sidebar-card">
             <h2 class="sidebar-title">热门社区</h2>
@@ -194,7 +191,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import NavBar from '../components/NavBar.vue'
 import { CircleAPI, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
 import request from '../utils/request.ts'

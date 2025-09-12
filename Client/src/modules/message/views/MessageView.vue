@@ -1,17 +1,14 @@
 <template>
-  <div class="page-content-wrapper">
+  <div class="flex md:flex-row flex-col h-full">
     <!-- 中间内容 -->
-    <div class="divider-vertical"></div>
+    <div class="divider-vertical "></div>
     <div class="center" :style="{ width: centerWidth + '%' }">
-      <div class="divider-horizontal"></div>
-      <div class="message-heading">
-        <h2>私信</h2>
-      </div>
-      <div class="divider-horizontal"></div>
+
       <div class="message-search">
         <SearchInput v-model="searchText" placeholder="🔍搜索" />
       </div>
       <div class="divider-horizontal"></div>
+
       <!-- 搜索结果 -->
       <div class="message-list">
         <div v-if="loading" class="loading">加载中...</div>
@@ -88,7 +85,9 @@
       <div class="divider-horizontal"></div>
     </div>
     <div class="resizer" @mousedown="startResize" :class="{ resizing: isResizing }"></div>
+
     <div class="divider-vertical"></div>
+
     <div class="right" :style="{ width: rightWidth + '%' }">
       <div class="divider-horizontal"></div>
       <div class="chat-header">
@@ -96,7 +95,7 @@
       </div>
       <div class="divider-horizontal"></div>
       <!-- 聊天窗口 -->
-      <div class="chat-window" :style="{ height: chatWindowHeight + '%' }">
+      <div class="chat-window bg-slate-800" :style="{ height: chatWindowHeight + '%' }">
         <div class="chat-content">
           <ChatMessage
             v-for="message in currentChatHistory"
@@ -108,14 +107,16 @@
           />
         </div>
       </div>
+
       <div
         class="horizontal-resizer"
         @mousedown="startHorizontalResize"
         :class="{ resizing: isHorizontalResizing }"
       ></div>
       <div class="divider-horizontal"></div>
+
       <!-- 聊天输入框 -->
-      <div class="chat-input" :style="{ height: chatInputHeight + '%' }">
+      <div class="chat-input bg-slate-800" :style="{ height: chatInputHeight + '%' }">
         <ChatInput @sendMessage="handleSendMessage" />
       </div>
       <div class="divider-horizontal"></div>
@@ -155,7 +156,7 @@ const error = ref<string | null>(null)
 
 // 拖动分割线相关状态
 const centerWidth = ref(22) // 中间面板宽度百分比
-const rightWidth = ref(58) // 右侧面板宽度百分比
+const rightWidth = ref(78) // 右侧面板宽度百分比
 const isResizing = ref(false)
 
 // 水平拖动相关状态
@@ -739,12 +740,6 @@ const startHorizontalResize = (e: MouseEvent) => {
 
 
 <style scoped>
-.page-content-wrapper {
-  display: flex;
-  flex-direction: row;
-  padding: 20px 0;
-  min-height: calc(100vh - 40px);
-}
 
 .center {
   min-width: 200px;
@@ -754,24 +749,15 @@ const startHorizontalResize = (e: MouseEvent) => {
   word-break: break-word;
 }
 
-.message-heading {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  font-size: 20px;
-  font-weight: bold;
-  padding-left: 32px;
-}
-
 .message-search {
-  flex: 1;
+  flex: 8;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .message-list {
-  flex: 11;
+  flex: 84;
 }
 
 .right {
@@ -789,6 +775,7 @@ const startHorizontalResize = (e: MouseEvent) => {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  background: linear-gradient(135deg, #1f2937 0%, #485a60 100%);
 }
 
 .chat-content {
@@ -798,7 +785,7 @@ const startHorizontalResize = (e: MouseEvent) => {
 
 .divider-horizontal {
   width: 100%;
-  border-bottom: 1px solid #444c5c;
+  border-bottom: 1px solid #323345;
 }
 
 .divider-vertical {
@@ -888,9 +875,6 @@ const startHorizontalResize = (e: MouseEvent) => {
 }
 
 @media (max-width: 768px) {
-  .page-content-wrapper {
-    flex-direction: column;
-  }
 
   .center {
     width: 100% !important;

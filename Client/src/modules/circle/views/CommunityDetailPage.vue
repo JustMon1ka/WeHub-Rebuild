@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <!-- 顶部导航 -->
-    <NavBar />
+  <div class="overflow-auto h-dvh">
     <!-- 主要内容 -->
     <div class="main-container">
       <!-- 中间主内容区 -->
@@ -225,7 +223,7 @@
 
       <!-- 右侧边栏 -->
       <aside class="right-sidebar">
-        <div class="sidebar-content">
+        <div class="sidebar-content space-y-6">
           <!-- 社区信息 -->
           <div class="sidebar-card">
             <h2 class="sidebar-title">关于社区</h2>
@@ -343,7 +341,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import NavBar from '../components/NavBar.vue'
 import { CircleAPI, getSpuPage, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
 import ActivityList from '../components/ActivityList.vue'
@@ -902,7 +899,6 @@ onMounted(() => {
   background: #1e293b; /* slate-800 */
   border-radius: 12px;
   border: 1px solid #334155; /* slate-700 */
-  overflow: hidden;
 }
 
 .community-header-section {
@@ -912,7 +908,6 @@ onMounted(() => {
 .community-banner {
   height: 192px;
   background: #334155; /* slate-700 */
-  overflow: hidden;
 }
 
 .community-banner img {
@@ -1183,7 +1178,6 @@ onMounted(() => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .post-meta {

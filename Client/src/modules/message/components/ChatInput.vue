@@ -259,20 +259,22 @@ onUnmounted(() => {
 }
 
 .send-button {
-  background: #e0e0e0;
+  background: #00aeec;
   border: none;
   border-radius: 8px;
   padding: 8px 18px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: 600;
+  transition: background 0.2s;
 }
 
 .send-button.active {
-  background: #4fc3f7;
+  background: #00aeec;
 }
 
 .send-button:disabled {
-  background: #e0e0e0;
+  background: #5a6478;
   cursor: not-allowed;
 }
 
