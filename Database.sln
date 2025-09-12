@@ -65,6 +65,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gateway", "Gateway\Gateway.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserTagService.Tests", "Services\Tests\UserTagService.Tests\UserTagService.Tests.csproj", "{4ED42944-CC4F-4697-B41A-D8650581B9AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyBackend", "Services\FoundingService\MyBackend.csproj", "{35DE0A20-9A50-4411-A0A2-51255EB14C8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -183,6 +185,10 @@ Global
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -217,6 +223,7 @@ Global
 		{C93F6C21-8233-4B82-9F9A-6706AE205794} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}
 		{848DDE97-D8D2-4114-8AD6-A8F4EF0A81E9} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}
+		{35DE0A20-9A50-4411-A0A2-51255EB14C8C} = {1D4447C9-B73F-4590-AB1D-F9C9834FE738}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB} = {AB83FBD6-20F7-4734-BA4D-7DE17705DAA3}

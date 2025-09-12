@@ -39,7 +39,6 @@ const emit = defineEmits<{
 
 const { currentUser } = useAuthState();
 const isLiked = ref(false);
-const likeCount = ref(0);
 
 
 const isCurrentUser = computed(() => {

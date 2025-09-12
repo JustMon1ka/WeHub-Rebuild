@@ -8,13 +8,13 @@ const routes: RouteRecordRaw[] = [
     path: "/founding",
     name: "founding",
     component: FoundingView,
-    meta: { title: "发现", navi: true, recommend: false, requireLogin: false },
+    meta: { title: "发现", navi: true, recommend: false, requireLogin: true },
   },
   {
     path: "/topic/:topic",   // ✅ param 名叫 topic
     name: "topicDetail",
     component: TopicDetailView,
-    meta: { title: "话题详情", navi: false, recommend: false, requireLogin: false },
+    meta: { title: "话题详情", navi: false, recommend: false, requireLogin: true },
   }
 ]
 
