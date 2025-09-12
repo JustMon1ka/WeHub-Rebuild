@@ -160,17 +160,17 @@ class UserInfo implements UserData{
   copy(copyUserInfo: UserInfo = new UserInfo(this.userId, true)): UserInfo {
     // 只需要复制可编辑的字段，
     // 假如传入了一个 UserInfo 实例，则复制到该实例中，防止放弃编辑时错误修改原主页内容
-    copyUserInfo.userId = this.userId;
-    copyUserInfo.isMe = this.isMe;
-    copyUserInfo.username = this.username;
+    copyUserInfo.userId = JSON.parse(JSON.stringify(this.userId));
+    copyUserInfo.isMe = JSON.parse(JSON.stringify(this.isMe));
+    copyUserInfo.username = JSON.parse(JSON.stringify(this.username));
 
-    copyUserInfo.profileUrl = this.profileUrl;
-    copyUserInfo.avatarUrl = this.avatarUrl;
+    copyUserInfo.profileUrl = JSON.parse(JSON.stringify(this.profileUrl));
+    copyUserInfo.avatarUrl = JSON.parse(JSON.stringify(this.avatarUrl));
 
-    copyUserInfo.nickname = this.nickname;
-    copyUserInfo.birthday = this.birthday;
-    copyUserInfo.location = this.location;
-    copyUserInfo.bio = this.bio;
+    copyUserInfo.nickname = JSON.parse(JSON.stringify(this.nickname));
+    copyUserInfo.birthday = JSON.parse(JSON.stringify(this.birthday));
+    copyUserInfo.location = JSON.parse(JSON.stringify(this.location));
+    copyUserInfo.bio = JSON.parse(JSON.stringify(this.bio));
 
     copyUserInfo.userTags = new Map(JSON.parse(JSON.stringify(Array.from(this.userTags))));
     return copyUserInfo;

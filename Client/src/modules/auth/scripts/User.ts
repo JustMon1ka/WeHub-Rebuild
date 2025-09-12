@@ -8,6 +8,7 @@ import {
   verifyCodeAPI
 } from '@/modules/auth/scripts/UserAuthAPI.ts'
 import { setUserAuthDataAPI } from '@/modules/user/scripts/UserDataAPI.ts'
+import { ref, type Ref } from 'vue'
 
 interface resultState {
   success: boolean;
@@ -200,7 +201,7 @@ class User {
   refreshTimer: any;
   followingList: Set<string> = new Set<string>();
   followerList: Set<string> = new Set<string>();
-  userInfo: UserInfo | undefined = undefined;
+  userInfo: Ref<UserInfo>;
 
   // 工厂函数，用于创建用户实例，并在创建前检查错误
   static async create(token: string, tokenType: 'session' | 'auth') {
@@ -247,11 +248,10 @@ class User {
         }
       }
     }, User.CHECK_INTERVAL, { immediate: true }); // 每5分钟检查一次
+    this.userInfo = ref(new UserInfo(this.#userId));
 
     setTimeout(async () => {
-      this.userInfo = new UserInfo(userid, false);
-      this.userInfo.isMe = true; // 显示指定，因为此时用户实例尚未创建完成，拿不到userid
-      await this.userInfo.loadUserData();
+      await this.userInfo.value.loadUserData();
     }, 0);
   }
 
@@ -275,19 +275,14 @@ class User {
     }
   }
 
-  async reloadUserInfo() {
-    this.userInfo = new UserInfo(this.#userId);
-    await this.userInfo.loadUserData();
-  }
-
   async resetPassword(newPassword: string): Promise<resultState> {
     try {
       const passwordHash = await User.generateHash(newPassword);
       const result = await setUserAuthDataAPI(this.#userId , {
-        username: this.userInfo?.username || '',
+        username: this.userInfo.value?.username || '',
         password: passwordHash,
-        email: this.userInfo?.email || '',
-        phone: this.userInfo?.phone || '',
+        email: this.userInfo.value?.email || '',
+        phone: this.userInfo.value?.phone || '',
       });
 
       return {

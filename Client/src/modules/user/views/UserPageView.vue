@@ -79,12 +79,10 @@ function onCancel(){
 }
 
 function onSave(){
-  userInfo.value = new UserInfo(userId);
-  userInfo.value.loadUserData(); // 重新加载用户数据
+  userInfoTemp.value.copy(userInfo.value);
   editMode.value = false;
-  tempCopied.value = false;
   if (userInfo.value.isMe) {
-    User.getInstance()?.reloadUserInfo();
+    User.getInstance().userInfo.value = userInfo.value;
   }
 }
 </script>
