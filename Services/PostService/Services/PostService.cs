@@ -18,6 +18,7 @@ namespace PostService.Services
         Task<List<SearchSuggestResponse>> GetSearchSuggestionsAsync(string? keyword, int limits);
         Task<List<Post>> GetPostsByUserIdAsync(long userId);
         Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true);
+        Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default);
     }
     
     public class PostService : IPostService
@@ -262,5 +263,8 @@ namespace PostService.Services
             }
             return await _postRepository.GetPagedAsync(lastId, num, desc);
         }
+        
+        public Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default)
+            => _postRepository.IncrementViewsAsync(postId, ct);
     }
 }

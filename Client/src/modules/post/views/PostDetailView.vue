@@ -6,7 +6,7 @@ import LikeButton from '@/modules/post/components/LikeButton.vue';
 import ShareButton from '@/modules/post/components/ShareButton.vue';
 import FavoriteButton from '@/modules/post/components/FavoriteButton.vue';
 import CommentList from '@/modules/post/components/CommentList.vue'; // 导入评论组件
-import { getPostDetail } from '@/modules/post/api';
+import { getPostDetail, increaseViewsById } from '@/modules/post/api';
 import type { PostDetail } from '@/modules/post/types';
 import UserInfo from '@/modules/user/scripts/UserInfo';
 import { formatTime } from '@/modules/core/utils/time';
@@ -52,6 +52,7 @@ async function load() {
   try {
     const detail = await getPostDetail(postId);
     post.value = detail;
+    post.value.views++;
     likeCount.value = detail.likes || 0;
     author.value = new UserInfo(String(detail.userId));
     await author.value.loadUserData();
@@ -60,6 +61,7 @@ async function load() {
     errorText.value = e?.message || '加载失败，请稍后重试';
   } finally {
     loading.value = false;
+    await increaseViewsById(postId);
   }
 }
 function reload() { load(); }
