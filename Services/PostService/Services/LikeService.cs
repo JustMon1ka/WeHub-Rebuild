@@ -59,6 +59,18 @@ namespace PostService.Services
                     await _likeRepository.DecrementLikeCountAsync(postId);
                 }
             }
+            else if (changed && like.TargetType == "post")
+            {
+                var commentId = Convert.ToInt64(like.TargetId);
+                if (like.IsLike)
+                {
+                    await _likeRepository.IncrementLikeCommentCountAsync(commentId);
+                }
+                else
+                {
+                    await _likeRepository.DecrementLikeCommentCountAsync(commentId);
+                }
+            }
         }
 
         public async Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId)
