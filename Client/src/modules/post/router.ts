@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import PostDetailView from './views/PostDetailView.vue'
+import EditPostView from './views/EditPostView.vue'
 import TestLikeFavoriteView from './views/TestLikeFavoriteView.vue'
 
 const routes: RouteRecordRaw[] = [
@@ -8,6 +9,12 @@ const routes: RouteRecordRaw[] = [
     name: 'PostDetail',
     component: PostDetailView,
     meta: { title: '帖子详情', navi: true, recommend: true },
+  },
+  {
+    path: "/post/edit/:id",
+    name: "EditPost",
+    component: EditPostView,
+    meta: { title: "修改帖子", navi: true, recommend: true }
   },
   {
     path: '/test-like-favorite',
