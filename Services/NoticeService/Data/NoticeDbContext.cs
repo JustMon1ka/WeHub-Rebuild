@@ -18,12 +18,25 @@ namespace NoticeService.Data
             modelBuilder.Entity<Reply>()
                 .HasKey(r => r.ReplyId);
             modelBuilder.Entity<Reply>()
-                .HasIndex(r => new { r.TargetUserId, r.IsDeleted, r.CreatedAt });
+                .HasIndex(r => new { r.TargetUserId, r.IsDeletedNumber, r.CreatedAt });
+
+            // 配置Reply的IsDeleted字段类型转换
+            modelBuilder.Entity<Reply>()
+                .Property(r => r.IsDeletedNumber)
+                .HasColumnName("IS_DELETED")
+                .HasColumnType("NUMBER(1)")
+                .HasConversion<int>();
 
             modelBuilder.Entity<Like>()
                 .HasKey(l => new { l.UserId, l.TargetType, l.TargetId });
             modelBuilder.Entity<Like>()
-                .HasIndex(l => new { l.TargetType, l.TargetId, l.CreatedAt });
+                .HasIndex(l => new { l.TargetType, l.TargetId, l.LikeTime });
+
+            // 配置Like实体的字段映射
+            modelBuilder.Entity<Like>()
+                .Property(l => l.LikeTime)
+                .HasColumnName("LIKE_TIME")
+                .HasColumnType("DATETIME");
 
             modelBuilder.Entity<Repost>()
                 .HasKey(rp => rp.RepostId);
@@ -34,10 +47,18 @@ namespace NoticeService.Data
                 .HasKey(m => new { m.UserId, m.TargetType, m.TargetId });
             modelBuilder.Entity<Mention>()
                 .HasIndex(m => new { m.TargetUserId, m.CreatedAt });
+
             modelBuilder.Entity<Comment>()
                 .HasKey(c => c.CommentId);
             modelBuilder.Entity<Comment>()
-                .HasIndex(c => new { c.TargetUserId, c.IsDeleted, c.CreatedAt });
+                .HasIndex(c => new { c.TargetUserId, c.IsDeletedNumber, c.CreatedAt });
+
+            // 配置Comment的IsDeleted字段类型转换
+            modelBuilder.Entity<Comment>()
+                .Property(c => c.IsDeletedNumber)
+                .HasColumnName("IS_DELETED")
+                .HasColumnType("NUMBER(1)")
+                .HasConversion<int>();
         }
     }
 }

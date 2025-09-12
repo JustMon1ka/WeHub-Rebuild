@@ -26,7 +26,9 @@ namespace MessageService.Data
 
             modelBuilder.Entity<Message>()
                 .Property(m => m.IsRead)
-                .HasColumnType("BOOLEAN");
+                .HasColumnName("IS_READ")
+                .HasColumnType("NUMBER(1)")
+                .HasConversion<int>();
         }
     }
 }
