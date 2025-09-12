@@ -6,15 +6,15 @@
       @submitted="handleCommentSubmitted"
       @cancel-reply="currentReply = undefined"
     />
-    
+
     <div v-if="loading" class="p-4 text-center text-slate-400">
       加载中...
     </div>
-    
+
     <div v-else-if="comments.length === 0" class="p-4 text-center text-slate-400">
       暂无评论
     </div>
-    
+
     <template v-else>
       <div v-for="comment in comments" :key="comment.comment_id || comment.reply_id">
         <!-- 主评论 -->
@@ -24,9 +24,9 @@
           @delete="handleDelete"
           @update:comment="handleCommentUpdate"
         />
-        
+
         <!-- 嵌套回复 -->
-        <div v-if="comment.replies && comment.replies.length > 0" 
+        <div v-if="comment.replies && comment.replies.length > 0"
              class="ml-12 pl-4 border-l-2 border-slate-800 space-y-4">
           <CommentItem
             v-for="reply in comment.replies"
@@ -89,32 +89,45 @@ const totalCommentCount = computed(() => {
 
 const loadComments = async () => {
   loading.value = true;
-  
   try {
     const response = await axios.get('/posts/comments', {
       params: { postId: props.postId }
     });
-    
+
     console.log('📦 API原始响应:', response.data);
-    
-    if (response.data && response.data.code === 200) {
-      if (Array.isArray(response.data.data)) {
-        // 检查第一条评论的用户信息
-        if (response.data.data.length > 0) {
-          const firstComment = response.data.data[0];
-          console.log('👤 用户信息详情:', {
-            userName: firstComment.userName,
-            avatarUrl: firstComment.avatarUrl,
-            userId: firstComment.userId
-          });
+
+    if (response.data && response.data.code === 200 && Array.isArray(response.data.data)) {
+
+      const rawData = response.data.data;
+      const processedComments: Comment[] = [];
+      let lastComment: Comment | null = null; // 用于追踪最近的一个主评论
+
+      rawData.forEach(item => {
+        // 先使用您已有的转换函数将后端数据转换为前端格式
+        const formattedItem = convertCommentResponseToFrontend(item);
+
+        if (item.type === 0) {
+          // 这是一个主评论
+          // 为其初始化一个空的 replies 数组，以备后续添加回复
+          formattedItem.replies = [];
+          processedComments.push(formattedItem);
+          // 更新 lastComment，使其指向当前这个主评论
+          lastComment = formattedItem;
+        } else if (item.type === 1 && lastComment) {
+          // 这是一个回复，并且我们已经有了一个可以归属的主评论
+          // 根据规则，将其添加到最近一个主评论的 replies 数组中
+          lastComment.replies.push(formattedItem);
         }
-        
-        // 使用转换函数
-        comments.value = response.data.data.map(convertCommentResponseToFrontend);
-        console.log('✅ 转换后的评论:', comments.value);
-      }
+      });
+
+      comments.value = processedComments;
+      console.log('✅ 转换并嵌套后的评论:', comments.value);
+
+    } else {
+      // 处理空数据或错误码的情况
+      comments.value = [];
     }
-    
+
   } catch (error) {
     console.error('❌ 加载评论失败:', error);
   } finally {
@@ -131,11 +144,11 @@ const handleNestedReply = (reply: Comment) => {
 };
 
 const handleDelete = (comment: Comment) => {
-  const index = comments.value.findIndex(c => 
+  const index = comments.value.findIndex(c =>
     (c.comment_id && c.comment_id === comment.comment_id) ||
     (c.reply_id && c.reply_id === comment.reply_id)
   );
-  
+
   if (index !== -1) {
     comments.value.splice(index, 1);
     emit('comment-deleted', totalCommentCount.value);
@@ -144,11 +157,11 @@ const handleDelete = (comment: Comment) => {
 };
 
 const handleCommentUpdate = (updatedComment: Comment) => {
-  const index = comments.value.findIndex(c => 
+  const index = comments.value.findIndex(c =>
     (c.comment_id && c.comment_id === updatedComment.comment_id) ||
     (c.reply_id && c.reply_id === updatedComment.reply_id)
   );
-  
+
   if (index !== -1) {
     comments.value[index] = updatedComment;
     emit('comment-updated', updatedComment);
