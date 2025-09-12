@@ -6,7 +6,7 @@ export type ToggleLikeRequest = {
 };
 
 export type ToggleLikeResponse = {
-  liked: boolean;    // 当前状态，true=已点赞，false=未点赞
+  Liked: boolean;    // 当前状态，true=已点赞，false=未点赞
 };
 
 // 标准响应

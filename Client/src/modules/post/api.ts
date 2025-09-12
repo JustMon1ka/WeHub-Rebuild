@@ -1,7 +1,8 @@
 import axios from 'axios';
-import type { PostDetail } from "./types";
+import type { PostDetail, ToggleLikeResponse} from "./types";
 import { unwrap } from "./types";
 import { useAuthState } from './utils/useAuthState';
+
 import type {
   ToggleLikeRequest,
   BaseResp,
@@ -165,7 +166,7 @@ postHttp.interceptors.request.use(cfg => {
 });
 
 export async function checkLike(type: 'post' | 'comment' | 'reply', targetId: number): Promise<boolean> {
-  const resp = await axios.post<BaseResp<{ liked: boolean }>>("/posts/CheckLike", { params:{ type, targetId } });
-  const data = unwrap<{ liked: boolean }>(resp.data);
-  return data.liked;
+  const resp = await axios.post<BaseResp<{ liked: boolean }>>("/posts/CheckLike", { type, targetId });
+  const data = unwrap<ToggleLikeResponse>(resp.data);
+  return data.isLiked;
 }

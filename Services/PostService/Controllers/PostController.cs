@@ -448,24 +448,24 @@ public class PostController : ControllerBase
 
     [HttpPost("CheckLike")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<BaseHttpResponse<List<CheckLikeResponse>>> CheckLike([FromBody] LikeRequest request)
+    public async Task<BaseHttpResponse<CheckLikeResponse>> CheckLike([FromBody] CheckLikeRequest request)
     {
         try
         {
             var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             if (userIdClaim == null)
             {
-                return BaseHttpResponse<List<CheckLikeResponse>>.Fail(401, "未认证的用户");
+                return BaseHttpResponse<CheckLikeResponse>.Fail(401, "未认证的用户");
             }
 
             var userId = long.Parse(userIdClaim.Value);
             var isLiked = await _likeService.GetLikeStatusAsync(userId, request.Type, request.TargetId);
             var response = new { isLiked };
-            return BaseHttpResponse<List<CheckLikeResponse>>.Success(new List<CheckLikeResponse> { new CheckLikeResponse { IsLiked = isLiked } });
+            return BaseHttpResponse<CheckLikeResponse>.Success(new CheckLikeResponse { IsLiked = isLiked });
         }
         catch (Exception ex)
         {
-            return BaseHttpResponse<List<CheckLikeResponse>>.Fail(500, "服务器内部错误：" + ex.Message);
+            return BaseHttpResponse<CheckLikeResponse>.Fail(500, "服务器内部错误：" + ex.Message);
         }
     }
 }
