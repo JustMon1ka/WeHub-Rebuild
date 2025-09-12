@@ -54,14 +54,14 @@ watch( () => userId_p, (newId, oldId) => {
       }
     }
     userInfo = ref<UserInfo>(new UserInfo(userId));
+    editMode.value = false;
+    followMode.value = false;
+    followTab.value = 0;
+    userInfoTemp.value = null;
+    tempCopied.value = false;
+    Tabs.switchTab(0);
     userInfo.value.loadUserData(); // 加载用户数据，必须在Ref包裹后调用，否则会丧失profileLoaded的响应性。
   }
-  editMode.value = false;
-  followMode.value = false;
-  followTab.value = 0;
-  userInfoTemp.value = undefined;
-  tempCopied.value = false;
-  Tabs.switchTab(0);
 }, { immediate: true });
 
 watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
@@ -140,8 +140,7 @@ function onSave(){
       <div v-for="( tab , index) in Tabs.tablabels" :key="index">
         <div v-show="Tabs.currentTab === index">
           <!-- 内容切换 Tab -->
-          <!--<privacy-view :key="'post'+index+userId"/>-->
-          <MyPostList />
+          <MyPostList/>
         </div>
       </div>
     </div>

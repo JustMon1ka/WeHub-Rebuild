@@ -56,7 +56,7 @@ namespace ReportService.Models
         [NotMapped]
         public ReportStatus Status { get; set; } = ReportStatus.Pending;  // 代码层面管理状态
 
-        [ForeignKey("ReporterId")]
-        public virtual User Reporter { get; set; }
+        // [ForeignKey("ReporterId")]
+        // public virtual User Reporter { get; set; }
     }
 }

@@ -200,8 +200,8 @@ const getCurrentUserInfo = () => {
   if (userInstance) {
     return {
       userId: userInstance.userAuth?.userId,
-      username: userInstance.userInfo?.username,
-      email: userInstance.userInfo?.email,
+      username: userInstance.userInfo?.value.username,
+      email: userInstance.userInfo?.value.email,
     }
   }
   return null

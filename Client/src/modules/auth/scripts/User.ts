@@ -207,8 +207,8 @@ class User {
   static async create(token: string, tokenType: 'session' | 'auth') {
     try {
       User.loading = true;
-      if (User.#singleton) return
-      if (!token) return
+      if (User.#singleton) return;
+      if (!token) return;
 
       if (tokenType === 'auth') {
         token = await User.getSessionToken(token)
