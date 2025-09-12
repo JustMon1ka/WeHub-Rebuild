@@ -5,19 +5,13 @@ const routes: RouteRecordRaw[] = [
     path: '/post/:id',
     name: 'PostDetail',
     component: () => import('./views/PostDetailView.vue'),
-    meta: { title: '帖子详情', navi: true, recommend: true },
+    meta: { title: '帖子详情', navi: true, recommend: true, requireLogin: false },
   },
   {
     path: "/post/edit/:id",
     name: "EditPost",
     component: () => import("./views/EditPostView.vue"),
-    meta: { title: "修改帖子", navi: true, recommend: true }
-  },
-  {
-    path: '/test-like-favorite',
-    name: 'TestLikeFavorite',
-    component: () => import('./views/TestLikeFavoriteView.vue'),
-    meta: { title: '测试点赞收藏' },
+    meta: { title: "修改帖子", navi: true, recommend: true, requireLogin: true },
   },
 ]
 

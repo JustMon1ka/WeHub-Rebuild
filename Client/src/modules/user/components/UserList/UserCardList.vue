@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 import UserCardHover from '@/modules/user/components/UserList/UserCardHover.vue'
-import { ref, shallowRef, watch } from 'vue'
+import { ref } from 'vue'
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
 import FollowButton from '@/modules/user/components/UserList/FollowButton.vue'
 

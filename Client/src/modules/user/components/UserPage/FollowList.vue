@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import UserList from '@/modules/user/components/UserList/UserList.vue'
 import TabController, { type TabLabel } from '@/modules/user/scripts/TabController.ts'
-import { User } from '@/modules/auth/public.ts'
 import { watch } from 'vue'
-import router from '@/router.ts'
-import { toggleLoginHover } from '@/router.ts'
 import { getFollowerAPI, getFollowingAPI } from '@/modules/user/scripts/FollowAPI.ts'
 
 const { userId, nickName } = defineProps<{

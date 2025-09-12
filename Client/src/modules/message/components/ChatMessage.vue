@@ -167,8 +167,8 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.my-message router-link,
-.other-message router-link {
+.my-message .router-link,
+.other-message .router-link {
   display: contents;
 }
 

@@ -215,7 +215,7 @@
     </div>
   </div>
 </template>
-  
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -350,7 +350,7 @@ onMounted(() => {
   fetchReportTargetInfo()
 })
 </script>
-  
+
 <style scoped>
 .report-dialog-overview {
   position: fixed;
@@ -439,7 +439,7 @@ onMounted(() => {
 .report-reason-discription {
   width: 100%;
   height: 60px;
-  border: 1.5px solid #ddd;
+  border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 12px;
 }

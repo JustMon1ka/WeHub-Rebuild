@@ -46,7 +46,6 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import type { Comment } from '../types';
-import { postService } from '../api';
 import CommentItem from './CommentItem.vue';
 import CommentForm from './CommentForm.vue';
 import { convertCommentResponseToFrontend } from '../types';

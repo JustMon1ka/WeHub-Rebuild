@@ -146,7 +146,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { Activity, CreateActivityRequest, UpdateActivityRequest } from '../types'
-import { activityApi, CircleAPI } from '../api'
+import { activityApi } from '../api'
 
 interface Props {
   circleId: number

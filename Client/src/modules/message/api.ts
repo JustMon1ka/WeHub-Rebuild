@@ -1,7 +1,6 @@
 import axios from 'axios'
 import type {
     conversationListResponse,
-    chatHistoryResponse,
     sendMessageResponse,
     conversationList,
     message,

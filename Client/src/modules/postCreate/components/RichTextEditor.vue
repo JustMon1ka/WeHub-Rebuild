@@ -98,11 +98,10 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import { visitParents , SKIP } from 'unist-util-visit-parents';
-import type { Link, Heading, Strong, Emphasis, InlineCode, Delete } from 'mdast';
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { LanguageDescription } from '@codemirror/language';
-import { createVNode, render, h, type VNode } from 'vue';
+import { createVNode, render, type VNode } from 'vue';
 import axios from 'axios';
 
 import {

@@ -143,8 +143,8 @@ import {
 } from '../api'
 import { User } from '@/modules/auth/public.ts'
 import { highlightSearchTerm, createDebounceSearch } from '../utils/search'
-import { renderContent, copyMessageContent } from '../utils/message'
-import { ensureUser, userCache, getDefaultAvatar } from '../utils/user'
+import { copyMessageContent } from '../utils/message'
+import { ensureUser, userCache } from '../utils/user'
 import { convertMessagesToDisplay, sortConversationsByTime } from '../utils/data'
 
 const router = useRouter()
@@ -590,8 +590,10 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
       }
 
       // 滚动到最新消息
-      nextTick(() => {
-        const chatWindow = document.querySelector('.chat-window') as HTMLElement
+      await nextTick(() => {
+        const chatWindow = document.querySelector('.chat-window')
+        as
+        HTMLElement
         if (chatWindow) {
           chatWindow.scrollTop = chatWindow.scrollHeight
         }
@@ -779,7 +781,7 @@ const startHorizontalResize = (e: MouseEvent) => {
 }
 
 .chat-content {
-  padding: 12px 8px, 12px 8px;
+  padding: 12px 8px;
   flex: 1;
 }
 
@@ -923,10 +925,6 @@ const startHorizontalResize = (e: MouseEvent) => {
     height: 65vh;
   }
 
-  .message-heading {
-    padding-left: 16px;
-    font-size: 18px;
-  }
 }
 
 /* 搜索结果分类样式 */

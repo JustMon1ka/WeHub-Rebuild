@@ -152,7 +152,7 @@ export class CircleAPI {
       if (response.status === 401) {
         console.error('🔐 认证失败，清除登录状态')
         if (userInstance) {
-          userInstance.logout()
+          await userInstance.logout()
         }
         throw new Error('登录已过期，请重新登录')
       }
@@ -807,7 +807,7 @@ export const activityApi = {
       if (response.status === 401) {
         console.error('🔐 认证失败，清除登录状态')
         if (userInstance) {
-          userInstance.logout()
+          await userInstance.logout()
         }
         throw new Error('登录已过期，请重新登录')
       }
@@ -903,7 +903,7 @@ export const activityApi = {
         if (joinResponse.status === 401) {
           console.error('🔐 认证失败，清除登录状态')
           if (userInstance) {
-            userInstance.logout()
+            await userInstance.logout()
           }
           throw new Error('登录已过期，请重新登录')
         }
@@ -949,7 +949,7 @@ export const activityApi = {
       if (completeResponse.status === 401) {
         console.error('🔐 认证失败，清除登录状态')
         if (userInstance) {
-          userInstance.logout()
+          await userInstance.logout()
         }
         throw new Error('登录已过期，请重新登录')
       }
@@ -1188,7 +1188,7 @@ export class PostAPI {
           // 认证失败，清除本地token并提示登录
           const userInstance = User.getInstance()
           if (userInstance) {
-            userInstance.logout()
+            await userInstance.logout()
           }
           throw new Error('登录已过期，请重新登录')
         }

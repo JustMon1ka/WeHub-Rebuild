@@ -78,7 +78,6 @@
               placeholder="添加标签..."
               @keydown.enter.prevent="addTag"
               @keydown.space.prevent="addTag"
-              @keydown.comma.prevent="addTag"
               maxlength="20"
             />
           </div>

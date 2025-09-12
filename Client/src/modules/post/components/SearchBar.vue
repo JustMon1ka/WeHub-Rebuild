@@ -51,7 +51,7 @@
 import {computed, onMounted, ref} from 'vue';
 // 这里假设你已经提供了这两个方法
 import {getPosts, getSearch, getSearchSuggestion} from '../api.ts';
-import {type PostListItem, type SearchResponse, type SearchSuggestions} from "../types.ts"
+import {type SearchResponse, type SearchSuggestions} from "../types.ts"
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const query = ref('');

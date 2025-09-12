@@ -64,11 +64,8 @@ import {
   type commentNoticeItem,
   type replyNoticeItem,
   type repostNoticeItem,
-  type commentNoticeResponse,
-  type replyNoticeResponse,
   type atNoticeItem,
   type likeNoticeItem,
-  type postDetail,
   unwrap,
 } from '../types'
 import {

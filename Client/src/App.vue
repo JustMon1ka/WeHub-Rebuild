@@ -5,7 +5,6 @@ import { RouterView, useRoute } from 'vue-router'
 
 import NavigationBar from '@/modules/core/components/NavigationBar.vue'
 import NavigationBarMobile from '@/modules/core/components/NavigationBarMobile.vue'
-import RecommendBar from '@/modules/core/components/RightAside.vue'
 import PostCreate from '@/modules/postCreate/views/CreatePostView.vue'
 import LoginHover from '@/modules/auth/views/LoginHover.vue'
 import RightAside from '@/modules/core/components/RightAside.vue'

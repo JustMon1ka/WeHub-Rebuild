@@ -222,8 +222,7 @@ const loadCategories = async () => {
   categoriesError.value = ''
 
   try {
-    const categories = await CircleAPI.getCategories()
-    availableCategories.value = categories
+    availableCategories.value = await CircleAPI.getCategories()
   } catch (error) {
     console.error('加载分类失败:', error)
     categoriesError.value = '加载分类失败，请刷新页面重试'
@@ -769,7 +768,7 @@ const handleSubmit = async (): Promise<void> => {
 
 /* 规则管理样式 */
 .rules-section {
-  space-y: 16px;
+  gap: 16px;
 }
 
 .rule-item {
@@ -880,12 +879,11 @@ const handleSubmit = async (): Promise<void> => {
 }
 
 .guide-list li {
-  padding: 8px 0;
   color: #cbd5e1; /* slate-300 */
   font-size: 14px;
   line-height: 1.5;
   position: relative;
-  padding-left: 20px;
+  padding: 8px 0 8px 20px;
 }
 
 .guide-list li::before {
