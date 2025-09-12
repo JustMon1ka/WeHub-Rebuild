@@ -134,7 +134,7 @@ class AuthData {
       if (this.authType.value === AuthType.Register) {
         await router.push('/user_guide');
       } else {
-        await router.push('/');
+        await router.push('/mainpage');
       }
       toggleLoginHover(false);
     } else {
