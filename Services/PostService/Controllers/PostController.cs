@@ -446,9 +446,9 @@ public class PostController : ControllerBase
         return Ok(new { code = 200, msg = (string)null, data = (object)null });
     }
 
-    [HttpGet("CheckLike")]
+    [HttpPost("CheckLike")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<BaseHttpResponse<List<CheckLikeResponse>>> CheckLike([FromBody] CheckLikeRequest request)
+    public async Task<BaseHttpResponse<List<CheckLikeResponse>>> CheckLike([FromBody] LikeRequest request)
     {
         try
         {
