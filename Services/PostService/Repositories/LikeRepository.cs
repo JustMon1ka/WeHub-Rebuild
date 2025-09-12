@@ -7,6 +7,8 @@ namespace PostService.Repositories
 {
     public interface ILikeRepository
     {
+        Task IncrementLikeCommentCountAsync(long commentId);
+        Task DecrementLikeCommentCountAsync(long commentId);
         Task IncrementLikeCountAsync(long postId);
         Task DecrementLikeCountAsync(long postId);
         Task<bool> ToggleLikeAsync(long userId, Like like);
@@ -22,7 +24,7 @@ namespace PostService.Repositories
             _context = context;
         }
 
-
+        //posts
         // ✅ 点赞数 +1
         public async Task IncrementLikeCountAsync(long postId)
         {
@@ -41,6 +43,28 @@ namespace PostService.Repositories
             if (post != null && (post.Likes ?? 0) > 0)
             {
                 post.Likes = post.Likes - 1;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        //comments
+        // ✅ 点赞数 +1
+        public async Task IncrementLikeCommentCountAsync(long commentId)
+        {
+            var comment = await _context.Comments.FirstOrDefaultAsync(c => c.CommentId == commentId);
+            if (comment != null)
+            {
+                comment.Likes = comment.Likes + 1;
+                await _context.SaveChangesAsync();
+            }
+        }
+        // ✅ 点赞数 -1
+        public async Task DecrementLikeCommentCountAsync(long commentId)
+        {
+            var comment = await _context.Comments.FirstOrDefaultAsync(c => c.CommentId == commentId);
+            if (comment != null && comment.Likes > 0)
+            {
+                comment.Likes = comment.Likes - 1;
                 await _context.SaveChangesAsync();
             }
         }
