@@ -39,6 +39,8 @@ const emit = defineEmits<{
 
 const { currentUser } = useAuthState();
 const isLiked = ref(false);
+const likeCount = ref(0);
+
 
 const isCurrentUser = computed(() => {
   return currentUser.value?.id === props.comment.user_id;
@@ -71,10 +73,9 @@ const handleReply = () => {
 const handleLike = async () => {
   try {
     const targetId = props.comment.comment_id || props.comment.reply_id;
-    const userId = currentUser.value?.id;
     
-    if (!targetId || userId === undefined) {
-      console.error('缺少必要的参数:', { targetId, userId });
+    if (!targetId) {
+      console.error('缺少必要的参数:', { targetId });
       return;
     }
 
@@ -82,7 +83,6 @@ const handleLike = async () => {
       type: props.comment.type,
       targetId: targetId,      // 小驼峰
       like: !isLiked.value,
-      userId: userId           // 小驼峰
     });
 
     // 使用小驼峰命名规范
@@ -90,7 +90,6 @@ const handleLike = async () => {
       type: props.comment.type === 'comment' ? 'comment' : 'reply',
       targetId: targetId,      // 小驼峰
       like: !isLiked.value,
-      userd: userId           // 小驼峰
     });
 
     console.log('✅ 点赞响应:', result);

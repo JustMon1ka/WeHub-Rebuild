@@ -49,7 +49,6 @@ import type { Comment } from '../types';
 import { postService } from '../api';
 import CommentItem from './CommentItem.vue';
 import CommentForm from './CommentForm.vue';
-import User from '@/modules/auth/scripts/User.ts';
 import { convertCommentResponseToFrontend } from '../types';
 
 const props = defineProps<{
@@ -87,16 +86,6 @@ const totalCommentCount = computed(() => {
   return count;
 });
 
-// 获取当前用户ID
-const getCurrentUserId = (): number | null => {
-  try {
-    const user = User.getInstance();
-    return user?.userAuth?.userId || null;
-  } catch (error) {
-    console.warn('获取用户ID失败:', error);
-    return null;
-  }
-};
 
 const loadComments = async () => {
   loading.value = true;
