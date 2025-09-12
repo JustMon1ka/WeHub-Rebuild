@@ -52,6 +52,7 @@ async function load() {
   try {
     const detail = await getPostDetail(postId);
     post.value = detail;
+    likeCount.value = detail.likes || 0;
     author.value = new UserInfo(String(detail.userId));
     await author.value.loadUserData();
   } catch (e: any) {
