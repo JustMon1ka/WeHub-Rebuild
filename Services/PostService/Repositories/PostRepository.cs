@@ -17,8 +17,8 @@ namespace PostService.Repositories
         Task MarkAsDeletedAsync(long postId);
         Task<Post> InsertPostAsync(long userId, long circleId, string title, string content, List<long> tags);
         Task<List<string>> GetTagNamesByPostIdAsync(long postId);
-        Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true);
         Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default);
+        Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true, int PostMode = 0, string? tagName = null);
         /// <summary>
         /// 使用 Oracle Text CONTAINS 做全文候选检索，返回按 oracle_score 降序的候选（不做最终排序）
         /// maxCandidates: 若为 null 则返回全部 Oracle Text 命中的结果（慎用）
@@ -180,42 +180,92 @@ namespace PostService.Repositories
                 .ToListAsync();
         }
         
-        public async Task<List<Post>> GetPagedAsync(long? lastId, int num, bool desc = true)
+        public async Task<List<Post>> GetPagedAsync(
+            long? lastId,
+            int num,
+            bool desc = true,
+            int PostMode = 0,
+            string? tagName = null)   // ✅ 新增参数
         {
             await using var context = _contextFactory.CreateDbContext();
 
-            var q = context.Posts.Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
+            // 基础条件：必须未删除未隐藏
+            var q = context.Posts
+                .Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
 
-            if (desc)
+            // ✅ 如果传了 tagName，就只取包含该标签的帖子
+            if (!string.IsNullOrEmpty(tagName))
             {
-                if (lastId.HasValue && lastId.Value > 0)
-                {
-                    q = q.Where(p => p.PostId < lastId.Value);
-                }
-                q = q.OrderByDescending(p => p.PostId);
-            }
-            else
-            {
-                if (lastId.HasValue && lastId.Value > 0)
-                {
-                    q = q.Where(p => p.PostId > lastId.Value);
-                }
-                q = q.OrderBy(p => p.PostId);
+                q = q.Where(p => p.PostTags.Any(pt => pt.Tag != null && pt.Tag.TagName == tagName));
             }
 
-            // 取一页
+            // 排序逻辑
+            switch (PostMode)
+            {
+                case 1: // 按浏览量 Views 排序
+                    if (lastId.HasValue && lastId.Value > 0)
+                    {
+                        var lastPost = await context.Posts
+                            .Where(p => p.PostId == lastId.Value)
+                            .Select(p => new { p.Views, p.PostId })
+                            .FirstOrDefaultAsync();
+
+                        if (lastPost != null)
+                        {
+                            q = q.Where(p =>
+                                (p.Views < lastPost.Views) ||
+                                (p.Views == lastPost.Views && p.PostId < lastPost.PostId));
+                        }
+                    }
+                    q = q.OrderByDescending(p => p.Views ?? 0)
+                        .ThenByDescending(p => p.PostId);
+                    break;
+
+                case 2: // 按点赞 Likes 排序
+                    if (lastId.HasValue && lastId.Value > 0)
+                    {
+                        var lastPost = await context.Posts
+                            .Where(p => p.PostId == lastId.Value)
+                            .Select(p => new { p.Likes, p.PostId })
+                            .FirstOrDefaultAsync();
+
+                        if (lastPost != null)
+                        {
+                            q = q.Where(p =>
+                                (p.Likes < lastPost.Likes) ||
+                                (p.Likes == lastPost.Likes && p.PostId < lastPost.PostId));
+                        }
+                    }
+                    q = q.OrderByDescending(p => p.Likes ?? 0)
+                        .ThenByDescending(p => p.PostId);
+                    break;
+
+                default: // 按时间（PostId）
+                    if (desc)
+                    {
+                        if (lastId.HasValue && lastId.Value > 0)
+                            q = q.Where(p => p.PostId < lastId.Value);
+                        q = q.OrderByDescending(p => p.PostId);
+                    }
+                    else
+                    {
+                        if (lastId.HasValue && lastId.Value > 0)
+                            q = q.Where(p => p.PostId > lastId.Value);
+                        q = q.OrderBy(p => p.PostId);
+                    }
+                    break;
+            }
+
+            // 分页
             var posts = await q.Take(num).ToListAsync();
-            if (!posts.Any())
-            {
-                return posts;
-            }
+            if (!posts.Any()) return posts;
 
-            // 填充 TagNames（与现有 GetPostsByIdsAsync 的做法保持一致）
+            // 填充标签
             var ids = posts.Select(p => p.PostId).ToList();
             var postTags = await (from pt in context.PostTags
-                join t in context.Tags on pt.TagId equals t.TagId
-                where ids.Contains(pt.PostId)
-                select new { pt.PostId, t.TagName }).ToListAsync();
+                                join t in context.Tags on pt.TagId equals t.TagId
+                                where ids.Contains(pt.PostId)
+                                select new { pt.PostId, t.TagName }).ToListAsync();
 
             var tagLookup = postTags
                 .GroupBy(x => x.PostId)
@@ -226,6 +276,10 @@ namespace PostService.Repositories
 
             return posts;
         }
+
+
+
+
         
         public async Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default)
         {
