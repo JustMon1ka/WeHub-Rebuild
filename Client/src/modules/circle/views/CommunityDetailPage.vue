@@ -1,7 +1,5 @@
 <template>
   <div>
-    <!-- 顶部导航 -->
-    <NavBar />
     <!-- 主要内容 -->
     <div class="main-container">
       <!-- 中间主内容区 -->
@@ -62,24 +60,33 @@
                       ></path>
                     </svg>
                   </button>
-                  <button
-                    class="btn"
-                    :class="[
-                      communityStore.getCommunityJoinStatus(communityData.id)
-                        ? 'btn-secondary'
-                        : 'btn-primary',
-                    ]"
-                    @click="toggleJoinCommunity"
-                    :disabled="communityStore.getCommunityLoadingState(communityData.id)"
-                  >
-                    {{
-                      communityStore.getCommunityLoadingState(communityData.id)
-                        ? '处理中...'
-                        : communityStore.getCommunityJoinStatus(communityData.id)
-                          ? '退出'
-                          : '加入'
-                    }}
-                  </button>
+                  <div class="join-actions">
+                    <button
+                      v-if="!membershipStatus.isJoined"
+                      class="btn btn-primary"
+                      @click="handleJoinCommunity"
+                      :disabled="membershipStatus.loading"
+                    >
+                      {{ membershipStatus.loading ? '处理中...' : '加入' }}
+                    </button>
+                    <!-- 修改：已加入成员显示退出按钮 -->
+                    <button
+                      v-if="membershipStatus.isJoined"
+                      class="btn btn-danger"
+                      @click="handleLeaveCommunity"
+                      :disabled="membershipStatus.loading"
+                    >
+                      {{ membershipStatus.loading ? '处理中...' : '退出' }}
+                    </button>
+                    <!-- 审核按钮 -->
+                    <button
+                      v-if="isOwner"
+                      class="btn btn-secondary"
+                      @click="showApplicationModal = true"
+                    >
+                      审核
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="community-meta">
@@ -130,85 +137,8 @@
 
           <!-- 帖子列表 -->
           <div v-if="activeTab !== 'activities'" class="posts-list">
-            <!-- 置顶帖子 -->
-            <article class="post-item pinned-post">
-              <div class="post-vote-section">
-                <svg class="pin-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-3.125L5 18V4z"></path>
-                </svg>
-              </div>
-              <div class="post-content">
-                <a href="#" class="post-title"
-                  >【版规】{{ communityData.name }}发帖须知 (2024.07更新)</a
-                >
-                <div class="post-meta">
-                  <span class="post-author">版主</span>
-                  <span class="post-date">2024-07-01</span>
-                </div>
-              </div>
-            </article>
-
-            <!-- 普通帖子或暂无内容 -->
-            <div v-if="filteredPosts.length === 0" class="empty-posts">
-              <div class="empty-icon">📝</div>
-              <h3>暂无帖子</h3>
-              <p>这个分类下还没有帖子，成为第一个发帖的人吧！</p>
-              <button class="btn btn-primary" @click="handleCreatePost">创建第一个帖子</button>
-            </div>
-
-            <article
-              v-else
-              v-for="post in filteredPosts"
-              :key="post.id"
-              class="post-item"
-              @click="handlePostClick(post.id)"
-            >
-              <div class="post-vote-section">
-                <button
-                  class="vote-btn vote-up"
-                  :class="{ active: post.userVote === 'up' }"
-                  @click.stop="handleVote(post.id, 'up')"
-                >
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 15l7-7 7 7"
-                    ></path>
-                  </svg>
-                </button>
-                <p class="vote-count">{{ formatVoteCount(post.votes) }}</p>
-                <button
-                  class="vote-btn vote-down"
-                  :class="{ active: post.userVote === 'down' }"
-                  @click.stop="handleVote(post.id, 'down')"
-                >
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 9l-7 7-7-7"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-              <div class="post-content">
-                <a href="#" class="post-title" @click.prevent>{{ post.title }}</a>
-                <p class="post-excerpt">{{ post.excerpt }}</p>
-                <div class="post-meta">
-                  <span class="post-author">
-                    <span class="username">@{{ post.author }}</span> 发布于 {{ post.timeAgo }}
-                  </span>
-                  <span class="post-replies">{{ post.replies }} 回复</span>
-                  <span class="post-last-reply">
-                    <span class="username">@{{ post.lastReplyUser }}</span> 回复于
-                    {{ post.lastReplyTime }}
-                  </span>
-                </div>
-              </div>
-            </article>
+            <!-- 真实帖子列表 -->
+            <PostList :circleId="communityData.id" ref="postListRef" />
           </div>
 
           <!-- 活动列表 -->
@@ -321,6 +251,116 @@
         </div>
       </aside>
     </div>
+
+    <!-- 审核申请弹窗 -->
+    <div v-if="showApplicationModal" class="modal-overlay" @click="closeApplicationModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>审核申请</h3>
+          <button class="modal-close" @click="closeApplicationModal">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div v-if="applicationsLoading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>正在加载申请列表...</p>
+          </div>
+          <div v-else-if="applications.length === 0" class="empty-applications">
+            <p>暂无待审核申请</p>
+          </div>
+          <div v-else class="applications-list">
+            <div
+              v-for="application in applications"
+              :key="application.userId"
+              class="application-item"
+            >
+              <div class="application-info">
+                <div class="user-info">
+                  <img
+                    class="user-avatar"
+                    :src="`https://placehold.co/40x40/1677ff/ffffff?text=U${application.userId}`"
+                    :alt="`用户${application.userId}`"
+                  />
+                  <div class="user-details">
+                    <p class="user-id">用户ID: {{ application.userId }}</p>
+                    <p class="apply-time">申请时间: {{ formatDateTime(application.applyTime) }}</p>
+                  </div>
+                </div>
+                <button
+                  class="btn btn-primary btn-small"
+                  @click="approveApplication(application.userId)"
+                  :disabled="application.processing"
+                >
+                  {{ application.processing ? '处理中...' : '通过' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 退出确认弹窗 -->
+    <div v-if="showLeaveConfirmModal" class="modal-overlay" @click="closeLeaveConfirmModal">
+      <div class="modal-content confirm-modal" @click.stop>
+        <div class="modal-header">
+          <h3>确认退出社区</h3>
+          <button class="modal-close" @click="closeLeaveConfirmModal">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="confirm-content">
+            <div class="warning-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                ></path>
+              </svg>
+            </div>
+            <p class="confirm-text">
+              你确定要退出社区 <strong>{{ communityData.name }}</strong> 吗？
+            </p>
+            <p class="confirm-subtitle">退出后，你将无法看到社区内容，如需重新加入需要重新申请。</p>
+            <div class="confirm-actions">
+              <button
+                class="btn btn-secondary"
+                @click="closeLeaveConfirmModal"
+                :disabled="membershipStatus.loading"
+              >
+                取消
+              </button>
+              <button
+                class="btn btn-danger"
+                @click="confirmLeaveCommunity"
+                :disabled="membershipStatus.loading"
+              >
+                {{ membershipStatus.loading ? '退出中...' : '确认退出' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 创建活动弹窗 -->
     <CreateActivity
       v-if="showCreateActivity"
@@ -343,14 +383,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import NavBar from '../components/NavBar.vue'
 import { CircleAPI, getSpuPage, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
 import ActivityList from '../components/ActivityList.vue'
 import ActivityParticipation from '../components/ActivityParticipation.vue'
 import CreateActivity from '../components/CreateActivity.vue'
 import CreatePost from '../components/CreatePost.vue'
+import PostList from '../components/PostList.vue'
 import { PostAPI } from '../api'
+import { User } from '@/modules/auth/scripts/User'
+import request from '../utils/request.ts'
 
 const imageSrc = ref<string>('')
 
@@ -387,6 +429,7 @@ interface CommunityData {
   isPrivate?: boolean
   avatarUrl?: string
   bannerUrl?: string
+  ownerId?: number
 }
 
 interface Moderator {
@@ -400,6 +443,22 @@ interface ActivityStats {
   total: number
   active: number
   participated: number
+}
+
+// 新增：成员状态管理
+interface MembershipStatus {
+  isJoined: boolean
+  loading: boolean
+}
+
+// 新增：申请相关类型
+interface Application {
+  userId: number
+  applyTime: string
+  status: number
+  processedTime?: string | null
+  role?: number | null
+  processing?: boolean
 }
 
 // 路由和状态
@@ -427,6 +486,39 @@ const activityStats = ref<ActivityStats>({
 // 添加图片URL状态管理
 const processedAvatarUrl = ref<string>('')
 const processedBannerUrl = ref<string>('')
+
+// 新增：成员状态管理
+const membershipStatus = ref<MembershipStatus>({
+  isJoined: false,
+  loading: false,
+})
+
+// 新增：申请管理相关状态
+const showApplicationModal = ref(false)
+const applications = ref<Application[]>([])
+const applicationsLoading = ref(false)
+const isOwner = ref(false)
+
+// 新增：退出确认弹窗状态
+const showLeaveConfirmModal = ref(false)
+
+const getCurrentUserId = (): number | null => {
+  try {
+    const userInstance = User.getInstance()
+    const userId = userInstance?.userAuth?.userId
+
+    if (!userId) {
+      console.warn('⚠️ 用户未登录或用户ID不存在')
+      return null
+    }
+
+    console.log('👤 当前用户ID:', userId)
+    return Number(userId) // 确保返回数字类型
+  } catch (error) {
+    console.error('❌ 获取用户ID失败:', error)
+    return null
+  }
+}
 
 // 获取带认证的图片 - 这里就是使用 request.get() 的地方
 const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
@@ -465,6 +557,49 @@ const processImageUrls = async (): Promise<void> => {
     console.log('原始横幅URL:', communityData.value.bannerUrl)
     processedBannerUrl.value = await getProxiedImageUrl(communityData.value.bannerUrl)
     console.log('处理后横幅URL:', processedBannerUrl.value)
+  }
+}
+
+// 检查用户成员状态和角色
+const checkMembershipStatus = async (circleId: number): Promise<void> => {
+  try {
+    console.log(`检查用户是否为社区 ${circleId} 的成员...`)
+
+    // 获取当前用户ID
+    const currentUserId = getCurrentUserId()
+    if (!currentUserId) {
+      membershipStatus.value.isJoined = false
+      isOwner.value = false
+      return
+    }
+
+    // 获取社区成员列表
+    const response = await request.get(`/api/Circles/${circleId}/members`)
+
+    if (response.data && response.data.code === 200) {
+      const members = response.data.data || []
+
+      // 查找当前用户在成员列表中的信息
+      const currentUserMember = members.find((member: any) => member.userId === currentUserId)
+
+      if (currentUserMember) {
+        membershipStatus.value.isJoined = true
+        // 检查是否为圈主 (role = 1)
+        isOwner.value = currentUserMember.role === 1
+        console.log(`✅ 用户是社区 ${circleId} 的成员，角色: ${currentUserMember.role}`)
+      } else {
+        membershipStatus.value.isJoined = false
+        isOwner.value = false
+        console.log(`❌ 用户不是社区 ${circleId} 的成员`)
+      }
+    } else {
+      membershipStatus.value.isJoined = false
+      isOwner.value = false
+    }
+  } catch (error: any) {
+    membershipStatus.value.isJoined = false
+    isOwner.value = false
+    console.error(`检查成员状态失败:`, error)
   }
 }
 
@@ -513,11 +648,7 @@ const filteredPosts = computed(() => {
 
 // 计算用户是否可以管理活动（圈主或管理员）
 const canManageActivities = computed(() => {
-  const currentUserId = 2 // 与后端硬编码保持一致
-  return (
-    communityData.value.ownerId === currentUserId ||
-    moderators.value.some((mod) => mod.id === currentUserId)
-  )
+  return isOwner.value
 })
 
 // 加载社区数据
@@ -566,19 +697,16 @@ const loadCommunityData = async (): Promise<void> => {
       isPrivate: circleInfo.isPrivate || false,
       avatarUrl: avatarUrl,
       bannerUrl: bannerUrl,
+      ownerId: circleInfo.ownerId,
     }
 
-    // 检查用户是否已加入
-    const currentUserId = 2 // 与后端硬编码保持一致
-    if (Array.isArray(membersInfo) && membersInfo.length > 0) {
-      const isJoined = membersInfo.some((member: any) => member.userId === currentUserId)
-      communityData.value.isJoined = isJoined
-      // 同步到store
-      communityStore.updateCommunity(communityData.value.id, { isJoined })
+    // 检查用户成员状态
+    await checkMembershipStatus(communityData.value.id)
 
-      // 设置版主信息（圈主）
-      const ownerId = circleInfo.ownerId
-      if (ownerId) {
+    // 设置版主信息（圈主）
+    const ownerId = circleInfo.ownerId
+    if (ownerId) {
+      if (Array.isArray(membersInfo) && membersInfo.length > 0) {
         const owner = membersInfo.find((member: any) => member.userId === ownerId)
         if (owner) {
           moderators.value = [
@@ -600,27 +728,14 @@ const loadCommunityData = async (): Promise<void> => {
             },
           ]
         }
-      }
-    } else {
-      // 没有成员数据，尝试检查成员状态
-      try {
-        const isJoined = await CircleAPI.checkMembership(Number(communityId))
-        communityData.value.isJoined = isJoined
-        // 同步到store
-        communityStore.updateCommunity(communityData.value.id, { isJoined })
-      } catch (error) {
-        console.error('检查成员状态失败:', error)
-        communityData.value.isJoined = false
-      }
-
-      // 设置默认版主信息（圈主）
-      if (circleInfo.ownerId) {
+      } else {
+        // 设置默认版主信息（圈主）
         moderators.value = [
           {
-            id: circleInfo.ownerId,
-            name: `用户${circleInfo.ownerId}`,
-            handle: `user${circleInfo.ownerId}`,
-            avatar: `https://placehold.co/100x100/1677ff/ffffff?text=U${circleInfo.ownerId}`,
+            id: ownerId,
+            name: `用户${ownerId}`,
+            handle: `user${ownerId}`,
+            avatar: `https://placehold.co/100x100/1677ff/ffffff?text=U${ownerId}`,
           },
         ]
       }
@@ -653,6 +768,13 @@ const changeTab = (tab: 'hot' | 'latest' | 'featured' | 'activities'): void => {
   activeTab.value = tab
 }
 
+// 刷新帖子列表的方法
+const refreshPosts = () => {
+  if (postListRef.value) {
+    postListRef.value.refresh()
+  }
+}
+
 const formatMemberCount = (count: number): string => {
   if (count >= 10000) {
     return (count / 10000).toFixed(1) + '万'
@@ -675,6 +797,18 @@ const formatDate = (dateString: string): string => {
   return `${year}年${month}月`
 }
 
+const formatDateTime = (dateString: string): string => {
+  if (!dateString) return '未知'
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 const handleCreatePost = (): void => {
   showCreatePost.value = true
 }
@@ -684,8 +818,10 @@ const handlePostCreated = async (post: any): Promise<void> => {
   console.log('新帖子已创建:', post)
   showCreatePost.value = false
 
-  // 重新加载帖子列表
-  await loadCommunityPosts()
+  // 刷新帖子列表
+  if (postListRef.value) {
+    postListRef.value.refresh()
+  }
 }
 
 // 加载社区帖子
@@ -712,23 +848,157 @@ const handleNotification = (): void => {
   console.log('通知')
 }
 
-const toggleJoinCommunity = async (): Promise<void> => {
+// 修改后的加入社区方法
+const handleJoinCommunity = async (): Promise<void> => {
   try {
-    const result = await communityStore.toggleCommunityMembership(communityData.value.id)
+    membershipStatus.value.loading = true
 
-    if (result && result.success) {
-      // 更新本地数据
-      const isJoined = communityStore.getCommunityJoinStatus(communityData.value.id)
-      communityData.value.isJoined = isJoined
+    // 调用加入社区的API
+    const response = await request.post(`/api/Circles/${communityData.value.id}/join`)
 
-      if (isJoined) {
-        communityData.value.memberCount += 1
-      } else {
-        communityData.value.memberCount = Math.max(communityData.value.memberCount - 1, 0)
-      }
+    // 显示后端返回的消息
+    if (response.data && response.data.msg) {
+      alert(response.data.msg)
+    }
+
+    // 重新检查成员状态
+    await checkMembershipStatus(communityData.value.id)
+  } catch (error: any) {
+    console.error('加入社区失败:', error)
+
+    // 显示错误消息
+    let errorMsg = '操作失败，请稍后重试'
+    if (error.response && error.response.data && error.response.data.msg) {
+      errorMsg = error.response.data.msg
+    }
+    alert(errorMsg)
+  } finally {
+    membershipStatus.value.loading = false
+  }
+}
+
+// 新增：处理退出社区点击事件
+const handleLeaveCommunity = (): void => {
+  showLeaveConfirmModal.value = true
+}
+
+// 新增：关闭退出确认弹窗
+const closeLeaveConfirmModal = (): void => {
+  showLeaveConfirmModal.value = false
+}
+
+// 新增：确认退出社区
+const confirmLeaveCommunity = async (): Promise<void> => {
+  try {
+    membershipStatus.value.loading = true
+
+    // 调用退出社区的API - 使用新的接口
+    const response = await request.delete(`/api/Circles/${communityData.value.id}/membership`)
+
+    console.log('退出社区响应:', response.data)
+
+    // 显示成功消息
+    if (response.data && response.data.msg) {
+      alert(response.data.msg)
+    } else {
+      alert('已成功退出社区')
+    }
+
+    // 关闭弹窗
+    showLeaveConfirmModal.value = false
+
+    // 重新检查成员状态
+    await checkMembershipStatus(communityData.value.id)
+
+    // 更新成员数量
+    if (communityData.value.memberCount > 0) {
+      communityData.value.memberCount -= 1
+    }
+  } catch (error: any) {
+    console.error('退出社区失败:', error)
+
+    // 显示错误消息
+    let errorMsg = '退出失败，请稍后重试'
+    if (error.response && error.response.data && error.response.data.msg) {
+      errorMsg = error.response.data.msg
+    }
+    alert(errorMsg)
+  } finally {
+    membershipStatus.value.loading = false
+  }
+}
+
+// 加载申请列表
+const loadApplications = async (): Promise<void> => {
+  try {
+    applicationsLoading.value = true
+    const response = await request.get(`/api/Circles/${communityData.value.id}/applications`)
+
+    if (response.data && response.data.code === 200) {
+      applications.value = response.data.data.pendingApplications || []
+    } else {
+      applications.value = []
     }
   } catch (error) {
-    console.error('操作失败:', error)
+    console.error('加载申请列表失败:', error)
+    applications.value = []
+  } finally {
+    applicationsLoading.value = false
+  }
+}
+
+// 关闭申请弹窗
+const closeApplicationModal = (): void => {
+  showApplicationModal.value = false
+  applications.value = []
+}
+
+// 通过申请
+const approveApplication = async (targetUserId: number): Promise<void> => {
+  try {
+    // 设置当前申请为处理中状态
+    const application = applications.value.find((app) => app.userId === targetUserId)
+    if (application) {
+      application.processing = true
+    }
+
+    // 调用审核通过API
+    const response = await request.put(
+      `/api/Circles/${communityData.value.id}/applications/${targetUserId}`,
+      null,
+      {
+        params: {
+          approve: true,
+          role: 2, // 默认设置为普通成员
+        },
+      },
+    )
+
+    if (response.data && response.data.code === 200) {
+      // 成功后从列表中移除该申请
+      applications.value = applications.value.filter((app) => app.userId !== targetUserId)
+
+      // 更新成员数量
+      communityData.value.memberCount += 1
+
+      alert('审核通过成功')
+    } else {
+      throw new Error(response.data?.msg || '审核失败')
+    }
+  } catch (error: any) {
+    console.error('审核失败:', error)
+
+    let errorMsg = '审核失败，请稍后重试'
+    if (error.response && error.response.data && error.response.data.msg) {
+      errorMsg = error.response.data.msg
+    }
+    alert(errorMsg)
+  } finally {
+    // 重置处理中状态
+    const application = applications.value.find((app) => app.userId !== targetUserId)
+    if (application) {
+      application.processing = false
+    }
   }
 }
 
@@ -784,6 +1054,9 @@ const loadActivityStats = async (): Promise<void> => {
 
 // 添加 ActivityList 引用
 const activityListRef = ref()
+
+// 添加 PostList 引用
+const postListRef = ref() // 新增这一行
 
 // 添加当前活动筛选状态
 const currentActivityFilter = ref<'all' | 'active' | 'participated'>('all')
@@ -843,6 +1116,13 @@ watch(
   },
 )
 
+// 监听申请弹窗显示状态，加载申请列表
+watch(showApplicationModal, (show) => {
+  if (show) {
+    loadApplications()
+  }
+})
+
 // 生命周期
 onMounted(() => {
   loadCommunityData()
@@ -852,6 +1132,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 原有样式保持不变 */
 .main-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -902,7 +1183,8 @@ onMounted(() => {
   background: #1e293b; /* slate-800 */
   border-radius: 12px;
   border: 1px solid #334155; /* slate-700 */
-  overflow: hidden;
+  overflow: visible; /* 改为 visible，允许内容溢出和滚动 */
+  height: auto; /* 确保高度自适应 */
 }
 
 .community-header-section {
@@ -948,6 +1230,14 @@ onMounted(() => {
   gap: 8px;
 }
 
+/* 新增：加入操作区域样式 */
+.join-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
 .btn {
   padding: 10px 20px;
   border: none;
@@ -981,6 +1271,22 @@ onMounted(() => {
 .btn-secondary:hover:not(:disabled) {
   border-color: #0ea5e9; /* sky-500 */
   color: #0ea5e9; /* sky-500 */
+}
+
+/* 新增：危险按钮样式 */
+.btn-danger {
+  background: #dc2626; /* red-600 */
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c; /* red-700 */
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .btn-icon {
@@ -1049,8 +1355,10 @@ onMounted(() => {
   background: #334155; /* slate-700 */
 }
 
+/* 确保帖子列表和活动容器可以滚动 */
 .posts-list {
   min-height: 400px;
+  overflow: visible; /* 添加这行 */
 }
 
 .empty-posts {
@@ -1350,6 +1658,171 @@ onMounted(() => {
   color: #fff;
 }
 
+/* 新增：弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1e293b; /* slate-800 */
+  border-radius: 12px;
+  border: 1px solid #334155; /* slate-700 */
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 新增：确认弹窗样式 */
+.confirm-modal {
+  max-width: 400px;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #334155; /* slate-700 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #f1f5f9; /* slate-100 */
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #64748b; /* slate-500 */
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  color: #f1f5f9; /* slate-100 */
+  background: #334155; /* slate-700 */
+}
+
+.modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* 新增：确认内容样式 */
+.confirm-content {
+  text-align: center;
+}
+
+.warning-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  color: #f59e0b; /* amber-500 */
+}
+
+.warning-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.confirm-text {
+  font-size: 16px;
+  color: #f1f5f9; /* slate-100 */
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.confirm-subtitle {
+  font-size: 14px;
+  color: #64748b; /* slate-500 */
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.empty-applications {
+  text-align: center;
+  color: #64748b; /* slate-500 */
+  padding: 40px 20px;
+}
+
+.applications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.application-item {
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 8px;
+  padding: 16px;
+  background: #0f172a; /* slate-900 */
+}
+
+.application-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-id {
+  margin: 0 0 4px 0;
+  color: #f1f5f9; /* slate-100 */
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.apply-time {
+  margin: 0;
+  color: #64748b; /* slate-500 */
+  font-size: 12px;
+}
+
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .main-container {
@@ -1375,6 +1848,11 @@ onMounted(() => {
     justify-content: flex-end;
   }
 
+  .join-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
   .post-item {
     flex-direction: column;
     gap: 12px;
@@ -1388,8 +1866,28 @@ onMounted(() => {
   }
 
   .activities-container {
-    padding: 24px;
     min-height: 400px;
+    overflow: visible; /* 添加这行 */
+    padding: 24px;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .application-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .user-info {
+    width: 100%;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
   }
 }
 </style>

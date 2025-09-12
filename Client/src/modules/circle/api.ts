@@ -2,8 +2,57 @@
 import request from './utils/request'
 import { User } from '@/modules/auth/scripts/User'
 
+// 直接在 api.ts 中定义帖子相关的接口
+interface Post {
+  postId: number
+  userId: number
+  circleId: number
+  title: string
+  content: string
+  tags: string[]
+  createdAt: string
+  views: number
+  likes: number
+}
+
+interface PostsResponse {
+  code: number
+  msg: string
+  data: Post[]
+}
+
+interface CirclePostsResponse {
+  code: number
+  msg: string
+  data: {
+    circleId: number
+    postIds: number[]
+    totalCount: number
+  }
+}
+
 // 使用相对路径，通过 Vite 代理转发到后端
 const API_BASE_URL = ''
+
+// 然后添加这些函数（替换原来的）
+export const getCirclePosts = async (circleId: number): Promise<CirclePostsResponse> => {
+  const response = await request.get(`/api/Circles/${circleId}/posts`)
+  return response.data
+}
+
+export const getPostsByIds = async (postIds: number[]): Promise<PostsResponse> => {
+  const idsParam = postIds.join(',')
+  const response = await request.get(`/api/posts?ids=${idsParam}`)
+  return response.data
+}
+
+export const getPostById = async (postId: number): Promise<PostsResponse> => {
+  const response = await request.get(`/api/posts?ids=${postId}`)
+  return response.data
+}
+
+// 导出类型供其他文件使用
+export type { Post }
 
 interface ApiResponse<T> {
   success: boolean
@@ -129,6 +178,8 @@ export class CircleAPI {
       // 发送后端支持的字段
       const backendData = {
         name: data.name,
+        role: 1,
+        status: 1,
         description: data.description,
         categories: data.categories || '通用', // 确保有默认值
       }
@@ -261,10 +312,19 @@ export class CircleAPI {
     try {
       console.log('加入社区 ID:', circleId)
 
+      // 🔧 获取认证token
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // 🔧 添加认证头
         },
         credentials: 'include',
       })
@@ -304,6 +364,7 @@ export class CircleAPI {
       return result
     } catch (error) {
       console.error('加入圈子失败:', error)
+
       throw error
     }
   }
@@ -313,10 +374,19 @@ export class CircleAPI {
     try {
       console.log('退出社区 ID:', circleId)
 
+      // 🔧 获取认证token
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/membership`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // 🔧 添加认证头
         },
         credentials: 'include',
       })
@@ -351,12 +421,23 @@ export class CircleAPI {
   }
 
   // 检查成员状态
+  // 检查成员状态
   static async checkMembership(circleId: number): Promise<boolean> {
     try {
+      // 🔧 获取认证token
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        console.warn('用户未认证，无法检查成员状态')
+        return false
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/members`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // 🔧 添加认证头
         },
         credentials: 'include',
       })
@@ -365,10 +446,13 @@ export class CircleAPI {
         const result = await response.json()
         console.log('成员列表响应:', result)
 
-        const currentUserId = 2 // 硬编码的用户ID，与后端保持一致
+        // 🔧 使用真实的用户ID，不要硬编码
+        const currentUserId = userInstance?.userAuth?.userId
 
         if (result.code === 200 && result.data && Array.isArray(result.data)) {
-          return result.data.some((member: any) => member.userId === currentUserId)
+          const isMember = result.data.some((member: any) => member.userId === currentUserId)
+          console.log(`用户${currentUserId}是否为社区${circleId}成员:`, isMember)
+          return isMember
         }
       }
 
@@ -479,6 +563,15 @@ export class CircleAPI {
   static async uploadCircleAvatar(circleId: number, file: File): Promise<any> {
     try {
       console.log('=== 开始上传头像 ===')
+
+      // 🔧 获取认证token
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
+
       console.log('圈子ID:', circleId)
       console.log('文件信息:', {
         name: file.name,
@@ -494,6 +587,9 @@ export class CircleAPI {
 
       const response = await fetch(url, {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`, // 🔧 添加这一行
+        },
         body: formData,
         credentials: 'include',
       })
@@ -530,6 +626,14 @@ export class CircleAPI {
   static async uploadCircleBanner(circleId: number, file: File): Promise<any> {
     try {
       console.log('=== 开始上传横幅 ===')
+      // 🔧 获取认证token
+      const userInstance = User.getInstance()
+      const token = userInstance?.userAuth?.token
+
+      if (!token) {
+        throw new Error('用户未认证，请先登录')
+      }
+
       console.log('圈子ID:', circleId)
       console.log('文件信息:', {
         name: file.name,
@@ -543,8 +647,11 @@ export class CircleAPI {
       const url = `${API_BASE_URL}/api/circles/${circleId}/banner`
       console.log('请求URL:', url)
 
-      const response = await fetch(url, {
+      const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/banner`, {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`, // 🔧 添加这一行
+        },
         body: formData,
         credentials: 'include',
       })
@@ -1150,7 +1257,7 @@ export class PostAPI {
       console.log('请求数据:', data)
 
       const requestData = {
-        circleId: data.circleId || null,
+        circleId: data.circleId || 0,
         title: data.title,
         content: data.content,
         tags: data.tags || [],

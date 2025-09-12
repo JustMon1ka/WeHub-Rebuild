@@ -599,7 +599,7 @@ interface ActivityStats {
 .activity-list-container {
   background: #1e293b;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #334155;
 }
 
