@@ -17,8 +17,8 @@ namespace PostService.Services
         Task<List<SearchResponse>> SearchPostsAsync(string? query, int? limits);
         Task<List<SearchSuggestResponse>> GetSearchSuggestionsAsync(string? keyword, int limits);
         Task<List<Post>> GetPostsByUserIdAsync(long userId);
-        Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true);
         Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default);
+        Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true, int PostMode = 0, string? tagName = null);
     }
     
     public class PostService : IPostService
@@ -250,7 +250,7 @@ namespace PostService.Services
             return await _postRepository.GetPostsByUserIdAsync(userId);
         }
         
-        public async Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true)
+        public async Task<List<Post>> GetPagedPostsAsync(long? lastId, int num, bool desc = true, int PostMode = 0, string? tagName = null)
         {
             // 兜底：限制 num 防止一次取过多
             if (num <= 0)
@@ -261,7 +261,7 @@ namespace PostService.Services
             {
                 num = 20;
             }
-            return await _postRepository.GetPagedAsync(lastId, num, desc);
+            return await _postRepository.GetPagedAsync(lastId, num, desc, PostMode, tagName);
         }
         
         public Task<int?> IncrementViewsAsync(long postId, CancellationToken ct=default)

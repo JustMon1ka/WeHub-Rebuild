@@ -39,7 +39,9 @@ const props = withDefaults(defineProps<{
   tailPostId?: number | null; // 首次拉取时可指定从某个 id 之后
   autoLoad?: boolean; // 是否在挂载时自动加载
   showLoadMore?: boolean; // 显示“加载更多”按钮
-}>(), { num: 10, tailPostId: null, autoLoad: true, showLoadMore: true });
+  PostMode?: number;
+  tagName?: string | null; 
+}>(), { num: 10, tailPostId: null, autoLoad: true, showLoadMore: true, PostMode: 0, tagName: null  });
 
 const emit = defineEmits<{ (e: 'loaded', list: PostListItem[]): void; (e: 'error', err: unknown): void }>();
 
@@ -50,7 +52,7 @@ async function fetchOnce() {
   loading.value = true;
   try {
     const lastId = posts.value.length ? posts.value[posts.value.length - 1].postId : (props.tailPostId ?? undefined);
-    const list = await getPostList(props.num, lastId);
+    const list = await getPostList(props.num, lastId, props.PostMode, props.tagName);
     if (list?.length) posts.value.push(...list);
     emit('loaded', list || []);
   } catch (e) { emit('error', e); }

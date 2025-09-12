@@ -142,9 +142,11 @@ export async function deletePost(postId: number) {
   return unwrap(resp.data);
 }
 
-export async function getPostList(num: number, tailPostId?: number): Promise<PostListItem[]> {
+
+// ✅ 重点：getPostList —— 永远正确地命中 /api/posts/list
+export async function getPostList(num: number, tailPostId?: number, PostMode?: number, tagName?: string | null): Promise<PostListItem[]> {
   const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts/list", {
-    params: { num, lastId: tailPostId }
+    params: { num, lastId: tailPostId, PostMode, tagName }
   });
   return unwrap<PostListItem[]>(resp.data);
 }

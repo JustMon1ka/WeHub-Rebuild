@@ -108,15 +108,22 @@ public class PostController : ControllerBase
     [HttpGet("list")]
     public async Task<BaseHttpResponse<List<PostResponse>>> List(
         [FromQuery] long? lastId,
-        [FromQuery] int? num)
+        [FromQuery] int? num,
+        [FromQuery] int? PostMode,
+        [FromQuery] string? tagName)
     {
         try
         {
             int take = num.GetValueOrDefault(10);
             if (take <= 0) take = 10;
             if (take > 100) take = 100;
+            
+            int take_PostMode = PostMode.GetValueOrDefault(0);
+            if (take_PostMode < 0 || take_PostMode > 2) take_PostMode = 0;
 
-            var posts = await _postService.GetPagedPostsAsync(lastId, take, desc: true);
+            Console.WriteLine($"Controller 接收到 tagName={tagName}");
+
+            var posts = await _postService.GetPagedPostsAsync(lastId, take, true, take_PostMode, tagName);
 
             var data = posts.Select(p => new PostResponse
             {
@@ -446,7 +453,7 @@ public class PostController : ControllerBase
         return Ok(new { code = 200, msg = (string)null, data = (object)null });
     }
 
-    [HttpPost("CheckLike")]
+    [HttpGet("CheckLike")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<BaseHttpResponse<CheckLikeResponse>> CheckLike([FromBody] CheckLikeRequest request)
     {
