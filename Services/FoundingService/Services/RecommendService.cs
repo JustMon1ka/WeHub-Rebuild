@@ -10,7 +10,7 @@ public class RecommendService
     public RecommendService(IConfiguration config) => _config = config;
 
     private OracleConnection GetConnection()
-        => new OracleConnection(_config.GetConnectionString("OracleDb"));
+        => new OracleConnection(_config.GetConnectionString("DefaultConnection"));
 
     // 🔹 本周热门话题（个性化推荐）
     public IEnumerable<RecommendResult> RecommendTopics(int userId, int topK = 4)
