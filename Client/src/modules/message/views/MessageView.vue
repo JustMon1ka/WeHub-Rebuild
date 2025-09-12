@@ -2,7 +2,7 @@
   <div class="page-content-wrapper">
     <!-- 中间内容 -->
     <div class="divider-vertical"></div>
-    <div class="center">
+    <div class="center" :style="{ width: centerWidth + '%' }">
       <div class="divider-horizontal"></div>
       <div class="message-heading">
         <h2>私信</h2>
@@ -12,32 +12,91 @@
         <SearchInput v-model="searchText" placeholder="🔍搜索" />
       </div>
       <div class="divider-horizontal"></div>
-      <!-- 会话列表 -->
+      <!-- 搜索结果 -->
       <div class="message-list">
         <div v-if="loading" class="loading">加载中...</div>
         <div v-else-if="error" class="error">{{ error }}</div>
-        <div v-else-if="conversationList.length === 0" class="empty">暂无会话</div>
+        <div v-else-if="!searchText.trim()">
+          <!-- 无搜索时显示所有会话 -->
+          <div v-if="conversationList.length === 0" class="empty">暂无会话</div>
+          <div v-else>
+            <Conversation
+              v-for="item in conversationList"
+              :key="item.otherUserId"
+              :conversation="item"
+              :selected="selectedConversation?.otherUserId === item.otherUserId"
+              @click="handleConversationSelect(item)"
+            />
+          </div>
+        </div>
         <div v-else>
-          <Conversation
-            v-for="item in conversationList"
-            :key="item.OtherUserId"
-            :conversation="item"
-            :selected="selectedConversation?.OtherUserId === item.OtherUserId"
-            @click="handleConversationSelect(item)"
-          />
+          <!-- 有搜索时显示分类结果 -->
+          <div
+            v-if="searchResults.conversations.length === 0 && searchResults.messages.length === 0"
+            class="empty"
+          >
+            未找到匹配的内容
+          </div>
+          <div v-else>
+            <!-- 联系人搜索结果 -->
+            <div v-if="searchResults.conversations.length > 0" class="search-section">
+              <div class="search-section-title">联系人</div>
+              <Conversation
+                v-for="item in searchResults.conversations"
+                :key="'conv-' + item.otherUserId"
+                :conversation="item"
+                :selected="selectedConversation?.otherUserId === item.otherUserId"
+                :search-term="searchText.trim()"
+                @click="handleConversationSelect(item)"
+              />
+            </div>
+
+            <!-- 聊天记录搜索结果 -->
+            <div v-if="searchResults.messages.length > 0" class="search-section">
+              <div class="search-section-title">聊天记录</div>
+              <div
+                v-for="(result, index) in searchResults.messages"
+                :key="'msg-' + index"
+                class="message-search-result"
+                @click="handleConversationSelect(result.conversation)"
+              >
+                <div class="message-search-header">
+                  <img
+                    :src="
+                      result.conversation.contactUser?.avatar ||
+                      'https://placehold.co/100x100/facc15/78350f?text=U'
+                    "
+                    :alt="result.conversation.contactUser?.nickname"
+                    class="message-search-avatar"
+                  />
+                  <div class="message-search-info">
+                    <span class="message-search-name">{{
+                      result.conversation.contactUser?.nickname
+                    }}</span>
+                    <span class="message-search-time">{{ result.message?.time }}</span>
+                  </div>
+                </div>
+                <div
+                  class="message-search-content"
+                  v-html="highlightSearchTerm(result.message?.content || '', searchText.trim())"
+                ></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="divider-horizontal"></div>
     </div>
+    <div class="resizer" @mousedown="startResize" :class="{ resizing: isResizing }"></div>
     <div class="divider-vertical"></div>
-    <div class="right">
+    <div class="right" :style="{ width: rightWidth + '%' }">
       <div class="divider-horizontal"></div>
       <div class="chat-header">
         <ConservationHeader v-if="selectedConversation" :conversation="selectedConversation" />
       </div>
       <div class="divider-horizontal"></div>
       <!-- 聊天窗口 -->
-      <div class="chat-window">
+      <div class="chat-window" :style="{ height: chatWindowHeight + '%' }">
         <div class="chat-content">
           <ChatMessage
             v-for="message in currentChatHistory"
@@ -49,9 +108,14 @@
           />
         </div>
       </div>
+      <div
+        class="horizontal-resizer"
+        @mousedown="startHorizontalResize"
+        :class="{ resizing: isHorizontalResizing }"
+      ></div>
       <div class="divider-horizontal"></div>
       <!-- 聊天输入框 -->
-      <div class="chat-input">
+      <div class="chat-input" :style="{ height: chatInputHeight + '%' }">
         <ChatInput @sendMessage="handleSendMessage" />
       </div>
       <div class="divider-horizontal"></div>
@@ -76,6 +140,11 @@ import {
   markMessagesRead,
   getUserDetail,
 } from '../api'
+import { User } from '@/modules/auth/public.ts'
+import { highlightSearchTerm, createDebounceSearch } from '../utils/search'
+import { renderContent, copyMessageContent } from '../utils/message'
+import { ensureUser, userCache, getDefaultAvatar } from '../utils/user'
+import { convertMessagesToDisplay, sortConversationsByTime } from '../utils/data'
 
 const router = useRouter()
 const route = useRoute()
@@ -84,34 +153,105 @@ const conversationListData = ref<conversation[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-// 用户信息缓存，避免重复请求
-const userCache = new Map<number, user>()
+// 拖动分割线相关状态
+const centerWidth = ref(22) // 中间面板宽度百分比
+const rightWidth = ref(58) // 右侧面板宽度百分比
+const isResizing = ref(false)
 
-function getDefaultAvatar(): string {
-  return 'https://placehold.co/100x100/facc15/78350f?text=U'
-}
+// 水平拖动相关状态
+const chatWindowHeight = ref(70) // 聊天窗口高度百分比
+const chatInputHeight = ref(22) // 聊天输入框高度百分比
+const isHorizontalResizing = ref(false)
 
-async function ensureUser(userId: number): Promise<user> {
-  const cached = userCache.get(userId)
-  if (cached) return cached
-  const detail = await getUserDetail(userId)
-  const u: user = {
-    id: detail.userId,
-    nickname: detail.nickname || detail.username,
-    avatar: detail.avatar || getDefaultAvatar(),
-    url: `/user/${detail.userId}`,
+// 用户信息缓存已迁移到 utils/user.ts
+
+// 搜索结果类型
+interface SearchResult {
+  type: 'conversation' | 'message'
+  conversation: conversation
+  message?: {
+    content: string
+    time: string
+    sender: string
   }
-  userCache.set(userId, u)
-  return u
+  relevance: number // 相关性评分
 }
+
+// 搜索防抖
+const debouncedSearchText = ref('')
+
+// 防抖搜索函数已迁移到 utils/search.ts
+const debounceSearch = createDebounceSearch((text: string) => {
+  debouncedSearchText.value = text
+}, 300)
+
+// 监听搜索文本变化
+watch(searchText, (newText) => {
+  debounceSearch(newText)
+})
+
+// 统一搜索结果
+const searchResults = computed(() => {
+  if (!debouncedSearchText.value.trim()) {
+    return {
+      conversations: conversationList.value,
+      messages: [],
+    }
+  }
+
+  const searchTerm = debouncedSearchText.value.toLowerCase().trim()
+  const results: SearchResult[] = []
+
+  // 搜索会话（联系人）
+  conversationList.value.forEach((conv) => {
+    const user = conv.contactUser
+    if (!user) return
+
+    let relevance = 0
+
+    // 用户名完全匹配得分最高
+    if (user.nickname.toLowerCase() === searchTerm) {
+      relevance = 100
+    } else if (user.nickname.toLowerCase().startsWith(searchTerm)) {
+      relevance = 80
+    } else if (user.nickname.toLowerCase().includes(searchTerm)) {
+      relevance = 60
+    }
+
+    // 最新消息匹配
+    if (conv.newestMessage && conv.newestMessage.toLowerCase().includes(searchTerm)) {
+      relevance = Math.max(relevance, 40)
+    }
+
+    if (relevance > 0) {
+      results.push({
+        type: 'conversation',
+        conversation: conv,
+        relevance,
+      })
+    }
+  })
+
+  // 搜索聊天记录 - 暂时禁用，等待API支持
+  // TODO: 实现基于API的聊天记录搜索功能
+
+  // 按相关性排序
+  results.sort((a, b) => b.relevance - a.relevance)
+
+  return {
+    conversations: results.filter((r) => r.type === 'conversation').map((r) => r.conversation),
+    messages: results.filter((r) => r.type === 'message'),
+  }
+})
+
+// 过滤后的会话列表（保持向后兼容）
+const filteredConversationList = computed(() => {
+  return searchResults.value.conversations
+})
 
 // 按时间排序的会话列表，最新的在前面
 const conversationList = computed(() => {
-  return [...conversationListData.value].sort((a, b) => {
-    const timeA = new Date(a.lastMessage?.SendAt || a.time || 0).getTime()
-    const timeB = new Date(b.lastMessage?.SendAt || b.time || 0).getTime()
-    return timeB - timeA // 降序排列，新消息在前
-  })
+  return sortConversationsByTime(conversationListData.value)
 })
 
 // 聊天记录
@@ -120,14 +260,57 @@ const currentChatMessages = ref<messageDisplay[]>([])
 
 // 用户信息
 const myUser = ref<user>({
-  id: 1,
-  nickname: '小白',
-  avatar: 'https://placehold.co/100x100/facc15/78350f?text=F',
-  url: '/user/1',
+  id: 0,
+  nickname: 'Loading...',
+  avatar: 'https://placehold.co/100x100/facc15/78350f?text=L',
+  url: '/user/0',
 })
 
 // 当前用户ID
-const myUserId = computed(() => myUser.value.id)
+const myUserId = computed(() => {
+  const user = User.getInstance()
+  return user?.userAuth?.userId ? parseInt(user.userAuth.userId) : 0
+})
+
+// 初始化用户信息
+onMounted(async () => {
+  const user = User.getInstance()
+  console.log('当前用户信息:', user?.userAuth?.userId)
+
+  if (user?.userAuth?.userId) {
+    const userId = parseInt(user.userAuth.userId)
+    console.log('尝试获取用户ID:', userId)
+
+    if (userId > 0) {
+      try {
+        const userDetail = await getUserDetail(userId)
+        myUser.value = {
+          id: userDetail.userId,
+          nickname: userDetail.nickname || userDetail.username,
+          avatar: userDetail.avatar || 'https://placehold.co/100x100/facc15/78350f?text=U',
+          url: `/user/${userDetail.userId}`,
+        }
+        console.log('成功获取用户信息:', myUser.value)
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+        console.error('用户ID:', userId)
+        // 使用默认用户信息
+        myUser.value = {
+          id: userId,
+          nickname: '用户' + userId,
+          avatar: 'https://placehold.co/100x100/facc15/78350f?text=U',
+          url: `/user/${userId}`,
+        }
+      }
+    } else {
+      console.warn('用户ID无效:', userId)
+    }
+  } else {
+    console.warn('用户未登录或用户信息不可用')
+  }
+})
+
+// 高亮搜索关键词已迁移到 utils/search.ts
 
 // 选中的会话
 const selectedConversation = ref<conversation | null>(null)
@@ -137,30 +320,51 @@ const fetchConversationList = async () => {
   try {
     loading.value = true
     error.value = null
-    const data = await getConversationList()
-    // 并行获取所有会话的对端用户信息，并填充到 contactUser
-    const filled = await Promise.all(
-      data.map(async (conv) => {
-        const contact = await ensureUser(conv.OtherUserId)
-        return {
-          ...conv,
-          contactUser: contact,
-          newestMessage: conv.lastMessage?.Content || '',
-          time: conv.lastMessage?.SendAt || new Date().toISOString(),
-        }
+
+    // 首先尝试从API获取真实数据
+    console.log('[MessageView] 尝试从API获取会话列表...')
+    const apiConversations = await getConversationList()
+
+    // 详细输出会话列表数据
+    console.log('=== 会话列表数据详情 ===')
+    console.log('原始API响应:', apiConversations)
+    console.log('会话数量:', apiConversations.length)
+
+    // 输出每个会话的详细信息
+    apiConversations.forEach((conv, index) => {
+      console.log(`会话 ${index + 1}:`, {
+        otherUserId: conv.otherUserId,
+        unreadCount: conv.unreadCount,
+        lastMessage: conv.lastMessage,
+        lastMessageContent: conv.lastMessage?.content,
+        lastMessageTime: conv.lastMessage?.sentAt,
+        lastMessageSender: conv.lastMessage?.senderId,
+        lastMessageReceiver: conv.lastMessage?.receiverId,
+        isRead: conv.lastMessage?.isRead,
       })
-    )
-    conversationListData.value = filled
-    // 调试：输出会话列表中的用户信息
-    console.log(
-      '[MessageView] conversationList contactUser:',
-      conversationListData.value.map((c) => ({
-        id: c.contactUser?.id,
-        nickname: c.contactUser?.nickname,
-        avatar: c.contactUser?.avatar,
-        url: c.contactUser?.url,
-      }))
-    )
+    })
+    console.log('=== 会话列表数据详情结束 ===')
+
+    if (apiConversations.length > 0) {
+      console.log('[MessageView] 从API获取到会话数据:', apiConversations.length)
+      // 并行获取所有会话的对端用户信息，并填充到 contactUser
+      const filled = await Promise.all(
+        apiConversations.map(async (conv) => {
+          const contact = await ensureUser(conv.otherUserId)
+          return {
+            ...conv,
+            contactUser: contact,
+            newestMessage: conv.lastMessage?.content || '',
+            time: conv.lastMessage?.sentAt || new Date().toISOString(),
+          }
+        })
+      )
+      conversationListData.value = filled
+      console.log('[MessageView] 使用API会话数据:', conversationListData.value.length)
+    } else {
+      console.log('[MessageView] API无数据，显示空列表')
+      conversationListData.value = []
+    }
   } catch (err) {
     error.value = '获取会话列表失败'
     console.error('获取会话列表失败:', err)
@@ -179,11 +383,14 @@ const initializeSelectedConversation = () => {
 // 在组件挂载时初始化
 onMounted(async () => {
   // 加载本人资料，确保聊天窗口我的头像与其他位置一致
-  try {
-    const me = await ensureUser(myUser.value.id)
-    myUser.value = me
-  } catch (e) {
-    // 忽略头像失败，使用占位
+  const currentUserId = myUserId.value
+  if (currentUserId > 0) {
+    try {
+      const me = await ensureUser(currentUserId)
+      myUser.value = me
+    } catch (e) {
+      // 忽略头像失败，使用占位
+    }
   }
   await fetchConversationList()
   // 如果路由带有 userId，则优先选中该会话
@@ -197,21 +404,21 @@ onMounted(async () => {
 
 // 根据路由选择会话
 async function selectConversationByUserId(otherUserId: number) {
-  let conv = conversationListData.value.find((c) => c.OtherUserId === otherUserId)
+  let conv = conversationListData.value.find((c) => c.otherUserId === otherUserId)
   if (!conv) {
     // 若列表中暂无该会话，构造一个占位会话并填充用户信息
     const contact = await ensureUser(otherUserId)
     conv = {
-      OtherUserId: otherUserId,
+      otherUserId: otherUserId,
       lastMessage: {
-        MessageId: 0,
-        SenderId: otherUserId,
-        ReceiverId: myUser.value.id,
-        Content: '',
-        SendAt: new Date().toISOString(),
-        IsRead: true,
+        messageId: 0,
+        senderId: otherUserId,
+        receiverId: myUser.value.id,
+        content: '',
+        sentAt: new Date().toISOString(),
+        isRead: true,
       },
-      UnreadCount: 0,
+      unreadCount: 0,
       contactUser: contact,
       newestMessage: '',
       time: new Date().toISOString(),
@@ -236,49 +443,45 @@ watch(
 // 获取聊天记录
 const fetchChatHistory = async (userId: number) => {
   try {
-    loading.value = true
+    // 移除加载状态，避免点击会话时的加载动画
+    // loading.value = true
     error.value = null
-    const messages = await getChatHistory(userId)
+    // 首先尝试从API获取聊天记录
+    let messages = await getChatHistory(userId)
+
+    // API没有返回数据时，显示空聊天记录
+    if (messages.length === 0) {
+      console.log(`API无聊天记录数据 for user ${userId}`)
+    }
+
     // 预取涉及到的用户信息（发送者/接收者）
     const ids = new Set<number>()
     messages.forEach((m) => {
-      ids.add(m.SenderId)
-      ids.add(m.ReceiverId)
+      ids.add(m.senderId)
+      ids.add(m.receiverId)
     })
     await Promise.all(Array.from(ids).map((id) => ensureUser(id)))
 
     // 转换API数据格式为前端显示格式
-    const displayMessages: messageDisplay[] = messages.map((msg) => ({
-      MessageId: msg.MessageId,
-      SenderId: msg.SenderId,
-      ReceiverId: msg.ReceiverId,
-      Content: msg.Content,
-      SendAt: msg.SendAt,
-      IsRead: msg.IsRead,
-      messageId: msg.MessageId,
-      content: msg.Content,
-      sendTime: msg.SendAt,
-      sender: userCache.get(msg.SenderId)!,
-      receiver: userCache.get(msg.ReceiverId)!,
-      isRead: msg.IsRead,
-      type: 'text' as const,
-    }))
+    const displayMessages = convertMessagesToDisplay(messages, userCache)
     currentChatMessages.value = displayMessages
+
+    console.log(`加载了 ${displayMessages.length} 条聊天记录 for user ${userId}`)
 
     // 同步更新会话列表的最新消息（以最新一条消息为准）
     if (displayMessages.length > 0) {
       const latest = displayMessages[displayMessages.length - 1]
-      const conv = conversationListData.value.find((c) => c.OtherUserId === userId)
+      const conv = conversationListData.value.find((c) => c.otherUserId === userId)
       if (conv) {
         conv.newestMessage = latest.content
         conv.time = latest.sendTime
         conv.lastMessage = {
-          MessageId: latest.messageId,
-          SenderId: latest.sender.id,
-          ReceiverId: latest.receiver.id,
-          Content: latest.content,
-          SendAt: latest.sendTime,
-          IsRead: latest.isRead,
+          messageId: latest.messageId,
+          senderId: latest.sender.id,
+          receiverId: latest.receiver.id,
+          content: latest.content,
+          sentAt: latest.sendTime,
+          isRead: latest.isRead,
         }
       }
     }
@@ -293,9 +496,11 @@ const fetchChatHistory = async (userId: number) => {
   } catch (err) {
     error.value = '获取聊天记录失败'
     console.error('获取聊天记录失败:', err)
-  } finally {
-    loading.value = false
   }
+  // 移除loading状态，避免点击会话时的加载动画
+  // finally {
+  //   loading.value = false
+  // }
 }
 
 // 切换选中会话
@@ -303,24 +508,30 @@ async function handleConversationSelect(item: conversation) {
   selectedConversation.value = item
   // 标记消息已读
   try {
-    await markMessagesRead(item.OtherUserId)
-    item.UnreadCount = 0
+    await markMessagesRead(item.otherUserId)
+    item.unreadCount = 0
   } catch (err) {
     console.error('标记消息已读失败:', err)
   }
   // 获取聊天记录
-  await fetchChatHistory(item.OtherUserId)
+  await fetchChatHistory(item.otherUserId)
   // 路由跳转到子路径 /message/:userId（避免依赖命名路由）
-  router.push({ path: `/message/${item.OtherUserId}` }).catch(() => {})
+  router.push({ path: `/message/${item.otherUserId}` }).catch(() => {})
 }
 
 // 当前会话的聊天记录（使用缓存进行用户标准化）
 const currentChatHistory = computed(() => {
-  return currentChatMessages.value.map((m) => {
+  console.log(
+    '[MessageView] currentChatHistory 计算属性被调用，消息数量:',
+    currentChatMessages.value.length
+  )
+  const result = currentChatMessages.value.map((m) => {
     const sender = userCache.get(m.sender.id) || m.sender
     const receiver = userCache.get(m.receiver.id) || m.receiver
     return { ...m, sender, receiver }
   })
+  console.log('[MessageView] currentChatHistory 计算结果:', result.length, '条消息')
+  return result
 })
 
 async function handleSendMessage(content: string, type: 'text' | 'image') {
@@ -329,46 +540,48 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
   try {
     // 发送消息到服务器
     const result = await sendMessage({
-      receiverId: selectedConversation.value.OtherUserId,
+      receiverId: selectedConversation.value.otherUserId,
       content: content,
       type: type,
     })
 
     if (result.success) {
       // 确保接收者用户信息
-      const receiverUser = await ensureUser(selectedConversation.value.OtherUserId)
+      const receiverUser = await ensureUser(selectedConversation.value.otherUserId)
       // 创建新消息对象用于前端显示
       const newMessage: messageDisplay = {
-        MessageId: result.messageId,
-        SenderId: myUser.value.id,
-        ReceiverId: selectedConversation.value.OtherUserId,
-        Content: content,
-        SendAt: new Date().toISOString(),
-        IsRead: false,
         messageId: result.messageId,
+        senderId: myUserId.value, // 使用myUserId而不是myUser.value.id
+        receiverId: selectedConversation.value.otherUserId,
         content: content,
-        sendTime: new Date().toLocaleString(),
-        sender: myUser.value,
-        receiver: receiverUser,
+        sentAt: new Date().toISOString(),
         isRead: false,
+        sendTime: new Date().toLocaleString(),
+        sender: {
+          ...myUser.value,
+          id: myUserId.value, // 确保sender.id正确
+        },
+        receiver: receiverUser,
         type: type,
       }
 
       // 添加到当前聊天记录
       currentChatMessages.value.push(newMessage)
+      console.log('[MessageView] 新消息已添加到聊天记录:', newMessage)
+      console.log('[MessageView] 当前聊天记录数量:', currentChatMessages.value.length)
 
       // 更新会话列表中的最新消息
       const originalConversation = conversationListData.value.find(
-        (c) => c.OtherUserId === selectedConversation.value?.OtherUserId
+        (c) => c.otherUserId === selectedConversation.value?.otherUserId
       )
       if (originalConversation) {
         originalConversation.lastMessage = {
-          MessageId: result.messageId,
-          SenderId: myUser.value.id,
-          ReceiverId: selectedConversation.value.OtherUserId,
-          Content: content,
-          SendAt: new Date().toISOString(),
-          IsRead: false,
+          messageId: result.messageId,
+          senderId: myUserId.value, // 使用myUserId而不是myUser.value.id
+          receiverId: selectedConversation.value.otherUserId,
+          content: content,
+          sentAt: new Date().toISOString(),
+          isRead: false,
         }
         // 同时更新前端显示字段
         originalConversation.newestMessage = content
@@ -411,32 +624,116 @@ const handleMessageAction = async (action: string, message: messageDisplay) => {
   }
 }
 
-// 复制消息内容
+// 复制消息内容已迁移到 utils/message.ts
 const handleMessageCopy = async (message: messageDisplay) => {
-  try {
-    let textToCopy = ''
-
-    if (message.type === 'text') {
-      // 移除HTML标签，获取纯文本
-      const tempDiv = document.createElement('div')
-      tempDiv.innerHTML = renderContent(message.content)
-      textToCopy = tempDiv.textContent || tempDiv.innerText || ''
-    } else if (message.type === 'image') {
-      textToCopy = message.content // 图片URL
-    }
-
-    await navigator.clipboard.writeText(textToCopy)
-  } catch (error) {
-    console.error('复制失败:', error)
-  }
+  await copyMessageContent(message)
 }
 
-// 渲染消息内容（从ChatMessage组件复制）
-function renderContent(content: string) {
-  let html = content.replace(/\[emoji:(\w+)\]/g, (_match, p1) => {
-    return `<img src="/emoji/${p1}.png" alt="${p1}" class="emoji-img" />`
-  })
-  return html
+// 渲染消息内容已迁移到 utils/message.ts
+
+// 拖动分割线处理函数
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+
+  const startX = e.clientX
+  const startCenterWidth = centerWidth.value
+  const startRightWidth = rightWidth.value
+
+  const handleMouseMove = (e: MouseEvent) => {
+    const deltaX = e.clientX - startX
+    const containerWidth = document.querySelector('.page-content-wrapper')?.clientWidth || 1000
+    const deltaPercent = (deltaX / containerWidth) * 100
+
+    // 计算新的宽度
+    let newCenterWidth = startCenterWidth + deltaPercent
+    let newRightWidth = startRightWidth - deltaPercent
+
+    // 限制最小宽度
+    const minWidth = 15 // 最小15%
+    const maxWidth = 60 // 最大60%
+
+    if (newCenterWidth < minWidth) {
+      newCenterWidth = minWidth
+      newRightWidth = 100 - minWidth - 20 // 20%是其他元素占用的空间
+    } else if (newCenterWidth > maxWidth) {
+      newCenterWidth = maxWidth
+      newRightWidth = 100 - maxWidth - 20
+    } else if (newRightWidth < minWidth) {
+      newRightWidth = minWidth
+      newCenterWidth = 100 - minWidth - 20
+    }
+
+    centerWidth.value = newCenterWidth
+    rightWidth.value = newRightWidth
+  }
+
+  const handleMouseUp = () => {
+    isResizing.value = false
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+  }
+
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+}
+
+// 水平拖动分割线处理函数
+const startHorizontalResize = (e: MouseEvent) => {
+  isHorizontalResizing.value = true
+  document.body.style.cursor = 'row-resize'
+  document.body.style.userSelect = 'none'
+
+  const startY = e.clientY
+  const startWindowHeight = chatWindowHeight.value
+  const startInputHeight = chatInputHeight.value
+
+  const handleMouseMove = (e: MouseEvent) => {
+    const deltaY = e.clientY - startY
+    const containerHeight = document.querySelector('.right')?.clientHeight || 600
+    const deltaPercent = (deltaY / containerHeight) * 100
+
+    // 计算新的高度
+    let newWindowHeight = startWindowHeight + deltaPercent
+    let newInputHeight = startInputHeight - deltaPercent
+
+    // 限制最小高度
+    const minWindowHeight = 50 // 最小50%（聊天窗口最小高度）
+    const maxWindowHeight = 85 // 最大85%（聊天窗口最大高度）
+    const minInputHeight = 20 // 最小35%（确保发送按钮可见）
+    const maxInputHeight = 30 // 最大40%（输入框最大高度）
+
+    if (newWindowHeight < minWindowHeight) {
+      newWindowHeight = minWindowHeight
+      newInputHeight = 100 - minWindowHeight - 8 // 8%是头部占用的空间
+    } else if (newWindowHeight > maxWindowHeight) {
+      newWindowHeight = maxWindowHeight
+      newInputHeight = 100 - maxWindowHeight - 8
+    } else if (newInputHeight < minInputHeight) {
+      newInputHeight = minInputHeight
+      newWindowHeight = 100 - minInputHeight - 8
+    } else if (newInputHeight > maxInputHeight) {
+      newInputHeight = maxInputHeight
+      newWindowHeight = 100 - maxInputHeight - 8
+    }
+
+    chatWindowHeight.value = newWindowHeight
+    chatInputHeight.value = newInputHeight
+  }
+
+  const handleMouseUp = () => {
+    isHorizontalResizing.value = false
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+  }
+
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
 }
 </script>
 
@@ -450,7 +747,7 @@ function renderContent(content: string) {
 }
 
 .center {
-  width: 22%;
+  min-width: 200px;
   display: flex;
   flex-direction: column;
   overflow-wrap: break-word;
@@ -478,7 +775,6 @@ function renderContent(content: string) {
 }
 
 .right {
-  width: 58%;
   display: flex;
   flex-direction: column;
 }
@@ -490,7 +786,6 @@ function renderContent(content: string) {
 }
 
 .chat-window {
-  height: 70%;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -501,10 +796,6 @@ function renderContent(content: string) {
   flex: 1;
 }
 
-.chat-input {
-  height: 22%;
-}
-
 .divider-horizontal {
   width: 100%;
   border-bottom: 1px solid #444c5c;
@@ -513,6 +804,60 @@ function renderContent(content: string) {
 .divider-vertical {
   width: 1px;
   background-color: #444c5c;
+}
+
+/* 拖动分割线样式 */
+.resizer {
+  width: 1px;
+  background-color: #444c5c;
+  cursor: col-resize;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.resizer:hover {
+  background-color: #5a6478;
+}
+
+.resizer.resizing {
+  background-color: #4a9eff;
+}
+
+.resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -2px;
+  right: -2px;
+  bottom: 0;
+  background-color: transparent;
+}
+
+/* 水平拖动分割线样式 */
+.horizontal-resizer {
+  height: 1px;
+  background-color: #444c5c;
+  cursor: row-resize;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.horizontal-resizer:hover {
+  background-color: #5a6478;
+}
+
+.horizontal-resizer.resizing {
+  background-color: #4a9eff;
+}
+
+.horizontal-resizer::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  background-color: transparent;
 }
 
 .loading,
@@ -528,5 +873,149 @@ function renderContent(content: string) {
 
 .error {
   color: #e74c3c;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .center {
+    width: 25%;
+    min-width: 180px;
+  }
+
+  .right {
+    width: 55%;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content-wrapper {
+    flex-direction: column;
+  }
+
+  .center {
+    width: 100% !important;
+    min-width: unset;
+    height: 40vh;
+  }
+
+  .right {
+    width: 100% !important;
+    height: 60vh;
+  }
+
+  .resizer {
+    display: none;
+  }
+
+  .horizontal-resizer {
+    display: none;
+  }
+
+  .chat-header {
+    height: 8% !important;
+  }
+
+  .chat-window {
+    height: 70% !important;
+  }
+
+  .chat-input {
+    height: 22% !important;
+  }
+
+  .divider-vertical {
+    width: 100%;
+    height: 1px;
+    background-color: #444c5c;
+  }
+}
+
+@media (max-width: 480px) {
+  .center {
+    height: 35vh;
+  }
+
+  .right {
+    height: 65vh;
+  }
+
+  .message-heading {
+    padding-left: 16px;
+    font-size: 18px;
+  }
+}
+
+/* 搜索结果分类样式 */
+.search-section {
+  margin-bottom: 16px;
+}
+
+.search-section-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #6b7280;
+  padding: 8px 16px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 聊天记录搜索结果样式 */
+.message-search-result {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.message-search-result:hover {
+  background-color: #f9fafb;
+}
+
+.message-search-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.message-search-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.message-search-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.message-search-name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #374151;
+}
+
+.message-search-time {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.message-search-content {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-left: 44px;
+}
+
+/* 搜索高亮样式 */
+:deep(.highlight) {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 1px 2px;
+  border-radius: 2px;
+  font-weight: bold;
 }
 </style>

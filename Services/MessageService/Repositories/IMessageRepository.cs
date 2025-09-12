@@ -7,9 +7,9 @@ namespace MessageService.Repositories
 {
     public interface IMessageRepository
     {
-        Task<IEnumerable<ConversationDto>> GetConversationsAsync(int currentUserId);
-        Task<IEnumerable<MessageDto>> GetMessagesAsync(int currentUserId, int otherUserId);
+        Task<IEnumerable<ConversationDto>> GetConversationsAsync(long? currentUserId);
+        Task<IEnumerable<MessageDto>> GetMessagesAsync(long? currentUserId, long? otherUserId);
         Task AddMessageAsync(Message message);
-        Task MarkAsReadAsync(int currentUserId, int otherUserId);
+        Task MarkAsReadAsync(long? currentUserId, long? otherUserId);
     }
 }

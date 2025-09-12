@@ -28,14 +28,6 @@ namespace NoticeService.Models
         [Column("TARGET_USER_ID")]
         public int? TargetUserId { get; set; }
 
-        // LIKE_TIME的别名
-        [NotMapped]
-        public DateTime? CreatedAt
-        {
-            get => LikeTime;
-            set => LikeTime = value;
-        }
-
         [NotMapped]
         public List<int> LikerIds { get; set; } // 临时存储点赞者 ID 摘要
     }
