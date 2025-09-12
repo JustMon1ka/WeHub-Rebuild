@@ -203,7 +203,7 @@ const focusInput = () => {
   position: relative;
   display: flex;
   align-items: center;
-  width: 400px; /* 根据需要调整 */
+  width: 300px; /* 根据需要调整 */
   height: 40px;
   background-color: #2c2c2c; /* 灰黑底 */
   border-radius: 20px 20px 20px 20px; /* 长边为矩形，短边为半圆 */
