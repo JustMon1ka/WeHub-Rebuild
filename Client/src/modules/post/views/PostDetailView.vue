@@ -11,29 +11,15 @@ import type { PostDetail } from '@/modules/post/types';
 import UserInfo from '@/modules/user/scripts/UserInfo';
 import { formatTime } from '@/modules/core/utils/time';
 
-// 演示 Markdown（注意：不要用 $$...$$；行内公式用 \( ... \)，块级用 \[ ... \]）
-const mdDemo = ref<string>(
-`
-## 图片
-![示意图](https://placehold.co/800x400/png)
+// 路由参数
+const route = useRoute()
+const postId = Number(route.params.id)
 
-## 视频直链（自动 \`<video>\`）  
-https://www.w3schools.com/html/mov_bbb.mp4
-
-## Bilibili（自动 \`<iframe>\`）  
-https://www.bilibili.com/video/BV1xx411c7mD
-`
-);
-
-// —— 路由参数
-const route = useRoute();
-const postId = Number(route.params.id);
-
-// —— 数据状态
-const loading = ref(false);
-const err = ref<unknown>(null);
-const post = ref<PostDetail | null>(null);
-const author = ref<UserInfo | null>(null);
+// 状态
+const loading = ref(true)
+const errorText = ref('')
+const post = ref<PostDetail | null>(null)
+const author = ref<UserInfo | null>(null)
 
 // —— 按钮状态
 const isLiked = ref(false);
@@ -42,33 +28,42 @@ const isFavorited = ref(false);
 const favoriteCount = ref(0);
 const commentCount = ref(0); // 添加评论数状态
 
-// —— 衍生显示
+// 仅在“非代码块”中把 $$...$$ → \[...\]，避免 KaTeX 报错
+function sanitizeMath(md: string): string {
+  if (!md) return '';
+  const parts = md.split(/(```[\s\S]*?```)/g);
+  return parts.map(seg => {
+    const isCode = seg.startsWith('```') && seg.endsWith('```');
+    if (isCode) return seg;
+    return seg.replace(/\$\$([\s\S]*?)\$\$/g, (_m, g1) => `\\[${g1}\\]`);
+  }).join('');
+}
+
+// 衍生显示
 const createdAtLabel = computed(() =>
   post.value?.createdAt ? formatTime(String(post.value.createdAt)) : ''
-);
+)
+const ready = computed(() => !!post.value && typeof post.value.content === 'string');
+const contentMd = computed(() => sanitizeMath(post.value?.content || ''));
 
-// —— 拉取详情与作者信息
-onMounted(async () => {
+async function load() {
   loading.value = true;
+  errorText.value = '';
   try {
     const detail = await getPostDetail(postId);
     post.value = detail;
-    
-    // 设置按钮状态
-    isLiked.value = detail.isLiked || false;
-    likeCount.value = detail.likes || 0;
-    isFavorited.value = detail.isFavorited || false;
-
     author.value = new UserInfo(String(detail.userId));
     await author.value.loadUserData();
-  } catch (e) {
-    err.value = e;
-    // 这里不抛出，让页面仍能用 mdDemo 回退渲染
-    console.error('[PostDetail] load失败:', e);
+  } catch (e: any) {
+    console.error('[PostDetail] load failed:', e);
+    errorText.value = e?.message || '加载失败，请稍后重试';
   } finally {
     loading.value = false;
   }
-});
+}
+function reload() { load(); }
+
+onMounted(load);
 
 // 处理评论数变化事件
 function handleCommentCountChange(newCount: number) {
@@ -120,12 +115,14 @@ function handleError(error: unknown) {
       <h1 class="text-2xl font-bold text-slate-100 leading-snug">
         {{ post?.title || '帖子标题' }}
       </h1>
-      <p v-if="post?.views!==undefined || post?.likes!==undefined || commentCount!==undefined" class="mt-2 text-sm text-slate-500">
-        <span v-if="post?.views!==undefined">阅读 {{ post.views }}</span>
-        <span v-if="post?.views!==undefined && post?.likes!==undefined" class="mx-2">·</span>
-        <span v-if="post?.likes!==undefined">点赞 {{ post.likes }}</span>
-        <span v-if="(post?.views!==undefined || post?.likes!==undefined) && commentCount!==undefined" class="mx-2">·</span>
-        <span v-if="commentCount!==undefined">评论 {{ commentCount }}</span>
+      <p v-if="post?.views !== undefined || post?.likes !== undefined || commentCount !== undefined"
+        class="mt-2 text-sm text-slate-500">
+        <span v-if="post?.views !== undefined">阅读 {{ post.views }}</span>
+        <span v-if="post?.views !== undefined && post?.likes !== undefined" class="mx-2">·</span>
+        <span v-if="post?.likes !== undefined">点赞 {{ post.likes }}</span>
+        <span v-if="(post?.views !== undefined || post?.likes !== undefined) && commentCount !== undefined"
+          class="mx-2">·</span>
+        <span v-if="commentCount !== undefined">评论 {{ commentCount }}</span>
       </p>
     </div>
 
@@ -133,10 +130,11 @@ function handleError(error: unknown) {
     <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
       <div class="flex items-center gap-3">
         <img v-if="author?.avatarUrl" :src="author.avatarUrl" class="w-12 h-12 rounded-full" alt="avatar">
-        <div v-else class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 text-sm">U</div>
+        <div v-else class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 text-sm">
+          U</div>
         <div class="min-w-0">
           <div class="font-medium text-slate-200 truncate">
-            {{ author?.nickname || ('用户'+(post?.userId??'')) || '帖主昵称' }}
+            {{ author?.nickname || ('用户' + (post?.userId ?? '')) || '帖主昵称' }}
           </div>
           <div class="text-xs text-slate-500">
             {{ createdAtLabel || '' }}
@@ -144,16 +142,24 @@ function handleError(error: unknown) {
         </div>
       </div>
     </div>
-    
+
     <!-- 帖子内容 -->
-    <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
-      <MarkdownViewer :model-value="post?.content ?? mdDemo" />
+    <div v-if="ready" class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
+      <MarkdownViewer :model-value="contentMd" />
     </div>
-    
+    <div v-else-if="loading" class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6 text-slate-500">
+      正在加载…
+    </div>
+    <div v-else class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6 text-red-400">
+      {{ errorText }}
+      <button class="ml-3 px-3 py-1 rounded-xl border border-red-400 hover:bg-red-400/10" @click="reload">重试</button>
+    </div>
+
     <!-- 标签 -->
     <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
       <div v-if="post?.tags?.length" class="flex flex-wrap gap-2">
-        <span v-for="t in post.tags" :key="t" class="px-2 py-1 rounded-full bg-slate-800 text-slate-300 text-xs">#{{ t }}</span>
+        <span v-for="t in post.tags" :key="t" class="px-2 py-1 rounded-full bg-slate-800 text-slate-300 text-xs">#{{ t
+          }}</span>
       </div>
       <div v-else class="text-slate-500 text-sm">无标签</div>
     </div>
@@ -162,42 +168,26 @@ function handleError(error: unknown) {
     <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
       <div class="flex items-center justify-center gap-4">
         <!-- 点赞按钮 -->
-        <LikeButton
-          :postId="postId"
-          :isLiked="isLiked"
-          :likeCount="likeCount"
-          @update:isLiked="handleLikeUpdate"
-          @update:likeCount="handleLikeCountUpdate"
-          @error="handleError"
-        />
-        
+        <LikeButton :postId="postId" :isLiked="isLiked" :likeCount="likeCount" @update:isLiked="handleLikeUpdate"
+          @update:likeCount="handleLikeCountUpdate" @error="handleError" />
+
         <!-- 分享按钮 -->
         <ShareButton :postId="postId" />
-        
+
         <!-- 收藏按钮 -->
-        <FavoriteButton
-          :postId="postId"
-          :isFavorited="isFavorited"
-          :favoriteCount="favoriteCount"
-          :showCount="true"
-          @update:isFavorited="handleFavoriteUpdate"
-          @update:favoriteCount="handleFavoriteCountUpdate"
-          @error="handleError"
-        />
+        <FavoriteButton :postId="postId" :isFavorited="isFavorited" :favoriteCount="favoriteCount" :showCount="true"
+          @update:isFavorited="handleFavoriteUpdate" @update:favoriteCount="handleFavoriteCountUpdate"
+          @error="handleError" />
       </div>
     </div>
 
     <!-- 评论区 -->
     <div class="border border-slate-800 rounded-2xl bg-slate-900/30 p-4 md:p-6">
       <h3 class="text-xl font-bold text-slate-100 mb-4">评论 ({{ commentCount }})</h3>
-      
+
       <!-- 评论列表组件 -->
-      <CommentList 
-        :post-id="postId"
-        @comment-added="handleCommentAdded"
-        @comment-deleted="handleCommentDeleted"
-        @comment-count-change="handleCommentCountChange"
-      />
+      <CommentList :post-id="postId" @comment-added="handleCommentAdded" @comment-deleted="handleCommentDeleted"
+        @comment-count-change="handleCommentCountChange" />
     </div>
   </div>
 </template>
