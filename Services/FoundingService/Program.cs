@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // 添加控制器支持
 builder.Services.AddControllers();
 
+
 // 允许跨域
 builder.Services.AddCors(options =>
 {
