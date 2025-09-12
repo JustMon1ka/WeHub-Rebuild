@@ -1,5 +1,4 @@
 import NoticeView from './views/NoticeView.vue'
-import LikeDetailsView from './views/LikeDetailsView.vue'
 
 export default {
     getRoutes() {
@@ -17,7 +16,7 @@ export default {
             {
                 path: '/notice/likeDetails/:targetType(post|comment)/:targetId',
                 name: 'likeDetails',
-                component: LikeDetailsView,
+                component: () => import('./views/LikeDetailsView.vue'),
                 meta: { title: '点赞详情', navi: true, recommend: true, requireLogin: true },
             }
         ]
