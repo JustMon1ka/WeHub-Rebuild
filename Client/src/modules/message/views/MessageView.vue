@@ -76,6 +76,7 @@ import {
   markMessagesRead,
   getUserDetail,
 } from '../api'
+import { User } from '@/modules/auth/public.ts'
 
 const router = useRouter()
 const route = useRoute()
@@ -120,14 +121,35 @@ const currentChatMessages = ref<messageDisplay[]>([])
 
 // 用户信息
 const myUser = ref<user>({
-  id: 1,
-  nickname: '小白',
-  avatar: 'https://placehold.co/100x100/facc15/78350f?text=F',
-  url: '/user/1',
+  id: 0,
+  nickname: 'Loading...',
+  avatar: 'https://placehold.co/100x100/facc15/78350f?text=L',
+  url: '/user/0',
 })
 
 // 当前用户ID
-const myUserId = computed(() => myUser.value.id)
+const myUserId = computed(() => {
+  const user = User.getInstance()
+  return user?.userAuth?.userId ? parseInt(user.userAuth.userId) : 0
+})
+
+// 初始化用户信息
+onMounted(async () => {
+  const user = User.getInstance()
+  if (user?.userAuth?.userId) {
+    try {
+      const userDetail = await getUserDetail(parseInt(user.userAuth.userId))
+      myUser.value = {
+        id: userDetail.userId,
+        nickname: userDetail.nickname || userDetail.username,
+        avatar: userDetail.avatar || 'https://placehold.co/100x100/facc15/78350f?text=U',
+        url: `/user/${userDetail.userId}`,
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    }
+  }
+})
 
 // 选中的会话
 const selectedConversation = ref<conversation | null>(null)

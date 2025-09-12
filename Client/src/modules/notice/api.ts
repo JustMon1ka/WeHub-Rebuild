@@ -16,9 +16,25 @@ import type {
 } from './types'
 import { unwrap } from './types'
 import { getUserDetail } from '../message/api'
+import { User } from '@/modules/auth/public.ts'
 
 // 设置baseURL
-axios.defaults.baseURL = 'http://127.0.0.1:4523/m1/7050705-6770801-default/api'
+axios.defaults.baseURL = 'http://localhost:5000'
+
+// 获取当前用户ID
+function getCurrentUserId(): string | null {
+    const user = User.getInstance()
+    return user?.userAuth?.userId || null
+}
+
+// 添加认证拦截器
+axios.interceptors.request.use((config) => {
+    const user = User.getInstance()
+    if (user?.userAuth?.token) {
+        config.headers.Authorization = `Bearer ${user.userAuth.token}`
+    }
+    return config
+})
 
 
 // 获取未读通知数量
