@@ -102,7 +102,8 @@ public class PostController : ControllerBase
             Tags = post.TagNames,
             CreatedAt = post.CreatedAt ?? DateTime.MinValue,
             Views = post.Views ?? 0,
-            Likes = post.Likes ?? 0
+            Likes = post.Likes ?? 0,
+            CircleId = post.CircleId
         };
     }
 

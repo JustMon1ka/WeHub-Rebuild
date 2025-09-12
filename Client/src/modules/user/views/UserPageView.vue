@@ -73,14 +73,16 @@ watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
 
 function onCancel(){
   if (userInfoTemp.value.changed){
-    userInfoTemp.value = userInfo.value.copy()
+    userInfoTemp.value = userInfo.value.copy();
   }
-  editMode.value = false
+  editMode.value = false;
 }
 
 function onSave(){
-  userInfo.value = userInfoTemp.value.copy(userInfo.value);
+  userInfo.value = new UserInfo(userId);
+  userInfo.value.loadUserData(); // 重新加载用户数据
   editMode.value = false;
+  tempCopied.value = false;
   if (userInfo.value.isMe) {
     User.getInstance()?.reloadUserInfo();
   }

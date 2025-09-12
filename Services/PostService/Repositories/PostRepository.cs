@@ -5,6 +5,7 @@ using PostService.DTOs;
 using PostService.Utils;
 using JiebaNet.Segmenter;
 using LinqKit;
+using Oracle.ManagedDataAccess.Client;
 
 namespace PostService.Repositories
 {
@@ -248,34 +249,30 @@ namespace PostService.Repositories
                 return new List<Post>();
             }
 
-            // 2. 在数据库中构建 OR 查询：只要标题或内容包含任何一个关键词，就返回
-            var postsQuery = context.Posts
-                .Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
+            // 2. 构建 SQL 条件
+            var whereConditions = new List<string>();
+            var sqlParameters = new List<object>();
 
-            // 构建动态的 OR 条件
-            var predicate = PredicateBuilder.False<Post>();
-            foreach (var token in tokens)
+            for (int i = 0; i < tokens.Count; i++)
             {
-                // EF Core 的 LIKE 语法
-                predicate = predicate.Or(p => p.Title != null && p.Title.Contains(token))
-                    .Or(p => p.Content != null && p.Content.Contains(token));
-            }
-        
-            // 应用构建的谓词
-            postsQuery = postsQuery.Where(predicate);
-
-            // 3. 限制返回条目数
-            if (maxCandidates.HasValue && maxCandidates.Value > 0)
-            {
-                postsQuery = postsQuery.Take(maxCandidates.Value);
+                string paramName = $":p{i}";
+                whereConditions.Add($"Title LIKE '%' || {paramName} || '%' OR Content LIKE '%' || {paramName} || '%'");
+                sqlParameters.Add(new OracleParameter(paramName, tokens[i]));
             }
 
-            // 4. 包含关联数据并执行查询
-            return await postsQuery
-                .Include(p => p.PostTags!).ThenInclude(pt => pt.Tag!)
-                .Include(p => p.User!)
-                .Include(p => p.Circle!)
+            string sql = $@"
+SELECT *
+FROM Post
+WHERE Is_Deleted = 0 AND Is_Hidden = 0
+  AND ({string.Join(" OR ", whereConditions)})
+ORDER BY Post_Id
+";
+            
+            var posts = await context.Posts
+                .FromSqlRaw(sql, sqlParameters.ToArray())
                 .ToListAsync();
+
+            return posts;
         }
         
         /// <summary>

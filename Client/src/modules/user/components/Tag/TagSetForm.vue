@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, type Ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, type Ref } from 'vue'
 import { nanoid } from 'nanoid'
 import styles from '@/modules/user/scripts/Styles.ts'
 import UserInfo from '@/modules/user/scripts/UserInfo.ts'
@@ -8,8 +8,9 @@ const emit = defineEmits<{
   (e: 'changed'): void;
 }>();
 
-const selectedTags: Ref<Map<string, string>> = defineModel<Map<string, string>>(
-  'selectedTags', { required: true });
+const userInfo : Ref<UserInfo> = defineModel<UserInfo>('userInfo', { required: true });
+
+const selectedTags = computed(() => userInfo.value.userTags);
 
 const editing: Ref<boolean> = defineModel<boolean>(
   'editing', { required: true, default: false });
@@ -20,27 +21,23 @@ let formElement = document.getElementById(formId);
 const tagStyle = ref(styles.value.TagBasic);
 
 
-function onRemoveTag(event: MouseEvent) {
+function onRemoveTag(event: MouseEvent, tagName: string) {
   const target = event.target as HTMLButtonElement;
   let tagId: string = target.id;
 
   if (!tagId) return;
-  selectedTags.value.delete(tagId);
+  userInfo.value.removeTag(tagId, tagName);
   emit('changed');
 }
 
 async function addTag(event: Event) {
   let tagName: string = input.value.trim();
-
   // 替换空格为连字符
   tagName = tagName.replace(/\s+/g, '-');
+  if (!tagName) return;
 
-  const tagId = await UserInfo.getTagId(tagName);
-  if (tagName && tagId) {
-    // 添加标签到集合
-    selectedTags.value.set(tagId, tagName);
-    emit('changed');
-  }
+  userInfo.value.addTag(tagName);
+  emit('changed');
   input.value = '';
 }
 
@@ -73,7 +70,7 @@ function onfocus(event: Event) {
         <TransitionGroup name="list">
           <button v-for="([id ,tag], index) in selectedTags"
                   :key="'btn' + tag" :id="'btn' + id" :class="tagStyle">
-            <label :for="tag" :id="id" @click.prevent.stop="onRemoveTag" v-show="editing" :class="styles.TagDelete">×</label>
+            <label :for="tag" :id="id" @click.prevent.stop="onRemoveTag($event, tag)" v-show="editing" :class="styles.TagDelete">×</label>
             {{ tag }}
           </button>
           <input :key="input" v-model.lazy="input" @blur="addTag" @keyup.enter.prevent="addTag" type="text"
