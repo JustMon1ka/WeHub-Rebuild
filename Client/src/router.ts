@@ -11,6 +11,7 @@ import notFound from './NotFound.vue'
 import postRouter from './modules/post/router.ts'
 import postCreateRouter from './modules/postCreate/router.ts'
 import userRouter from './modules/user/router.ts'
+import foundingRouter from './modules/Founding/router.ts'
 import { showHoverLogin, showNavigationBar, showRecommendBar } from './App.vue'
 // import yourRouter from './yourModule/router.ts'
 
@@ -39,6 +40,9 @@ const router = createRouter({
     ...noticeRouter.getRoutes(),
     ...reportRouter.getRoutes(),
     ...postRouter,                   // post 模块路由数组
+     ...foundingRouter.getRoutes(),
+    //  console.log("Founding router object:", foundingRouter),
+    //  console.log("Founding routes:", foundingRouter.getRoutes()),
     // ...yourRouter.getRoutes(),
     // your router must be imported before NotFound route
     {

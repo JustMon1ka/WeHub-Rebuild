@@ -6,7 +6,7 @@ namespace PostService.Services
 {  
     public interface ILikeService
     {
-        Task ToggleLikeAsync(int userId, LikeRequest request);
+        Task ToggleLikeAsync(long userId, LikeRequest request);
     }
     public class LikeService : ILikeService
     {
@@ -24,7 +24,7 @@ namespace PostService.Services
             _redisRepository = redisRepository;
         }
 
-        public async Task ToggleLikeAsync(int userId, LikeRequest request)
+        public async Task ToggleLikeAsync(long userId, LikeRequest request)
         {
             var like = new Like
             {
