@@ -3,7 +3,7 @@ Markdown渲染组件
 
 用法：
 <script>中：
-import MarkdownViewer from ...
+import MarkdownViewer from '@/modules/post/components/MarkdownViewer.vue';
 <template>中：
 <MarkdownViewer ... />
 

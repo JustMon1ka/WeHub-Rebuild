@@ -3,10 +3,11 @@ using PostService.Models;
 using PostService.Repositories;
 
 namespace PostService.Services
-{  
+{
     public interface ILikeService
     {
-        Task ToggleLikeAsync(int userId, LikeRequest request);
+        Task ToggleLikeAsync(long userId, LikeRequest request);
+        Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId);
     }
     public class LikeService : ILikeService
     {
@@ -24,10 +25,11 @@ namespace PostService.Services
             _redisRepository = redisRepository;
         }
 
-        public async Task ToggleLikeAsync(int userId, LikeRequest request)
+        public async Task ToggleLikeAsync(long userId, LikeRequest request)
         {
             var like = new Like
             {
+                UserId = userId,
                 TargetId = request.TargetId,
                 TargetType = request.Type,
                 IsLike = request.Like
@@ -57,6 +59,11 @@ namespace PostService.Services
                     await _likeRepository.DecrementLikeCountAsync(postId);
                 }
             }
+        }
+
+        public async Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId)
+        {
+            return await _likeRepository.GetLikeStatusAsync(userId, targetType, targetId);
         }
     }
 }

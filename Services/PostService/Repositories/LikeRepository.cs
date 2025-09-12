@@ -9,10 +9,11 @@ namespace PostService.Repositories
     {
         Task IncrementLikeCountAsync(long postId);
         Task DecrementLikeCountAsync(long postId);
-        Task<bool> ToggleLikeAsync(int userId, Like like);
+        Task<bool> ToggleLikeAsync(long userId, Like like);
+        Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId);
     }
-    
-    public class LikeRepository: ILikeRepository
+
+    public class LikeRepository : ILikeRepository
     {
         private readonly AppDbContext _context;
 
@@ -50,7 +51,7 @@ namespace PostService.Repositories
         /// <param name="userId">用户ID</param>
         /// <param name="like">点赞请求（包含 TargetId、Type、IsLike）</param>
         /// <returns>是否有状态变化（true = 点赞/取消点赞成功，false = 没有变化）</returns>
-        public async Task<bool> ToggleLikeAsync(int userId, Like like)
+        public async Task<bool> ToggleLikeAsync(long userId, Like like)
         {
             var existing = await _context.Set<Like>()
                 .FirstOrDefaultAsync(l => l.UserId == userId && l.TargetId == like.TargetId && l.TargetType == like.TargetType);
@@ -78,6 +79,13 @@ namespace PostService.Repositories
                 }
                 return false; // 原本就没有点赞，不需要改
             }
+        }
+        
+        public async Task<bool> GetLikeStatusAsync(long userId, string targetType, long targetId)
+        {
+            var existing = await _context.Set<Like>()
+                .FirstOrDefaultAsync(l => l.UserId == userId && l.TargetId == targetId && l.TargetType == targetType);
+            return existing != null;
         }
     }
 }

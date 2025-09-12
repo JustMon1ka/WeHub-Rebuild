@@ -2,8 +2,8 @@
   <button
     class="like-btn"
     :class="[
-      isLikedLocal 
-        ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20' 
+      isLikedLocal
+        ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
         : 'text-slate-500 hover:bg-slate-800 hover:text-red-400'
     ]"
     :aria-pressed="isLikedLocal ? 'true' : 'false'"
@@ -24,6 +24,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { toggleLike } from "../../post/api";
+import { useAuthState } from '../utils/useAuthState';
 
 const emit = defineEmits<{
   (e: "update:isLiked", v: boolean): void;
@@ -40,6 +41,7 @@ const props = defineProps<{
 const isLikedLocal = ref(props.isLiked);
 const likeCountLocal = ref(props.likeCount);
 const pending = ref(false);
+const { currentUser } = useAuthState();
 
 watch(() => props.isLiked, (v) => (isLikedLocal.value = v));
 watch(() => props.likeCount, (v) => (likeCountLocal.value = v));
@@ -57,7 +59,7 @@ async function onToggleLike() {
   likeCountLocal.value = next ? prevCount + 1 : Math.max(0, prevCount - 1);
 
   try {
-    await toggleLike({ type: "post", target_id: props.postId, like: next });
+    await toggleLike({ type: "post", targetId: props.postId, like: next}); // TODO: 替换为实际用户ID
     emit("update:isLiked", isLikedLocal.value);
     emit("update:likeCount", likeCountLocal.value);
   } catch (e) {

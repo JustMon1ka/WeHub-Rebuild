@@ -48,10 +48,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import {computed, onMounted, ref} from 'vue';
 // 这里假设你已经提供了这两个方法
-import { getSearchSuggestion, getSearch } from '../api.ts';
-import {type KeywordType, type SearchSuggestions, type SearchResponse} from "../types.ts"
+import {getPosts, getSearch, getSearchSuggestion} from '../api.ts';
+import {type PostListItem, type SearchResponse, type SearchSuggestions} from "../types.ts"
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const query = ref('');
@@ -158,9 +158,12 @@ const performSearch = async (searchQuery: string) => {
   try {
     console.log(`正在搜索：${searchQuery}`);
     const searchResult: SearchResponse = await getSearch(searchQuery);
-    // 这里可以处理搜索结果，例如跳转到新页面
-    console.log('搜索结果:', searchResult.data);
-    alert(`搜索结果已在控制台打印：\n${JSON.stringify(searchResult.data, null, 2)}`);
+    if (!searchResult.data || searchResult.data.length === 0) {
+      console.log("没有找到任何搜索结果。");
+      return [];
+    }
+    const ids: string = searchResult.data.map(item => item.postId).join(',');
+    return await getPosts(ids);
   } catch (error) {
     console.error('搜索失败:', error);
     alert('搜索失败，请稍后重试。');
@@ -174,7 +177,9 @@ const handleSearch = () => {
     finalQuery = placeholderText.value;
   }
   if (finalQuery) {
-    performSearch(finalQuery);
+    const searchResults = performSearch(finalQuery);
+    // 跳转到xxxView
+
   }
   // 搜索后隐藏建议栏
   showSuggestions.value = false;
@@ -198,7 +203,7 @@ const focusInput = () => {
   position: relative;
   display: flex;
   align-items: center;
-  width: 400px; /* 根据需要调整 */
+  width: 300px; /* 根据需要调整 */
   height: 40px;
   background-color: #2c2c2c; /* 灰黑底 */
   border-radius: 20px 20px 20px 20px; /* 长边为矩形，短边为半圆 */

@@ -5,9 +5,10 @@ import { RouterView, useRoute } from 'vue-router'
 
 import NavigationBar from '@/modules/core/components/NavigationBar.vue'
 import NavigationBarMobile from '@/modules/core/components/NavigationBarMobile.vue'
-import RecommendBar from '@/modules/core/components/RecommendBar.vue'
+import RecommendBar from '@/modules/core/components/RightAside.vue'
 import PostCreate from '@/modules/postCreate/views/CreatePostView.vue'
 import LoginHover from '@/modules/auth/views/LoginHover.vue'
+import RightAside from '@/modules/core/components/RightAside.vue'
 
 const route = useRoute()
 </script>
@@ -27,7 +28,11 @@ export const showRecommendBar = ref(true)
         <RouterView class="flex-auto h-dvh overflow-y-auto" />
         <PostCreate v-if="route.name === 'post-create'" class="h-dvh overflow-y-auto"/>
       </div>
-      <RecommendBar v-show="showRecommendBar" id="recommend-bar" class="flex-none h-24 overflow-hidden md:h-screen px-5 py-5 z-100"/>
+      <RightAside
+        v-show="showRecommendBar && route.name !== 'founding'"
+        id="recommend-bar"
+        class="flex-none h-24 overflow-hidden md:h-screen px-5 py-5 z-100"
+      />
     </div>
 
     <!-- 移动端底部导航栏 -->

@@ -5,7 +5,7 @@ using PostService.Services;
 
 namespace PostService.Controllers
 {
-    [ApiController]
+    /*[ApiController]
     [Route("api/posts/like")]
     public class LikeController : ControllerBase
     {
@@ -20,9 +20,9 @@ namespace PostService.Controllers
         [HttpPost]
         public async Task<IActionResult> LikePost([FromBody] LikeRequest request)
         {
-            var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            var userId = request.UserId;
             await _service.ToggleLikeAsync(userId, request);
             return Ok(new { code = 200, msg = (string)null, data = (object)null });
         }
-    }
+    }*/
 }

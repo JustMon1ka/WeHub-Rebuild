@@ -108,6 +108,8 @@ namespace PostService
             builder.Services.AddScoped<ILikeRepository, LikeRepository>();
             builder.Services.AddScoped<ILikeService, LikeService>();
             builder.Services.AddScoped<IShareService, ShareService>();
+            builder.Services.AddScoped<FavoriteRepository>();
+            builder.Services.AddScoped<FavoriteService>();
 
             var app = builder.Build();
 
