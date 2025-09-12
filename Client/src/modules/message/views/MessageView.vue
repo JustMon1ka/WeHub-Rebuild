@@ -22,9 +22,9 @@
           <div v-else>
             <Conversation
               v-for="item in conversationList"
-              :key="item.OtherUserId"
+              :key="item.otherUserId"
               :conversation="item"
-              :selected="selectedConversation?.OtherUserId === item.OtherUserId"
+              :selected="selectedConversation?.otherUserId === item.otherUserId"
               @click="handleConversationSelect(item)"
             />
           </div>
@@ -43,9 +43,9 @@
               <div class="search-section-title">联系人</div>
               <Conversation
                 v-for="item in searchResults.conversations"
-                :key="'conv-' + item.OtherUserId"
+                :key="'conv-' + item.otherUserId"
                 :conversation="item"
-                :selected="selectedConversation?.OtherUserId === item.OtherUserId"
+                :selected="selectedConversation?.otherUserId === item.otherUserId"
                 :search-term="searchText.trim()"
                 @click="handleConversationSelect(item)"
               />
@@ -144,13 +144,7 @@ import { User } from '@/modules/auth/public.ts'
 import { highlightSearchTerm, createDebounceSearch } from '../utils/search'
 import { renderContent, copyMessageContent } from '../utils/message'
 import { ensureUser, userCache, getDefaultAvatar } from '../utils/user'
-import {
-  mockUsers,
-  mockChatHistory,
-  createMockConversations,
-  convertMessagesToDisplay,
-  sortConversationsByTime,
-} from '../utils/data'
+import { convertMessagesToDisplay, sortConversationsByTime } from '../utils/data'
 
 const router = useRouter()
 const route = useRoute()
@@ -171,8 +165,6 @@ const isHorizontalResizing = ref(false)
 
 // 用户信息缓存已迁移到 utils/user.ts
 
-// 模拟数据已迁移到 utils/data.ts
-
 // 搜索结果类型
 interface SearchResult {
   type: 'conversation' | 'message'
@@ -184,9 +176,6 @@ interface SearchResult {
   }
   relevance: number // 相关性评分
 }
-
-// 模拟聊天记录数据已迁移到 utils/data.ts
-const mockChatHistoryRef = ref(mockChatHistory)
 
 // 搜索防抖
 const debouncedSearchText = ref('')
@@ -243,32 +232,8 @@ const searchResults = computed(() => {
     }
   })
 
-  // 搜索聊天记录
-  Object.entries(mockChatHistoryRef.value).forEach(([userIdStr, messages]) => {
-    const userId = parseInt(userIdStr)
-    const conv = conversationList.value.find((c) => c.OtherUserId === userId)
-    if (!conv) return
-
-    messages.forEach((message) => {
-      if (message.content.toLowerCase().includes(searchTerm)) {
-        let relevance = 20 // 消息匹配基础分
-
-        // 完全匹配得分更高
-        if (message.content.toLowerCase() === searchTerm) {
-          relevance = 50
-        } else if (message.content.toLowerCase().startsWith(searchTerm)) {
-          relevance = 35
-        }
-
-        results.push({
-          type: 'message',
-          conversation: conv,
-          message: message,
-          relevance,
-        })
-      }
-    })
-  })
+  // 搜索聊天记录 - 暂时禁用，等待API支持
+  // TODO: 实现基于API的聊天记录搜索功能
 
   // 按相关性排序
   results.sort((a, b) => b.relevance - a.relevance)
@@ -360,27 +325,45 @@ const fetchConversationList = async () => {
     console.log('[MessageView] 尝试从API获取会话列表...')
     const apiConversations = await getConversationList()
 
+    // 详细输出会话列表数据
+    console.log('=== 会话列表数据详情 ===')
+    console.log('原始API响应:', apiConversations)
+    console.log('会话数量:', apiConversations.length)
+
+    // 输出每个会话的详细信息
+    apiConversations.forEach((conv, index) => {
+      console.log(`会话 ${index + 1}:`, {
+        otherUserId: conv.otherUserId,
+        unreadCount: conv.unreadCount,
+        lastMessage: conv.lastMessage,
+        lastMessageContent: conv.lastMessage?.content,
+        lastMessageTime: conv.lastMessage?.sentAt,
+        lastMessageSender: conv.lastMessage?.senderId,
+        lastMessageReceiver: conv.lastMessage?.receiverId,
+        isRead: conv.lastMessage?.isRead,
+      })
+    })
+    console.log('=== 会话列表数据详情结束 ===')
+
     if (apiConversations.length > 0) {
       console.log('[MessageView] 从API获取到会话数据:', apiConversations.length)
       // 并行获取所有会话的对端用户信息，并填充到 contactUser
       const filled = await Promise.all(
         apiConversations.map(async (conv) => {
-          const contact = await ensureUser(conv.OtherUserId)
+          const contact = await ensureUser(conv.otherUserId)
           return {
             ...conv,
             contactUser: contact,
-            newestMessage: conv.lastMessage?.Content || '',
-            time: conv.lastMessage?.SendAt || new Date().toISOString(),
+            newestMessage: conv.lastMessage?.content || '',
+            time: conv.lastMessage?.sentAt || new Date().toISOString(),
           }
         })
       )
       conversationListData.value = filled
       console.log('[MessageView] 使用API会话数据:', conversationListData.value.length)
     } else {
-      console.log('[MessageView] API无数据，使用模拟会话数据')
-      // API无数据时使用模拟数据
-      conversationListData.value = createMockConversations(myUserId.value)
-      console.log('[MessageView] 使用模拟会话数据:', conversationListData.value.length)
+      console.log('[MessageView] API无数据，显示空列表')
+      conversationListData.value = []
     }
   } catch (err) {
     error.value = '获取会话列表失败'
@@ -421,21 +404,21 @@ onMounted(async () => {
 
 // 根据路由选择会话
 async function selectConversationByUserId(otherUserId: number) {
-  let conv = conversationListData.value.find((c) => c.OtherUserId === otherUserId)
+  let conv = conversationListData.value.find((c) => c.otherUserId === otherUserId)
   if (!conv) {
     // 若列表中暂无该会话，构造一个占位会话并填充用户信息
     const contact = await ensureUser(otherUserId)
     conv = {
-      OtherUserId: otherUserId,
+      otherUserId: otherUserId,
       lastMessage: {
-        MessageId: 0,
-        SenderId: otherUserId,
-        ReceiverId: myUser.value.id,
-        Content: '',
-        SendAt: new Date().toISOString(),
-        IsRead: true,
+        messageId: 0,
+        senderId: otherUserId,
+        receiverId: myUser.value.id,
+        content: '',
+        sentAt: new Date().toISOString(),
+        isRead: true,
       },
-      UnreadCount: 0,
+      unreadCount: 0,
       contactUser: contact,
       newestMessage: '',
       time: new Date().toISOString(),
@@ -460,30 +443,22 @@ watch(
 // 获取聊天记录
 const fetchChatHistory = async (userId: number) => {
   try {
-    loading.value = true
+    // 移除加载状态，避免点击会话时的加载动画
+    // loading.value = true
     error.value = null
     // 首先尝试从API获取聊天记录
     let messages = await getChatHistory(userId)
 
-    // 如果API没有返回数据，使用模拟数据
-    if (messages.length === 0 && mockChatHistoryRef.value[userId]) {
-      console.log(`使用模拟聊天记录数据 for user ${userId}`)
-      const mockMessages = mockChatHistoryRef.value[userId]
-      messages = mockMessages.map((msg, index) => ({
-        MessageId: index + 1,
-        SenderId: msg.sender === '我' ? myUserId.value : userId,
-        ReceiverId: msg.sender === '我' ? userId : myUserId.value,
-        Content: msg.content,
-        SendAt: msg.time,
-        IsRead: true,
-      }))
+    // API没有返回数据时，显示空聊天记录
+    if (messages.length === 0) {
+      console.log(`API无聊天记录数据 for user ${userId}`)
     }
 
     // 预取涉及到的用户信息（发送者/接收者）
     const ids = new Set<number>()
     messages.forEach((m) => {
-      ids.add(m.SenderId)
-      ids.add(m.ReceiverId)
+      ids.add(m.senderId)
+      ids.add(m.receiverId)
     })
     await Promise.all(Array.from(ids).map((id) => ensureUser(id)))
 
@@ -496,17 +471,17 @@ const fetchChatHistory = async (userId: number) => {
     // 同步更新会话列表的最新消息（以最新一条消息为准）
     if (displayMessages.length > 0) {
       const latest = displayMessages[displayMessages.length - 1]
-      const conv = conversationListData.value.find((c) => c.OtherUserId === userId)
+      const conv = conversationListData.value.find((c) => c.otherUserId === userId)
       if (conv) {
         conv.newestMessage = latest.content
         conv.time = latest.sendTime
         conv.lastMessage = {
-          MessageId: latest.messageId,
-          SenderId: latest.sender.id,
-          ReceiverId: latest.receiver.id,
-          Content: latest.content,
-          SendAt: latest.sendTime,
-          IsRead: latest.isRead,
+          messageId: latest.messageId,
+          senderId: latest.sender.id,
+          receiverId: latest.receiver.id,
+          content: latest.content,
+          sentAt: latest.sendTime,
+          isRead: latest.isRead,
         }
       }
     }
@@ -521,9 +496,11 @@ const fetchChatHistory = async (userId: number) => {
   } catch (err) {
     error.value = '获取聊天记录失败'
     console.error('获取聊天记录失败:', err)
-  } finally {
-    loading.value = false
   }
+  // 移除loading状态，避免点击会话时的加载动画
+  // finally {
+  //   loading.value = false
+  // }
 }
 
 // 切换选中会话
@@ -531,24 +508,30 @@ async function handleConversationSelect(item: conversation) {
   selectedConversation.value = item
   // 标记消息已读
   try {
-    await markMessagesRead(item.OtherUserId)
-    item.UnreadCount = 0
+    await markMessagesRead(item.otherUserId)
+    item.unreadCount = 0
   } catch (err) {
     console.error('标记消息已读失败:', err)
   }
   // 获取聊天记录
-  await fetchChatHistory(item.OtherUserId)
+  await fetchChatHistory(item.otherUserId)
   // 路由跳转到子路径 /message/:userId（避免依赖命名路由）
-  router.push({ path: `/message/${item.OtherUserId}` }).catch(() => {})
+  router.push({ path: `/message/${item.otherUserId}` }).catch(() => {})
 }
 
 // 当前会话的聊天记录（使用缓存进行用户标准化）
 const currentChatHistory = computed(() => {
-  return currentChatMessages.value.map((m) => {
+  console.log(
+    '[MessageView] currentChatHistory 计算属性被调用，消息数量:',
+    currentChatMessages.value.length
+  )
+  const result = currentChatMessages.value.map((m) => {
     const sender = userCache.get(m.sender.id) || m.sender
     const receiver = userCache.get(m.receiver.id) || m.receiver
     return { ...m, sender, receiver }
   })
+  console.log('[MessageView] currentChatHistory 计算结果:', result.length, '条消息')
+  return result
 })
 
 async function handleSendMessage(content: string, type: 'text' | 'image') {
@@ -557,46 +540,48 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
   try {
     // 发送消息到服务器
     const result = await sendMessage({
-      receiverId: selectedConversation.value.OtherUserId,
+      receiverId: selectedConversation.value.otherUserId,
       content: content,
       type: type,
     })
 
     if (result.success) {
       // 确保接收者用户信息
-      const receiverUser = await ensureUser(selectedConversation.value.OtherUserId)
+      const receiverUser = await ensureUser(selectedConversation.value.otherUserId)
       // 创建新消息对象用于前端显示
       const newMessage: messageDisplay = {
-        MessageId: result.messageId,
-        SenderId: myUser.value.id,
-        ReceiverId: selectedConversation.value.OtherUserId,
-        Content: content,
-        SendAt: new Date().toISOString(),
-        IsRead: false,
         messageId: result.messageId,
+        senderId: myUserId.value, // 使用myUserId而不是myUser.value.id
+        receiverId: selectedConversation.value.otherUserId,
         content: content,
-        sendTime: new Date().toLocaleString(),
-        sender: myUser.value,
-        receiver: receiverUser,
+        sentAt: new Date().toISOString(),
         isRead: false,
+        sendTime: new Date().toLocaleString(),
+        sender: {
+          ...myUser.value,
+          id: myUserId.value, // 确保sender.id正确
+        },
+        receiver: receiverUser,
         type: type,
       }
 
       // 添加到当前聊天记录
       currentChatMessages.value.push(newMessage)
+      console.log('[MessageView] 新消息已添加到聊天记录:', newMessage)
+      console.log('[MessageView] 当前聊天记录数量:', currentChatMessages.value.length)
 
       // 更新会话列表中的最新消息
       const originalConversation = conversationListData.value.find(
-        (c) => c.OtherUserId === selectedConversation.value?.OtherUserId
+        (c) => c.otherUserId === selectedConversation.value?.otherUserId
       )
       if (originalConversation) {
         originalConversation.lastMessage = {
-          MessageId: result.messageId,
-          SenderId: myUser.value.id,
-          ReceiverId: selectedConversation.value.OtherUserId,
-          Content: content,
-          SendAt: new Date().toISOString(),
-          IsRead: false,
+          messageId: result.messageId,
+          senderId: myUserId.value, // 使用myUserId而不是myUser.value.id
+          receiverId: selectedConversation.value.otherUserId,
+          content: content,
+          sentAt: new Date().toISOString(),
+          isRead: false,
         }
         // 同时更新前端显示字段
         originalConversation.newestMessage = content

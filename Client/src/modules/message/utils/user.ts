@@ -4,7 +4,6 @@
 
 import type { user } from '../types'
 import { getUserDetail } from '../api'
-import { mockUsers } from './data'
 
 /**
  * 获取默认头像URL
@@ -66,18 +65,6 @@ export async function ensureUser(userId: number): Promise<user> {
     const cached = userCache.get(userId)
     if (cached) return cached
 
-    // 首先检查是否是模拟用户
-    const mockUser = mockUsers.find(u => u.id === userId)
-    if (mockUser) {
-        const userInfo: user = {
-            id: mockUser.id,
-            nickname: mockUser.nickname,
-            avatar: mockUser.avatar,
-            url: `/user/${mockUser.id}`,
-        }
-        userCache.set(userId, userInfo)
-        return userInfo
-    }
 
     try {
         const detail = await getUserDetail(userId)
@@ -133,19 +120,3 @@ export function createUserInfo(
     }
 }
 
-/**
- * 获取模拟用户信息（用于测试）
- * @param userId 用户ID
- * @returns 模拟用户信息或null
- */
-export function getMockUserInfo(userId: number): user | null {
-    const mockUser = mockUsers.find(u => u.id === userId)
-    if (!mockUser) return null
-
-    return {
-        id: mockUser.id,
-        nickname: mockUser.nickname,
-        avatar: mockUser.avatar,
-        url: `/user/${mockUser.id}`,
-    }
-}

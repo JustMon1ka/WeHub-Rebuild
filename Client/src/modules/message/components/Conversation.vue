@@ -6,11 +6,11 @@
           props.conversation.contactUser?.avatar ||
           'https://placehold.co/100x100/facc15/78350f?text=U'
         "
-        :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
+        :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.otherUserId}`"
       />
       <!-- 未读消息红点 - 放在头像右上角 -->
-      <div v-if="props.conversation.UnreadCount > 0" class="unread-count">
-        {{ displayUnreadCount(props.conversation.UnreadCount) }}
+      <div v-if="props.conversation.unreadCount > 0" class="unread-count">
+        {{ displayUnreadCount(props.conversation.unreadCount) }}
       </div>
     </div>
     <div class="content">
@@ -35,7 +35,7 @@ const props = defineProps<{
 }>()
 
 const diffime = formatTime(
-  props.conversation.time || props.conversation.lastMessage?.SendAt || new Date().toISOString()
+  props.conversation.time || props.conversation.lastMessage?.sentAt || new Date().toISOString()
 )
 
 // 显示未读消息数量，与NoticeView.vue保持一致
@@ -56,13 +56,13 @@ function highlightSearchTerm(text: string, searchTerm: string): string {
 // 计算属性：高亮后的昵称
 const highlightedNickname = computed(() => {
   const nickname =
-    props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`
+    props.conversation.contactUser?.nickname || `用户${props.conversation.otherUserId}`
   return highlightSearchTerm(nickname, props.searchTerm || '')
 })
 
 // 计算属性：高亮后的最新消息
 const highlightedMessage = computed(() => {
-  const message = props.conversation.newestMessage || props.conversation.lastMessage?.Content || ' '
+  const message = props.conversation.newestMessage || props.conversation.lastMessage?.content || ' '
   return highlightSearchTerm(message, props.searchTerm || '')
 })
 </script>
