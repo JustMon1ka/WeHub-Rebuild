@@ -1,7 +1,8 @@
 import axios from 'axios';
-import type { PostDetail } from "./types";
+import type { PostDetail, ToggleLikeResponse} from "./types";
 import { unwrap } from "./types";
 import { useAuthState } from './utils/useAuthState';
+
 import type {
   ToggleLikeRequest,
   BaseResp,
@@ -141,9 +142,11 @@ export async function deletePost(postId: number) {
   return unwrap(resp.data);
 }
 
-export async function getPostList(num: number, tailPostId?: number): Promise<PostListItem[]> {
+
+// ✅ 重点：getPostList —— 永远正确地命中 /api/posts/list
+export async function getPostList(num: number, tailPostId?: number, PostMode?: number, tagName?: string | null): Promise<PostListItem[]> {
   const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts/list", {
-    params: { num, lastId: tailPostId }
+    params: { num, lastId: tailPostId, PostMode, tagName }
   });
   return unwrap<PostListItem[]>(resp.data);
 }
@@ -165,7 +168,7 @@ postHttp.interceptors.request.use(cfg => {
 });
 
 export async function checkLike(type: 'post' | 'comment' | 'reply', targetId: number): Promise<boolean> {
-  const resp = await axios.post<BaseResp<{ liked: boolean }>>("/posts/CheckLike", { params:{ type, targetId } });
-  const data = unwrap<{ liked: boolean }>(resp.data);
-  return data.liked;
+  const resp = await axios.post<BaseResp<{ liked: boolean }>>("/posts/CheckLike", { type, targetId });
+  const data = unwrap<ToggleLikeResponse>(resp.data);
+  return data.isLiked;
 }
