@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NoticeService.Models
 {
-    [Table("REPOSTS")]
+    [Table("REPOST")]
     public class Repost
     {
         [Key]

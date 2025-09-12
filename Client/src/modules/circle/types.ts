@@ -219,3 +219,37 @@ export interface Activity {
   completedCount?: number // 新增
   // 如果后端返回的字段名不同，请根据实际情况调整
 }
+
+// 在 types.ts 中添加帖子相关类型定义
+
+// 帖子相关类型
+export interface Post {
+  postId: number
+  userId: number
+  circleId?: number
+  title: string
+  content: string
+  tags: string[]
+  createdAt: string
+  views: number
+  likes: number
+}
+
+export interface CreatePostRequest {
+  circleId?: number
+  title: string
+  content: string
+  tags?: number[]
+}
+
+export interface PostPublishResponse {
+  postId: number
+  createdAt: string
+}
+
+// 扩展现有的 ApiResponse 类型
+export interface PostApiResponse<T = any> extends ApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+}

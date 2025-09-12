@@ -329,6 +329,15 @@
       @saved="handleActivityCreated"
     />
   </div>
+  <!-- 创建帖子弹窗 -->
+  <CreatePost
+    v-if="showCreatePost"
+    :circle-id="communityData.id"
+    :community-name="communityData.name"
+    :community-avatar="processedAvatarUrl"
+    @close="showCreatePost = false"
+    @submitted="handlePostCreated"
+  />
 </template>
 
 <script setup lang="ts">
@@ -340,6 +349,8 @@ import { useCommunityStore } from '../store.ts'
 import ActivityList from '../components/ActivityList.vue'
 import ActivityParticipation from '../components/ActivityParticipation.vue'
 import CreateActivity from '../components/CreateActivity.vue'
+import CreatePost from '../components/CreatePost.vue'
+import { PostAPI } from '../api'
 
 const imageSrc = ref<string>('')
 
@@ -399,6 +410,11 @@ const activeTab = ref<'hot' | 'latest' | 'featured' | 'activities'>('hot')
 const isLoading = ref(false)
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// 发帖相关状态
+const showCreatePost = ref(false)
+const communityPosts = ref<any[]>([])
+const postsLoading = ref(false)
 
 // 新增活动相关状态
 const showCreateActivity = ref(false)
@@ -660,7 +676,36 @@ const formatDate = (dateString: string): string => {
 }
 
 const handleCreatePost = (): void => {
-  console.log('创建帖子')
+  showCreatePost.value = true
+}
+
+// 处理帖子创建完成
+const handlePostCreated = async (post: any): Promise<void> => {
+  console.log('新帖子已创建:', post)
+  showCreatePost.value = false
+
+  // 重新加载帖子列表
+  await loadCommunityPosts()
+}
+
+// 加载社区帖子
+const loadCommunityPosts = async (): Promise<void> => {
+  if (!communityData.value.id) return
+
+  try {
+    postsLoading.value = true
+    const response = await PostAPI.getPostsByCircle(communityData.value.id, {
+      num: 20,
+    })
+
+    if (response.success) {
+      communityPosts.value = response.data || []
+    }
+  } catch (error) {
+    console.error('加载帖子失败:', error)
+  } finally {
+    postsLoading.value = false
+  }
 }
 
 const handleNotification = (): void => {
@@ -787,6 +832,16 @@ watch(activeTab, (newTab) => {
     loadActivityStats()
   }
 })
+
+// 监听社区数据变化，加载帖子
+watch(
+  () => communityData.value.id,
+  (newId) => {
+    if (newId) {
+      loadCommunityPosts()
+    }
+  },
+)
 
 // 生命周期
 onMounted(() => {

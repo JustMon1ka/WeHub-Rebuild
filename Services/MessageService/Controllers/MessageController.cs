@@ -10,7 +10,7 @@ namespace MessageService.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/Messages")]
     public class MessagesController : ControllerBase
     {
         private readonly IMessageService _messageService;
@@ -21,10 +21,10 @@ namespace MessageService.Controllers
         }
 
         // 获取当前用户ID
-        private int GetCurrentUserId()
+        private long? GetCurrentUserId()
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            if (string.IsNullOrEmpty(userIdClaim) || !long.TryParse(userIdClaim, out var userId))
             {
                 throw new UnauthorizedAccessException("无法获取当前用户ID");
             }
@@ -37,11 +37,14 @@ namespace MessageService.Controllers
             try
             {
                 var currentUserId = GetCurrentUserId();
+                Console.WriteLine($"[MessageController] GetConversations called with userId: {currentUserId}");
                 var conversations = await _messageService.GetConversationsAsync(currentUserId);
+                Console.WriteLine($"[MessageController] Found {conversations.Count()} conversations");
                 return Ok(conversations);
             }
             catch (UnauthorizedAccessException ex)
             {
+                Console.WriteLine($"[MessageController] Unauthorized: {ex.Message}");
                 return Unauthorized(ex.Message);
             }
             catch (Exception ex)
@@ -52,7 +55,7 @@ namespace MessageService.Controllers
         }
 
         [HttpGet("{userId}")]
-        public async Task<IActionResult> GetMessages(int userId)
+        public async Task<IActionResult> GetMessages(long userId)
         {
             try
             {
@@ -72,7 +75,7 @@ namespace MessageService.Controllers
         }
 
         [HttpPost("{userId}")]
-        public async Task<IActionResult> SendMessage(int userId, [FromBody] SendMessageDto messageDto)
+        public async Task<IActionResult> SendMessage(long userId, [FromBody] SendMessageDto messageDto)
         {
             try
             {
@@ -96,7 +99,7 @@ namespace MessageService.Controllers
         }
 
         [HttpPut("{userId}/read")]
-        public async Task<IActionResult> MarkAsRead(int userId)
+        public async Task<IActionResult> MarkAsRead(long userId)
         {
             try
             {
@@ -112,6 +115,37 @@ namespace MessageService.Controllers
             {
                 Console.WriteLine($"MarkAsRead Error: {ex}");
                 return StatusCode(500, $"标记已读失败: {ex.Message}");
+            }
+        }
+
+        // 临时测试端点，不需要认证
+        [HttpGet("test")]
+        public async Task<IActionResult> TestConversations()
+        {
+            try
+            {
+                Console.WriteLine("[MessageController] TestConversations called");
+                // 使用固定的用户ID进行测试
+                var testUserId = 100140L;
+                var conversations = await _messageService.GetConversationsAsync(testUserId);
+                Console.WriteLine($"[MessageController] Test found {conversations.Count()} conversations");
+                
+                // 输出每个会话的详细信息
+                foreach (var conv in conversations)
+                {
+                    Console.WriteLine($"[MessageController] Conversation: OtherUserId={conv.OtherUserId}, UnreadCount={conv.UnreadCount}");
+                    if (conv.LastMessage != null)
+                    {
+                        Console.WriteLine($"[MessageController] LastMessage: MessageId={conv.LastMessage.MessageId}, Content={conv.LastMessage.Content}");
+                    }
+                }
+                
+                return Ok(conversations);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"TestConversations Error: {ex}");
+                return StatusCode(500, $"测试获取会话列表失败: {ex.Message}");
             }
         }
     }

@@ -9,8 +9,8 @@ namespace NoticeService.Profiles
         public MappingProfile()
         {
             CreateMap<Like, LikeNotificationDto>()
-                .ForMember(dest => dest.LastLikedAt, opt => opt.MapFrom(src => src.CreatedAt))
-                .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => src.UserId)) 
+                .ForMember(dest => dest.LastLikedAt, opt => opt.MapFrom(src => src.LikeTime))
+                .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.LikerIds, opt => opt.Ignore());
 
             CreateMap<Reply, ReplyNotificationDto>()
