@@ -26,13 +26,28 @@ apiClient.interceptors.request.use((config) => {
     const user = User.getInstance()
     if (user?.userAuth?.token) {
         config.headers.Authorization = `Bearer ${user.userAuth.token}`
-        // console.log('发送请求，token:', user.userAuth.token)
-        //console.log('请求头:', config.headers.Authorization)
+        console.log('[MessageAPI] 发送请求，用户ID:', user.userAuth.userId)
+        console.log('[MessageAPI] Token前缀:', user.userAuth.token.substring(0, 50) + '...')
     } else {
-        console.log('用户未登录或token不存在')
+        console.warn('[MessageAPI] 用户未登录或token不存在')
     }
     return config
 })
+
+// 添加响应拦截器处理错误
+apiClient.interceptors.response.use(
+    (response) => {
+        console.log('[MessageAPI] 响应成功:', response.status, response.config.url)
+        return response
+    },
+    (error) => {
+        console.error('[MessageAPI] 请求失败:', error.response?.status, error.response?.data, error.config?.url)
+        if (error.response?.status === 401) {
+            console.error('[MessageAPI] 认证失败，可能需要重新登录')
+        }
+        return Promise.reject(error)
+    }
+)
 
 // 获取会话列表
 export async function getConversationList(): Promise<conversationList> {
