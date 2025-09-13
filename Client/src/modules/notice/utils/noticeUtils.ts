@@ -8,11 +8,11 @@ export type UnreadSummaryData = unreadNoticeCount['data']
  * @param idx 索引值
  * @returns 对应的通知类型或null
  */
-export function indexToType(idx: number): 'at' | 'comment' | 'reply' | 'like' | 'repost' | null {
+export function indexToType(idx: number): 'mention' | 'comment' | 'reply' | 'like' | 'repost' | null {
     if (idx === 0) return 'like'
     if (idx === 1) return 'comment'
     if (idx === 2) return 'reply'
-    if (idx === 3) return 'at'
+    if (idx === 3) return 'mention'
     if (idx === 4) return 'repost'
     return null
 }
@@ -24,15 +24,17 @@ export function indexToType(idx: number): 'at' | 'comment' | 'reply' | 'like' | 
  * @param unreadSummary 未读通知摘要
  */
 export function optimisticMarkRead(
-    type: 'at' | 'comment' | 'reply' | 'like' | 'repost',
+    type: 'mention' | 'comment' | 'reply' | 'like' | 'repost',
     readOnce: Set<string>,
     unreadSummary: UnreadSummaryData | null
 ) {
     if (readOnce.has(type)) return
     readOnce.add(type)
     if (unreadSummary) {
-        const delta = unreadSummary.unreadByType[type] || 0
-        unreadSummary.unreadByType[type] = 0
+        // 将内部类型映射到API字段名
+        const apiField = type === 'mention' ? 'mention' : type
+        const delta = unreadSummary.unreadByType[apiField] || 0
+        unreadSummary.unreadByType[apiField] = 0
         unreadSummary.totalUnread = Math.max(0, (unreadSummary.totalUnread || 0) - delta)
     }
 }
@@ -77,7 +79,7 @@ export function getUnreadCountByType(
     if (index === 0) return u.like || 0
     if (index === 1) return u.comment || 0
     if (index === 2) return u.reply || 0
-    if (index === 3) return u.at || 0
+    if (index === 3) return u.mention || 0  // 修复：使用API返回的mention字段
     if (index === 4) return u.repost || 0
     return 0
 }

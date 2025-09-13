@@ -1,58 +1,106 @@
 <template>
-  <div class="page-content-wrapper">
-    <div class="divider-vertical"></div>
-    <div class="center">
-      <div class="divider-horizontal"></div>
-      <div class="notice-heading">
-        <span class="separator">通知 > </span>
-        <span @click="goBackToNotice" class="back-link">收到的赞</span>
-        <span> > 点赞详情</span>
-      </div>
-      <div class="divider-horizontal"></div>
-      <div class="post-info">
-        <span
-          class="post-title clickable-title"
-          @click="goToTarget"
-          :title="`点击查看${targetType === 'post' ? '帖子' : '评论'}详情`"
-        >
-          {{ targetType === 'post' ? '帖子' : '评论' }}：{{ targetTitle }}
-        </span>
-      </div>
+  <div class="flex flex-row">
+    <div class="divider-vertical" aria-hidden="true"></div>
+
+    <div class="center w-full">
       <div class="divider-horizontal"></div>
 
-      <div class="like-users-list">
-        <div v-if="loading" class="loading-state">
-          <span>加载中...</span>
+      <div
+        class="text-3xl font-bold px-10 py-4 text-slate-200 flex justify-left items-center gap-4"
+      >
+        <button
+          @click="goBackToNotice"
+          class="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors text-lg font-normal"
+          title="返回通知页面"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+          <span>返回</span>
+        </button>
+        <span>点赞详情</span>
+      </div>
+
+      <div class="divider-horizontal"></div>
+
+      <div class="bg-slate-900/30 p-4 md:p-6">
+        <div class="flex items-center gap-3">
+          <span class="text-slate-200 font-medium">
+            {{ targetType === 'post' ? '帖子' : '评论' }}：
+          </span>
+          <span
+            class="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors"
+            @click="goToTarget"
+            :title="`点击查看${targetType === 'post' ? '帖子' : '评论'}详情`"
+          >
+            {{ targetTitle }}
+          </span>
         </div>
-        <div v-else-if="error" class="error-state">
-          <span>{{ error }}</span>
+      </div>
+
+      <div class="divider-horizontal"></div>
+
+      <div class="notice-information">
+        <div v-if="loading" class="text-center text-slate-500 text-md py-3">
+          <p>加载中...</p>
         </div>
-        <div v-else-if="filteredLikeUsers.length === 0" class="empty-state">
-          <span>暂无点赞用户</span>
+        <div v-else-if="error" class="text-center text-red-500 text-md py-3">
+          <p>{{ error }}</p>
         </div>
-        <div v-else>
-          <div v-for="user in filteredLikeUsers" :key="user.id" class="like-user-item">
-            <div class="item-left">
-              <div class="user-avater">
-                <img v-if="user.avatar" :src="user.avatar" :alt="user.username" />
-                <span v-else class="avatar-placeholder">
+        <div
+          v-else-if="filteredLikeUsers.length === 0"
+          class="text-center text-slate-500 text-md py-3"
+        >
+          <p>暂无点赞用户</p>
+        </div>
+        <div v-else class="notice-list">
+          <div v-for="user in filteredLikeUsers" :key="user.id" class="notice-item">
+            <div class="notice-main-content">
+              <!-- 左侧图标和头像 -->
+              <div class="notice-left">
+                <span class="icon">👍</span>
+                <img
+                  class="user-avatar clickable-avatar"
+                  v-if="user.avatar && user.avatar.trim() !== ''"
+                  :src="user.avatar"
+                  :alt="user.username"
+                  @click="handleAvatarClick(user)"
+                  @error="handleAvatarError"
+                />
+                <span
+                  v-else
+                  class="clickable-avatar avatar-fallback"
+                  @click="handleAvatarClick(user)"
+                >
                   {{ user.username.charAt(0).toUpperCase() }}
                 </span>
               </div>
-            </div>
-            <div class="item-right">
-              <div class="item-content">
-                <span class="username">{{ user.username }}</span>
-                <span class="action">赞了我</span>
+
+              <!-- 通知内容 -->
+              <div class="notice-content">
+                <div class="notice-main">
+                  <span class="username">{{ user.username }}</span>
+                  <span class="action">赞了我</span>
+                </div>
+
+                <div class="other-info">
+                  <span class="notice-time">{{ user.time }}</span>
+                </div>
               </div>
-              <span class="time">{{ user.time }}</span>
             </div>
           </div>
         </div>
       </div>
+
       <div class="divider-horizontal"></div>
     </div>
-    <div class="divider-vertical"></div>
+
+    <div class="divider-vertical" aria-hidden="true"></div>
   </div>
 </template>
 
@@ -60,6 +108,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getLikersByTarget, getPostDetail, getCommentDetail, getUserInfo } from '../api'
+import { getUserDetail } from '../../message/api'
 import { unwrap } from '../types'
 
 const route = useRoute()
@@ -124,13 +173,18 @@ async function getLikeUsersList() {
     }
 
     // 获取所有点赞者的详细信息
+    const MEDIA_BASE_URL = 'http://localhost:5000/api/media'
     likeUsers.value = await Promise.all(
       likersData.items.map(async (userId) => {
         const userDetail = await getUserDetail(userId)
+        const avatarUrl = userDetail.avatarUrl
+          ? `${MEDIA_BASE_URL}/${userDetail.avatarUrl}`
+          : 'https://placehold.co/100x100/facc15/78350f?text=U'
+
         return {
           id: userId,
           username: userDetail.nickname,
-          avatar: userDetail.avatarUrl,
+          avatar: avatarUrl,
           time: '刚刚', // API中没有提供点赞时间，使用默认值
         }
       })
@@ -172,6 +226,20 @@ const goToTarget = () => {
     // 跳转到评论详情页面（如果有的话）
     router.push(`/comment/${targetId.value}`)
   }
+}
+
+// 点击用户头像
+const handleAvatarClick = (user: any) => {
+  // 跳转到用户主页
+  window.open(`/user/${user.id}`, '_blank')
+}
+
+// 头像加载失败处理
+const handleAvatarError = (event: Event) => {
+  console.warn('头像加载失败:', (event.target as HTMLImageElement)?.src)
+  // 隐藏图片，显示fallback文字
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
 }
 
 // 调试函数：手动测试API调用
@@ -217,103 +285,89 @@ onMounted(async () => {
 
 
 <style scoped>
-.page-content-wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  margin: 20px 0; /* 添加上下边距 */
-  height: calc(100vh - 40px); /* 减去上下边距的高度 */
-}
-
 .center {
-  width: 60%;
   display: flex;
   flex-direction: column;
   overflow-wrap: break-word;
-  word-break: break-word;
+  word-break: break-all;
 }
 
-.notice-heading {
-  display: flex;
-  padding: 12px 32px;
-  align-items: center;
-  gap: 8px;
-}
-
-.back-link {
-  cursor: pointer;
-}
-
-.back-link:hover {
-  color: #3b82f6;
-}
-
-.post-info {
+.notice-information {
   flex: 1;
   display: flex;
-  padding: 0px 32px;
-  align-items: center;
-}
-
-.post-title {
-  font-weight: bold;
-  color: #333;
-  align-items: center;
-}
-
-.clickable-title {
-  color: #3b82f6 !important; /* 使用蓝色，更亮更明显 */
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-
-.clickable-title:hover {
-  color: #1d4ed8 !important; /* 悬停时更深的蓝色 */
-  text-decoration: underline;
-  transform: translateY(-1px); /* 轻微上移效果 */
-}
-
-.clickable-title:active {
-  color: #1e40af !important; /* 点击时的颜色 */
-  transform: translateY(0); /* 点击时回到原位置 */
-}
-
-.like-users-list {
-  flex: 10;
+  flex-direction: column;
   overflow-y: auto;
 }
 
-.like-user-item {
+.notice-list {
   display: flex;
-  padding: 12px 32px;
-  border-bottom: 1px solid #f0f0f0;
+  flex-direction: column;
+  width: 100%;
+}
+
+.notice-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1e293b;
   transition: background-color 0.2s;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.like-user-item:hover {
-  background-color: #273549;
+.notice-item:hover {
+  background-color: #1e293b;
 }
 
-.item-left {
+.notice-main-content {
+  display: flex;
+}
+
+.notice-left {
   display: flex;
   align-items: center;
   margin-right: 24px;
 }
 
-.user-avater {
+.icon {
+  margin-right: 8px;
+  font-size: 24px;
+  color: #4a9eff;
+}
+
+.user-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 100%;
 }
 
-.user-avater img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 100%;
+  background-color: #4a9eff;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
 }
 
-.item-right {
+.clickable-avatar {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-avatar:hover {
+  opacity: 0.8;
+}
+
+.notice-content {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -321,74 +375,43 @@ onMounted(async () => {
   align-items: flex-start;
 }
 
-.user-avatar img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.item-content {
+.notice-main {
   display: flex;
   align-items: center;
+  font-size: 14px;
   gap: 8px;
-  margin-bottom: 4px;
 }
 
 .username {
   font-weight: bold;
-  font-size: 16px;
 }
 
 .action {
-  font-size: 14px;
-  color: #61666d;
+  color: #a0aec0;
 }
 
-.time {
+.other-info {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0px;
+}
+
+.notice-time {
   color: #9499a0;
   font-size: 12px;
-}
-
-.loading-state,
-.error-state,
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-  color: #999;
-  font-size: 16px;
-}
-
-.error-state {
-  color: #ef4444;
-}
-
-.avatar-placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  color: #6b7280;
-}
-
-.right {
-  width: 25%;
+  padding: 0px 4px;
 }
 
 .divider-horizontal {
+  height: 1px;
+  background: #444c5c;
   width: 100%;
-  border-bottom: 1px solid #444c5c;
 }
 
 .divider-vertical {
   width: 1px;
   background-color: #444c5c;
-  margin: 0 0px;
+  align-self: stretch;
 }
 </style>

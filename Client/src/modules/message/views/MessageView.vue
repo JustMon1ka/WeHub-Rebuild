@@ -1,9 +1,8 @@
 <template>
   <div class="flex md:flex-row flex-col h-full">
     <!-- 中间内容 -->
-    <div class="divider-vertical "></div>
+    <div class="divider-vertical"></div>
     <div class="center" :style="{ width: centerWidth + '%' }">
-
       <div class="message-search">
         <SearchInput v-model="searchText" placeholder="🔍搜索" />
       </div>
@@ -58,10 +57,21 @@
                 @click="handleConversationSelect(result.conversation)"
               >
                 <div class="message-search-header">
-                  <img v-if="!!result.conversation.contactUser?.avatar"
-                       :src="result.conversation.contactUser?.avatar" alt="user" />
-                  <PlaceHolder v-else width="100" height="100" :text="result.conversation.contactUser?.nickname || `${result.conversation.OtherUserId}`"
-                               class="w-12 h-12 rounded-full" />
+                  <img
+                    v-if="!!result.conversation.contactUser?.avatar"
+                    :src="result.conversation.contactUser?.avatar"
+                    alt="user"
+                  />
+                  <PlaceHolder
+                    v-else
+                    width="100"
+                    height="100"
+                    :text="
+                      result.conversation.contactUser?.nickname ||
+                      `${result.conversation.OtherUserId}`
+                    "
+                    class="w-12 h-12 rounded-full"
+                  />
                   <div class="message-search-info">
                     <span class="message-search-name">{{
                       result.conversation.contactUser?.nickname
@@ -93,6 +103,10 @@
       <!-- 聊天窗口 -->
       <div class="chat-window bg-slate-800" :style="{ height: chatWindowHeight + '%' }">
         <div class="chat-content">
+          <!-- 调试信息 -->
+          <div v-if="false" class="debug-info" style="color: red; font-size: 12px; padding: 5px">
+            消息数量: {{ currentChatHistory.length }} | 原始数量: {{ currentChatMessages.length }}
+          </div>
           <ChatMessage
             v-for="message in currentChatHistory"
             :key="message.messageId"
@@ -122,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, watch, triggerRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import SearchInput from '../components/SearchInput.vue'
 import Conversation from '../components/Conversation.vue'
@@ -284,7 +298,7 @@ onMounted(async () => {
         myUser.value = {
           id: userDetail.userId,
           nickname: userDetail.nickname || userDetail.username,
-          avatar: `${GATEWAY}/api/media/${userDetail.avatarUrl}` || '',
+          avatar: `${GATEWAY}/api/media/${userDetail.avatar}` || '',
           url: `/user/${userDetail.userId}`,
         }
       } catch (error) {
@@ -455,7 +469,7 @@ async function handleConversationSelect(item: conversation) {
     await markMessagesRead(item.otherUserId)
     item.unreadCount = 0
   } catch (err) {
-    return;
+    return
   }
   // 获取聊天记录
   await fetchChatHistory(item.otherUserId)
@@ -466,8 +480,16 @@ async function handleConversationSelect(item: conversation) {
 // 当前会话的聊天记录（使用缓存进行用户标准化）
 const currentChatHistory = computed(() => {
   const result = currentChatMessages.value.map((m) => {
-    const sender = userCache.get(m.sender.id) || m.sender
-    const receiver = userCache.get(m.receiver.id) || m.receiver
+    // 优先使用消息对象中已有的用户信息，避免依赖非响应式的userCache
+    const sender = m.sender ||
+      userCache.get(m.sender.id) || { id: m.senderId, nickname: '未知用户', avatar: '', url: '' }
+    const receiver = m.receiver ||
+      userCache.get(m.receiver.id) || {
+        id: m.receiverId,
+        nickname: '未知用户',
+        avatar: '',
+        url: '',
+      }
     return { ...m, sender, receiver }
   })
   return result
@@ -485,53 +507,23 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
     })
 
     if (result.success) {
-      // 确保接收者用户信息
-      const receiverUser = await ensureUser(selectedConversation.value.otherUserId)
-      // 创建新消息对象用于前端显示
-      const newMessage: messageDisplay = {
-        messageId: result.messageId,
-        senderId: myUserId.value, // 使用myUserId而不是myUser.value.id
-        receiverId: selectedConversation.value.otherUserId,
-        content: content,
-        sentAt: new Date().toISOString(),
-        isRead: false,
-        sendTime: new Date().toLocaleString(),
-        sender: {
-          ...myUser.value,
-          id: myUserId.value, // 确保sender.id正确
-        },
-        receiver: receiverUser,
-        type: type,
-      }
+      console.log('[发送消息] 消息发送成功，重新获取聊天记录')
 
-      // 添加到当前聊天记录
-      currentChatMessages.value.push(newMessage)
+      // 重新获取聊天记录以确保数据同步
+      await fetchChatHistory(selectedConversation.value.otherUserId)
 
-      // 更新会话列表中的最新消息
-      const originalConversation = conversationListData.value.find(
-        (c) => c.otherUserId === selectedConversation.value?.otherUserId
-      )
-      if (originalConversation) {
-        originalConversation.lastMessage = {
-          messageId: result.messageId,
-          senderId: myUserId.value, // 使用myUserId而不是myUser.value.id
-          receiverId: selectedConversation.value.otherUserId,
-          content: content,
-          sentAt: new Date().toISOString(),
-          isRead: false,
-        }
-        // 同时更新前端显示字段
-        originalConversation.newestMessage = content
-        originalConversation.time = new Date().toISOString()
-      }
+      // 重新获取会话列表以确保数据同步
+      await fetchConversationList()
 
       // 滚动到最新消息
       await nextTick(() => {
-        const chatWindow = document.querySelector('.chat-window') as HTMLElement;
+        const chatWindow = document.querySelector('.chat-window') as HTMLElement
         if (chatWindow) {
           chatWindow.scrollTop = chatWindow.scrollHeight
         }
       })
+
+      console.log('[发送消息] ✅ 消息发送成功，聊天记录和会话列表已更新')
     }
   } catch (err) {
     error.value = '发送消息失败'
@@ -675,7 +667,6 @@ const startHorizontalResize = (e: MouseEvent) => {
 
 
 <style scoped>
-
 .center {
   min-width: 200px;
   display: flex;
@@ -710,7 +701,7 @@ const startHorizontalResize = (e: MouseEvent) => {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  background: linear-gradient(135deg, #1f2137 0%, #485a60 100%);
+  background: linear-gradient(135deg, #1f2937 0%, #485a60 100%);
 }
 
 .chat-content {
@@ -810,7 +801,6 @@ const startHorizontalResize = (e: MouseEvent) => {
 }
 
 @media (max-width: 768px) {
-
   .center {
     width: 100% !important;
     min-width: unset;
@@ -857,7 +847,6 @@ const startHorizontalResize = (e: MouseEvent) => {
   .right {
     height: 65vh;
   }
-
 }
 
 /* 搜索结果分类样式 */

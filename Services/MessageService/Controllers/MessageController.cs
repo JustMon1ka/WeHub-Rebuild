@@ -40,17 +40,25 @@ namespace MessageService.Controllers
                 Console.WriteLine($"[MessageController] GetConversations called with userId: {currentUserId}");
                 var conversations = await _messageService.GetConversationsAsync(currentUserId);
                 Console.WriteLine($"[MessageController] Found {conversations.Count()} conversations");
-                return Ok(conversations);
+
+                // 返回标准格式
+                var response = new
+                {
+                    code = 200,
+                    msg = "OK",
+                    data = conversations
+                };
+                return Ok(response);
             }
             catch (UnauthorizedAccessException ex)
             {
                 Console.WriteLine($"[MessageController] Unauthorized: {ex.Message}");
-                return Unauthorized(ex.Message);
+                return Unauthorized(new { code = 401, msg = ex.Message, data = (object)null });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"GetConversations Error: {ex}");
-                return StatusCode(500, $"获取会话列表失败: {ex.Message}");
+                return StatusCode(500, new { code = 500, msg = $"获取会话列表失败: {ex.Message}", data = (object)null });
             }
         }
 
@@ -61,16 +69,24 @@ namespace MessageService.Controllers
             {
                 var currentUserId = GetCurrentUserId();
                 var messages = await _messageService.GetMessagesAsync(currentUserId, userId);
-                return Ok(messages);
+
+                // 返回标准格式
+                var response = new
+                {
+                    code = 200,
+                    msg = "OK",
+                    data = messages
+                };
+                return Ok(response);
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(ex.Message);
+                return Unauthorized(new { code = 401, msg = ex.Message, data = (object)null });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"GetMessages Error: {ex}");
-                return StatusCode(500, $"获取聊天记录失败: {ex.Message}");
+                return StatusCode(500, new { code = 500, msg = $"获取聊天记录失败: {ex.Message}", data = (object)null });
             }
         }
 
@@ -82,19 +98,31 @@ namespace MessageService.Controllers
                 var currentUserId = GetCurrentUserId();
 
                 if (messageDto == null || string.IsNullOrWhiteSpace(messageDto.Content))
-                    return BadRequest("消息内容不能为空");
+                    return BadRequest(new { code = 400, msg = "消息内容不能为空", data = (object)null });
 
                 var message = await _messageService.SendMessageAsync(currentUserId, userId, messageDto.Content);
-                return CreatedAtAction(nameof(GetMessages), new { userId }, message);
+
+                // 返回标准格式
+                var response = new
+                {
+                    code = 200,
+                    msg = "OK",
+                    data = new
+                    {
+                        messageId = message.MessageId,
+                        success = true
+                    }
+                };
+                return Ok(response);
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(ex.Message);
+                return Unauthorized(new { code = 401, msg = ex.Message, data = (object)null });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"SendMessage Error: {ex}");
-                return StatusCode(500, $"发送消息失败: {ex.Message}");
+                return StatusCode(500, new { code = 500, msg = $"发送消息失败: {ex.Message}", data = (object)null });
             }
         }
 
@@ -129,7 +157,7 @@ namespace MessageService.Controllers
                 var testUserId = 100140L;
                 var conversations = await _messageService.GetConversationsAsync(testUserId);
                 Console.WriteLine($"[MessageController] Test found {conversations.Count()} conversations");
-                
+
                 // 输出每个会话的详细信息
                 foreach (var conv in conversations)
                 {
@@ -139,7 +167,7 @@ namespace MessageService.Controllers
                         Console.WriteLine($"[MessageController] LastMessage: MessageId={conv.LastMessage.MessageId}, Content={conv.LastMessage.Content}");
                     }
                 }
-                
+
                 return Ok(conversations);
             }
             catch (Exception ex)

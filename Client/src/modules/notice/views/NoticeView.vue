@@ -1,4 +1,4 @@
- <template>
+    <template>
   <div class="flex flex-row">
     <div class="divider-vertical" aria-hidden="true"></div>
 
@@ -15,12 +15,17 @@
           :key="index"
           :class="{ active: selectedNoticeType === index }"
           @click="onTabChange(index)"
-          class="h-12 text-l hover:bg-slate-800 w-full transition-colors duration-200 text-slate-200"
+          class="h-12 text-l hover:bg-slate-800 w-full transition-colors duration-200 text-slate-200 relative"
         >
           {{ text }}
           <span
             v-if="getUnreadCountByType(index, unreadSummary, readOnce) > 0"
             class="unread-notice-type-count"
+            :title="`${noticeTypeTexts[index]}: ${getUnreadCountByType(
+              index,
+              unreadSummary,
+              readOnce
+            )}条未读`"
           >
             {{ displayUnreadNoticeCount(getUnreadCountByType(index, unreadSummary, readOnce)) }}
           </span>
@@ -31,7 +36,10 @@
       <div class="text-red-500 text-sm text-center" v-if="unreadError">{{ unreadError }}</div>
 
       <div class="notice-information">
-        <div v-if="selectedNotices.length === 0 && !unreadError" class="text-center text-slate-500 text-md py-3">
+        <div
+          v-if="selectedNotices.length === 0 && !unreadError"
+          class="text-center text-slate-500 text-md py-3"
+        >
           <p>暂无通知</p>
         </div>
         <div v-else class="notice-list">
@@ -75,7 +83,7 @@ import {
   getCommentNotices,
   getReplyNotices,
   getRepostNotices,
-  getAtNotices,
+  getMentionNotices,
   getPostDetail,
   getCommentDetail,
   getLikersByTarget,
@@ -88,11 +96,6 @@ import {
   displayUnreadNoticeCount,
   getUnreadCountByType,
 } from '../utils/noticeUtils'
-import {
-  checkAllServices,
-  logServiceHealth,
-  isCriticalServiceAvailable,
-} from '../utils/serviceHealth'
 
 const selectedNoticeType = ref(0)
 const searchText = ref('')
@@ -131,12 +134,12 @@ watchEffect(() => {
   }
 })
 
-const typeToIndex: Record<string, number> = { like: 0, comment: 1, reply: 2, at: 3, repost: 4 }
+const typeToIndex: Record<string, number> = { like: 0, comment: 1, reply: 2, mention: 3, repost: 4 }
 const idxToType: Record<number, string> = {
   0: 'like',
   1: 'comment',
   2: 'reply',
-  3: 'at',
+  3: 'mention',
   4: 'repost',
 }
 
@@ -150,9 +153,14 @@ async function getUserInfoLocal(
 
   try {
     const userDetail = await getUserInfo(userId) // 使用新的UserDataService接口
+    const MEDIA_BASE_URL = 'http://localhost:5000/api/media'
+    const avatarUrl = userDetail.avatarUrl
+      ? `${MEDIA_BASE_URL}/${userDetail.avatarUrl}`
+      : 'https://placehold.co/100x100/facc15/78350f?text=U'
+
     const userInfo = {
-      nickname: userDetail.nickname,
-      avatar: userDetail.avatarUrl,
+      nickname: userDetail.nickname || `用户${userId}`,
+      avatar: avatarUrl,
     }
     userCache.value.set(userId, userInfo)
     return userInfo
@@ -218,7 +226,7 @@ watch(
   (t) => {
     const mapped = typeToIndex[String(t)] ?? 0 // 无type时默认 like
     selectedNoticeType.value = mapped
-    const type = indexToType(mapped) as 'at' | 'reply' | 'like' | 'repost' | null
+    const type = indexToType(mapped) as 'mention' | 'reply' | 'like' | 'repost' | null
     if (type) {
       optimisticMarkRead(type, readOnce.value, unreadSummary.value)
       markNotificationsRead(type).catch((e) => console.error('标记已读失败', e))
@@ -231,6 +239,8 @@ watch(
 function onTabChange(index: number) {
   selectedNoticeType.value = index
   const t = idxToType[index]
+  // 执行路由跳转
+  router.push(`/notice/${t}`)
 }
 
 // 获取点赞数
@@ -266,37 +276,35 @@ onMounted(async () => {
     selectedNoticeType.value = 0
   }
 
-  // 检查服务健康状态
-  try {
-    const healthResult = await checkAllServices()
-    logServiceHealth(healthResult)
-
-    const isServiceAvailable = await isCriticalServiceAvailable()
-    if (!isServiceAvailable) {
-      console.warn('[NoticeView] 关键服务不可用，通知功能可能受限')
-    }
-  } catch (error) {
-    console.error('[NoticeView] 服务健康检查失败:', error)
-  }
-
   loadingUnread.value = true
   try {
     // 并行请求：未读汇总 + 各种通知列表
-    const [unreadResp, likeResp, commentResp, replyResp, repostResp, atResp] = await Promise.all([
-      getUnreadNoticeCount(),
-      getLikeNotices({ page: 1, pageSize: 20 }),
-      getCommentNotices({ page: 1, pageSize: 20, unreadOnly: false }),
-      getReplyNotices({ page: 1, pageSize: 20, unreadOnly: false }),
-      getRepostNotices({ page: 1, pageSize: 20, unreadOnly: false }),
-      getAtNotices({ page: 1, pageSize: 20, unreadOnly: false }),
-    ])
+    const [unreadResp, likeResp, commentResp, replyResp, repostResp, mentionResp] =
+      await Promise.all([
+        getUnreadNoticeCount(),
+        getLikeNotices({ page: 1, pageSize: 20 }),
+        getCommentNotices({ page: 1, pageSize: 20, unreadOnly: false }),
+        getReplyNotices({ page: 1, pageSize: 20, unreadOnly: false }),
+        getRepostNotices({ page: 1, pageSize: 20, unreadOnly: false }),
+        getMentionNotices({ page: 1, pageSize: 20, unreadOnly: false }),
+      ])
 
     // 处理未读数据
     unreadSummary.value = unwrap(unreadResp)
+    console.log('[通知数据] 未读通知汇总:', unreadSummary.value)
+    console.log('[通知数据] 各类型未读数量:', {
+      like: unreadSummary.value.unreadByType.like,
+      comment: unreadSummary.value.unreadByType.comment,
+      reply: unreadSummary.value.unreadByType.reply,
+      mention: unreadSummary.value.unreadByType.mention,
+      repost: unreadSummary.value.unreadByType.repost,
+    })
 
-    for (const t of ['at', 'comment', 'reply', 'like', 'repost'] as const) {
+    for (const t of ['mention', 'comment', 'reply', 'like', 'repost'] as const) {
       if (readOnce.value.has(t)) {
-        unreadSummary.value.unreadByType[t] = 0
+        // 将内部类型映射到API字段名
+        const apiField = t === 'mention' ? 'mention' : t
+        unreadSummary.value.unreadByType[apiField] = 0
       }
     }
 
@@ -304,7 +312,7 @@ onMounted(async () => {
     commentItems.value = unwrap(commentResp).items
     replyItems.value = unwrap(replyResp).items
     repostItems.value = unwrap(repostResp).items
-    atItems.value = unwrap(atResp).items
+    atItems.value = unwrap(mentionResp).items
 
     // 合并已读和未读的点赞数据
     const likeData = unwrap(likeResp)
@@ -435,16 +443,8 @@ async function convertApiDataToNoticeList() {
   }
 
   // 处理@通知
-  // 去重：根据targetId和targetType组合去重
-  const uniqueAts = new Map<string, atNoticeItem>()
+  // 不去重：每个@通知都应该显示，因为可能有多个用户@同一个目标
   for (const at of atItems.value) {
-    const key = `${at.targetType}-${at.targetId}`
-    if (!uniqueAts.has(key)) {
-      uniqueAts.set(key, at)
-    }
-  }
-
-  for (const at of uniqueAts.values()) {
     const userInfo = await getUserInfoLocal(at.userId)
 
     let targetTitle = ''
@@ -718,7 +718,10 @@ const selectedNotices = computed(() => {
   color: #fff;
   font-size: 12px;
   text-align: center;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  z-index: 10;
 }
 
 .notice-type button:hover {

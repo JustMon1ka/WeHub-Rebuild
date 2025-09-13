@@ -26,13 +26,6 @@ namespace NoticeService.Models
         [Column("IS_DELETED")]
         public int IsDeletedNumber { get; set; }
 
-        [NotMapped]
-        public bool IsDeleted
-        {
-            get => IsDeletedNumber != 0;
-            set => IsDeletedNumber = value ? 1 : 0;
-        }
-
         [Column("TARGET_USER_ID")]
         public int? TargetUserId { get; set; }
     }
