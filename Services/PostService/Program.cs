@@ -24,17 +24,17 @@ namespace PostService
                 // 如果配置不存在或为空，可以抛出异常或记录警告
                 Console.WriteLine("Redis ConnectionString is not configured.");
                 // 或者直接返回，避免应用启动失败
-                return; 
+                return;
             }
 
             // 将 Redis 连接配置为单例服务
-            builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+            builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
                 ConnectionMultiplexer.Connect(redisConfig.ConnectionString));
 
             // ------------------ DB ------------------
             // builder.Services.AddDbContext<AppDbContext>(options =>
             //     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
-            
+
             // 注册 DbContext 工厂，使它能够被多次创建
             builder.Services.AddDbContextFactory<AppDbContext>(options =>
                 options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -64,7 +64,7 @@ namespace PostService
                 options.AddDefaultPolicy(policy =>
                 {
                     policy.WithOrigins("http://localhost:5173",// 前端地址
-                            "http://localhost:5000") 
+                            "http://localhost:5000")
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
@@ -102,11 +102,17 @@ namespace PostService
             builder.Services.AddControllers();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<IPostRedisRepository, PostRedisRepository>();
+            // 注册 HttpClient 用于调用 NoticeService
+            builder.Services.AddHttpClient<ILikeService, LikeService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5000/");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            });
+
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
             builder.Services.AddScoped<IPostService, PostService.Services.PostService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<ILikeRepository, LikeRepository>();
-            builder.Services.AddScoped<ILikeService, LikeService>();
             builder.Services.AddScoped<IShareService, ShareService>();
             builder.Services.AddScoped<FavoriteRepository>();
             builder.Services.AddScoped<FavoriteService>();

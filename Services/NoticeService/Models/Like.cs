@@ -12,12 +12,13 @@ namespace NoticeService.Models
         public int UserId { get; set; }
 
         [Key]
-        [Column("TARGET_ID", Order = 1)]
-        public int TargetId { get; set; }
-
-        [Column("TARGET_TYPE")]
+        [Column("TARGET_TYPE", Order = 1)]
         [MaxLength(10)]
-        public string? TargetType { get; set; }
+        public string TargetType { get; set; } = string.Empty;
+
+        [Key]
+        [Column("TARGET_ID", Order = 2)]
+        public int TargetId { get; set; }
 
         [Column("LIKE_TYPE")]
         public int? LikeType { get; set; }

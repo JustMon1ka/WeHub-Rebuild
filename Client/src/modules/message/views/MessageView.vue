@@ -151,13 +151,14 @@ import {
   markMessagesRead,
   getUserDetail,
 } from '../api'
-import { User } from '@/modules/auth/public.ts'
+import { User } from '@/modules/auth/public'
 import { highlightSearchTerm, createDebounceSearch } from '../utils/search'
 import { copyMessageContent } from '../utils/message'
 import { ensureUser, userCache } from '../utils/user'
 import { convertMessagesToDisplay, sortConversationsByTime } from '../utils/data'
-import { GATEWAY } from '@/modules/core/public.ts'
+import { GATEWAY } from '@/modules/core/public'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
+import { eventBus, EVENTS } from '@/modules/core/utils/eventBus'
 
 const router = useRouter()
 const route = useRoute()
@@ -468,6 +469,9 @@ async function handleConversationSelect(item: conversation) {
   try {
     await markMessagesRead(item.otherUserId)
     item.unreadCount = 0
+
+    // 触发事件通知侧边栏更新未读数量
+    eventBus.emit(EVENTS.MESSAGE_MARKED_AS_READ, item.otherUserId)
   } catch (err) {
     return
   }
@@ -535,6 +539,19 @@ const handleMessageAction = async (action: string, message: messageDisplay) => {
   switch (action) {
     case 'copy':
       await handleMessageCopy(message)
+      break
+    case 'report':
+      const to = router.resolve({
+        name: 'report',
+        params: { type: 'message', id: message.messageId },
+        query: {
+          reporterId: myUserId.value,
+          reportedId: message.sender.id,
+          reportTime: new Date().toISOString(),
+        },
+      })
+      const url = new URL(to.href, window.location.origin) // 保证绝对地址
+      window.open(url.toString(), '_blank', 'noopener,noreferrer')
       break
   }
 }

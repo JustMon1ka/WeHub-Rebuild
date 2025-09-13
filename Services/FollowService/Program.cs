@@ -11,21 +11,28 @@ using FollowService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Ìí¼Ó·şÎñµ½ÈİÆ÷
+// æ·»åŠ æœåŠ¡
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ÅäÖÃÊı¾İ¿âÉÏÏÂÎÄ£¨Oracle£©
+// é…ç½®æ•°æ®åº“è¿æ¥ï¼ˆOracleï¼‰
 builder.Services.AddDbContext<FollowDbContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ×¢²á²Ö´¢ºÍ·şÎñ
+// æ³¨å†Œä»“å‚¨å’ŒæœåŠ¡
 builder.Services.AddScoped<IFollowRepository, FollowRepository>();
-builder.Services.AddScoped<IFollowService, FollowService.Services.FollowService>();
+builder.Services.AddScoped<IFollowService, ExtendedFollowService>();
 builder.Services.AddHttpContextAccessor();
 
-// ÅäÖÃ JWT ÈÏÖ¤
+// æ³¨å†Œ HTTP å®¢æˆ·ç«¯ç”¨äºè°ƒç”¨ MessageService
+builder.Services.AddHttpClient<ExtendedFollowService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5082/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// é…ç½® JWT è®¤è¯
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -37,23 +44,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "DefaultKey"))
         };
     });
 
-// ÅäÖÃ Swagger
+// é…ç½® Swagger
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "FollowService API",
         Version = "v1",
-        Description = "FollowService API ÎÄµµ"
+        Description = "FollowService API æ–‡æ¡£"
     });
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
-        Description = "ÇëÊäÈë JWT ÁîÅÆ£¨¸ñÊ½£ºBearer {token}£©",
+        Description = "è¯·è¾“å…¥ JWT ä»¤ç‰Œï¼Œæ ¼å¼ï¼šBearer {token}",
         Name = "Authorization",
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
@@ -76,7 +83,7 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// ÅäÖÃ HTTP ÇëÇó¹ÜµÀ
+// é…ç½® HTTP è¯·æ±‚ç®¡é“
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -123,6 +123,38 @@ export async function markMessagesRead(otherUserId: number): Promise<{ success: 
     }
 }
 
+// 获取未读消息数量
+export async function getUnreadMessageCount(): Promise<number> {
+    try {
+        // 检查用户是否已登录
+        const user = User.getInstance()
+        console.log('[MessageAPI] 用户状态:', {
+            hasUser: !!user,
+            hasToken: !!user?.userAuth?.token,
+            userId: user?.userAuth?.userId,
+            tokenLength: user?.userAuth?.token?.length
+        })
+
+        if (!user?.userAuth?.token) {
+            console.log('[MessageAPI] 用户未登录，跳过获取未读消息数量')
+            return 0
+        }
+
+        const { data } = await apiClient.get<BaseResp<{ unreadCount: number }>>('/api/Messages/unread-count')
+        const result = unwrap(data)
+        console.log('[MessageAPI] 成功获取未读消息数量:', result.unreadCount)
+        return result.unreadCount || 0
+    } catch (error: any) {
+        console.error('[MessageAPI] 获取未读消息数量失败:', error)
+        if (error.response?.status === 401) {
+            console.log('[MessageAPI] 认证失败，用户可能需要重新登录')
+        } else {
+            console.warn('MessageService未运行，无法获取未读消息数量:', error)
+        }
+        return 0
+    }
+}
+
 // 获取用户详情
 export interface UserDetailApiResp extends BaseResp<{
     userId: number

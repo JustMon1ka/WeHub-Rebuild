@@ -47,14 +47,14 @@ namespace FollowService.Controllers
         }
 
         [HttpGet("count")]
-        public async Task<IActionResult> GetFollowCounts(int userId)
+        public async Task<IActionResult> GetFollowCounts([FromQuery] int userId)
         {
             var result = await _followService.GetFollowCountsAsync(userId);
             return Ok(result);
         }
 
         [HttpGet("following")]
-        public async Task<IActionResult> GetFollowing(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetFollowing([FromQuery] int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page < 1 || pageSize < 1)
             {
@@ -66,7 +66,7 @@ namespace FollowService.Controllers
         }
 
         [HttpGet("followers")]
-        public async Task<IActionResult> GetFollowers(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetFollowers([FromQuery] int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page < 1 || pageSize < 1)
             {

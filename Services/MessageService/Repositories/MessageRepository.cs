@@ -138,5 +138,24 @@ namespace MessageService.Repositories
                 throw;
             }
         }
+
+        public async Task<int> GetUnreadCountAsync(long? currentUserId)
+        {
+            try
+            {
+                Console.WriteLine($"[MessageRepository] GetUnreadCountAsync called with currentUserId={currentUserId}");
+
+                var unreadCount = await _context.Messages
+                    .CountAsync(m => m.ReceiverId == currentUserId && !m.IsRead);
+
+                Console.WriteLine($"[MessageRepository] Found {unreadCount} unread messages");
+                return unreadCount;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MessageRepository] Error in GetUnreadCountAsync: {ex}");
+                throw;
+            }
+        }
     }
 }
