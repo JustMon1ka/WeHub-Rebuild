@@ -16,6 +16,40 @@ import type {
 import User from '@/modules/auth/scripts/User.ts';
 import { GATEWAY } from '@/modules/core/public.ts'
 
+
+
+// 🔍 搜索帖子（带完整详情）
+export async function searchPosts(query: string, limits = 30): Promise<PostListItem[]> {
+  // 1. 先调 /api/posts/search 获取候选帖子 ID
+  const res = await postHttp.get<BaseResp<SearchResponse[]>>("posts/search", {
+    params: { query, limits }
+  });
+
+  const searchData = res.data?.data || [];
+  if (!searchData.length) return [];
+
+  // 2. 拼接 ID 列表
+  const ids = searchData.map((x: any) => x.postId).join(",");
+
+  // 3. 批量获取帖子详情
+  const detailRes = await postHttp.get<BaseResp<PostListItem[]>>("posts", {
+    params: { ids }
+  });
+
+  return detailRes.data?.data || [];
+}
+
+// 🔎 搜索建议（输入框下拉提示用）
+export async function getSearchSuggestions(keyword: string, limits = 10) {
+  const res = await postHttp.get<BaseResp<SearchSuggestions>>("posts/search/suggest", {
+    params: { keyword, limits }
+  });
+  return res.data?.data || [];
+}
+
+
+
+
 // ✅ 新增：为帖子模块创建“专用实例”，不再依赖全局 defaults
 const API_BASE = `${GATEWAY}/api`; // '/api' 或 'http://localhost:5000/api'
 const postHttp = axios.create({ baseURL: API_BASE });

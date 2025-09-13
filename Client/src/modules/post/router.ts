@@ -13,6 +13,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import("./views/EditPostView.vue"),
     meta: { title: "修改帖子", navi: true, recommend: true, requireLogin: true },
   },
+  {
+    path: "/search",
+    name: "SearchResultPage",
+    component: () => import("@/modules/post/views/SearchResultPage.vue"),
+  },
 ]
 
 export default routes
