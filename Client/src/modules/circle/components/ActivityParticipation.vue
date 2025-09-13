@@ -229,11 +229,8 @@ const handleSubmit = async () => {
         contact: form.value.contact.trim() || undefined,
       },
     )
-
-    console.log('参与心得提交成功')
     emit('submitted')
   } catch (err: any) {
-    console.error('提交参与心得失败:', err)
     error.value = err.message || '提交失败，请重试'
   } finally {
     isSubmitting.value = false

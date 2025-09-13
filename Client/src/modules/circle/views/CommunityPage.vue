@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- 顶部导航 -->
-    <NavBar />
-
     <!-- 主要内容 -->
     <div class="main-container">
       <!-- 中间主内容区 -->
@@ -149,7 +146,7 @@
 
       <!-- 右侧边栏 -->
       <aside class="right-sidebar">
-        <div class="sidebar-content">
+        <div class="sidebar-content space-y-6">
           <!-- 热门社区 -->
           <div class="sidebar-card">
             <h2 class="sidebar-title">热门社区</h2>
@@ -194,7 +191,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import NavBar from '../components/NavBar.vue'
 import { CircleAPI, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
 import request from '../utils/request.ts'
@@ -251,30 +247,23 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
     // 将返回的blob转换为可显示的URL
     return URL.createObjectURL(response.data)
   } catch (error) {
-    console.error('获取图片失败:', error)
     return ''
   }
 }
 
 // 添加处理图片URLs的函数（和详情页完全一样）
 const processImageUrls = async (community: Community): Promise<void> => {
-  console.log('开始处理图片URL for community:', community.id)
-
   const processedAvatar = ref<string>('')
   const processedBanner = ref<string>('')
 
   // 处理头像
   if (community.avatarUrl) {
-    console.log('原始头像URL:', community.avatarUrl)
     processedAvatar.value = await getProxiedImageUrl(community.avatarUrl)
-    console.log('处理后头像URL:', processedAvatar.value)
   }
 
   // 处理横幅
   if (community.bannerUrl) {
-    console.log('原始横幅URL:', community.bannerUrl)
     processedBanner.value = await getProxiedImageUrl(community.bannerUrl)
-    console.log('处理后横幅URL:', processedBanner.value)
   }
 
   // 存储处理后的图片URL
@@ -324,9 +313,7 @@ const popularCommunities = computed(() => {
 // 加载所有社区
 const loadAllCommunities = async (): Promise<void> => {
   try {
-    console.log('加载所有社区列表...')
     const response = await CircleAPI.getCircles()
-    console.log('所有社区响应:', response)
 
     if (response && response.code === 200 && Array.isArray(response.data)) {
       const communities = await Promise.all(
@@ -365,9 +352,6 @@ const loadAllCommunities = async (): Promise<void> => {
       // 使用store管理状态
       communityStore.setAllCommunities(communities)
       allCommunities.value = communities
-
-      console.log('处理后的所有社区列表:', allCommunities.value)
-      console.log('处理后的图片映射:', processedImages.value)
     } else {
       throw new Error('社区列表数据格式错误')
     }
@@ -380,9 +364,7 @@ const loadAllCommunities = async (): Promise<void> => {
 // 加载已加入的社区
 const loadJoinedCommunities = async (): Promise<void> => {
   try {
-    console.log('加载已加入社区列表...')
     const response = await CircleAPI.getUserJoinedCircles(currentUserId)
-    console.log('已加入社区响应:', response)
 
     if (response && response.code === 200 && Array.isArray(response.data)) {
       const communities = await Promise.all(
@@ -413,10 +395,7 @@ const loadJoinedCommunities = async (): Promise<void> => {
       // 使用store管理状态
       communityStore.setJoinedCommunities(communities)
       joinedCommunities.value = communities
-
-      console.log('处理后的已加入社区列表:', joinedCommunities.value)
     } else {
-      console.log('没有已加入的社区或数据格式错误')
       joinedCommunities.value = []
       communityStore.setJoinedCommunities([])
     }

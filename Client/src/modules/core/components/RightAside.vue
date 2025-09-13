@@ -15,17 +15,16 @@ if (currentUserId.value) {
 }
 
 // 监听登录状态变化，重新加载
-watch(currentUserId, (newVal) => {
+watch(() => currentUserId.value, (newVal) => {
   if (newVal) {
-    console.log("✅ 右侧栏组件刷新数据，userId:", newVal)
     store.loadAll()
   }
 })
 </script>
 
 <template>
-  <aside class="hidden md:block flex-none md:h-screen px-5 py-5 z-100 w-96">
-    <div class="space-y-6">
+  <aside class="hidden md:block flex-none md:h-screen py-5 z-100 border-l border-slate-800">
+    <div class="space-y-6 p-4">
       <!-- 搜索框 -->
       <SearchBar />
 
@@ -35,7 +34,7 @@ watch(currentUserId, (newVal) => {
       <!-- 推荐关注 -->
       <RecommendUsers
         :users="store.recommendUsers"
-        @updated="store.loadAll()"   
+        @updated="store.loadAll()"
       />
     </div>
   </aside>

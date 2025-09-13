@@ -27,9 +27,9 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.value.follo
     <div class="p-4">
       <div class="flex justify-between items-start">
         <img v-if="!!userInfo.avatarUrl" :src="userInfo.avatarUrl"
-             class="w-12 h-12 rounded-full" alt="User Avatar">
+             class="w-16 h-16 rounded-full" alt="User Avatar">
         <PlaceHolder v-else width="100" :text="userInfo.nickname" height="100"
-                     class="w-12 h-12 rounded-full"/>
+                     class="w-16 h-16 rounded-full"/>
         <router-link :to="{ name: 'UserPage', params: { userId_p: userInfo.userId } }"
                      class="border-2 text-white border-slate-600 hover:bg-slate-700
                      font-bold py-1 px-4 rounded-full transition-colors duration-200 text-sm">
@@ -55,7 +55,7 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.value.follo
       </div>
     </div>
     <div class="border-t border-slate-700 p-3 flex justify-center">
-      <FollowButton :user-id="userInfo.userId" class="w-full"/>
+      <FollowButton :user-id="userInfo.userId.toString()" class="w-full"/>
     </div>
   </div>
 </template>

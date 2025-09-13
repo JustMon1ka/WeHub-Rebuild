@@ -1,20 +1,18 @@
 <template>
   <div class="avatar">
-    <img
-      :src="
-        props.conversation.contactUser?.avatar ||
-        'https://placehold.co/100x100/facc15/78350f?text=U'
-      "
-      :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
-    />
+    <img v-if="!!props.conversation.contactUser?.avatar" class="w-10 h-10 rounded-full"
+      :src="props.conversation.contactUser?.avatar" alt="user" />
+    <PlaceHolder v-else width="100" height="100" :text="props.conversation.contactUser?.nickname || props.conversation.OtherUserId"
+                  class="w-10 h-10 rounded-full" />
     <div class="nickname">
-      {{ props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}` }}
+      {{ props.conversation.contactUser?.nickname || props.conversation.OtherUserId }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { conversation } from '../types'
+import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 
 const props = defineProps<{
   conversation: conversation
@@ -25,8 +23,7 @@ const props = defineProps<{
 .avatar {
   display: flex;
   align-items: center;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding: 1rem;
 }
 
 .avatar img {

@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <!-- 顶部导航 -->
-    <NavBar />
+  <div class="overflow-auto h-dvh">
     <!-- 主要内容 -->
     <div class="main-container">
       <!-- 中间主内容区 -->
@@ -225,7 +223,7 @@
 
       <!-- 右侧边栏 -->
       <aside class="right-sidebar">
-        <div class="sidebar-content">
+        <div class="sidebar-content space-y-6">
           <!-- 社区信息 -->
           <div class="sidebar-card">
             <h2 class="sidebar-title">关于社区</h2>
@@ -343,11 +341,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import NavBar from '../components/NavBar.vue'
 import { CircleAPI, getSpuPage, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
 import ActivityList from '../components/ActivityList.vue'
-import ActivityParticipation from '../components/ActivityParticipation.vue'
 import CreateActivity from '../components/CreateActivity.vue'
 import CreatePost from '../components/CreatePost.vue'
 import { PostAPI } from '../api'
@@ -444,27 +440,20 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
     // 将返回的blob转换为可显示的URL
     return URL.createObjectURL(response.data)
   } catch (error) {
-    console.error('获取图片失败:', error)
     return ''
   }
 }
 
 //  processImageUrls 函数
 const processImageUrls = async (): Promise<void> => {
-  console.log('开始处理图片URL...')
-
   // 处理头像
   if (communityData.value.avatarUrl) {
-    console.log('原始头像URL:', communityData.value.avatarUrl)
     processedAvatarUrl.value = await getProxiedImageUrl(communityData.value.avatarUrl)
-    console.log('处理后头像URL:', processedAvatarUrl.value)
   }
 
   // 处理横幅
   if (communityData.value.bannerUrl) {
-    console.log('原始横幅URL:', communityData.value.bannerUrl)
     processedBannerUrl.value = await getProxiedImageUrl(communityData.value.bannerUrl)
-    console.log('处理后横幅URL:', processedBannerUrl.value)
   }
 }
 
@@ -681,7 +670,6 @@ const handleCreatePost = (): void => {
 
 // 处理帖子创建完成
 const handlePostCreated = async (post: any): Promise<void> => {
-  console.log('新帖子已创建:', post)
   showCreatePost.value = false
 
   // 重新加载帖子列表
@@ -748,8 +736,6 @@ const handleVote = async (postId: number, voteType: 'up' | 'down'): Promise<void
       post.userVote = voteType
       post.votes += voteType === 'up' ? 1 : -1
     }
-
-    console.log(`投票 ${voteType} 帖子 ${postId}`)
   } catch (error) {
     console.error('投票失败:', error)
   }
@@ -761,7 +747,6 @@ const handlePostClick = (postId: number): void => {
 
 // 新增活动相关方法
 const handleActivityCreated = (activity: any): void => {
-  console.log('新活动已创建:', activity)
   showCreateActivity.value = false
   // 刷新活动统计
   loadActivityStats()
@@ -902,7 +887,6 @@ onMounted(() => {
   background: #1e293b; /* slate-800 */
   border-radius: 12px;
   border: 1px solid #334155; /* slate-700 */
-  overflow: hidden;
 }
 
 .community-header-section {
@@ -912,7 +896,6 @@ onMounted(() => {
 .community-banner {
   height: 192px;
   background: #334155; /* slate-700 */
-  overflow: hidden;
 }
 
 .community-banner img {
@@ -1183,7 +1166,6 @@ onMounted(() => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .post-meta {

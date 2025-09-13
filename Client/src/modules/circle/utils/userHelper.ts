@@ -22,13 +22,13 @@ export class UserHelper {
   // 获取当前用户名
   static getUsername(): string | null {
     const userInstance = User.getInstance()
-    return userInstance?.userInfo?.username || null
+    return userInstance?.userInfo?.value.username || null
   }
 
   // 获取当前用户邮箱
   static getEmail(): string | null {
     const userInstance = User.getInstance()
-    return userInstance?.userInfo?.email || null
+    return userInstance?.userInfo?.value.email || null
   }
 
   // 获取完整用户信息
@@ -47,17 +47,9 @@ export class UserHelper {
     return {
       isLoggedIn: true,
       userId: userInstance.userAuth?.userId || null,
-      username: userInstance.userInfo?.username || null,
-      email: userInstance.userInfo?.email || null,
+      username: userInstance.userInfo?.value.username || null,
+      email: userInstance.userInfo?.value.email || null,
       hasToken: !!userInstance.userAuth?.token,
-    }
-  }
-
-  // 强制刷新用户信息
-  static async refreshUserInfo(): Promise<void> {
-    const userInstance = User.getInstance()
-    if (userInstance && userInstance.reloadUserInfo) {
-      await userInstance.reloadUserInfo()
     }
   }
 }

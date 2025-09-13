@@ -7,7 +7,7 @@
     <router-link to="/" class="router-link">
       <img src="@/modules/core/assets/home.svg" alt="Home" class="svg">
     </router-link>
-    <router-link to="/discover" class="router-link">
+    <router-link to="/founding" class="router-link">
       <img src="@/modules/core/assets/discover.svg" alt="Discover" class="svg">
     </router-link>
     <router-link to="/community" class="router-link">

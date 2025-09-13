@@ -40,14 +40,12 @@ export const getProxiedImageUrl = async (originalUrl: string): Promise<string> =
     })
 
     if (!response.ok) {
-      console.error('代理请求失败:', response.status)
       return originalUrl // 如果代理失败，返回原始URL
     }
 
     const blob = await response.blob()
     return URL.createObjectURL(blob)
   } catch (error) {
-    console.error('获取代理图片失败:', error)
     return originalUrl
   }
 }
@@ -70,8 +68,6 @@ export class CircleAPI {
         url += `?${params.toString()}`
       }
 
-      console.log('发送请求到:', url)
-
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -81,17 +77,13 @@ export class CircleAPI {
         credentials: 'include',
       })
 
-      console.log('响应状态:', response.status)
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const result = await response.json()
-      console.log('响应数据:', result)
       return result
     } catch (error) {
-      console.error('获取圈子列表失败:', error)
       throw error
     }
   }
@@ -101,7 +93,6 @@ export class CircleAPI {
     try {
       return await this.getCircles(undefined, userId)
     } catch (error) {
-      console.error('获取用户已加入圈子失败:', error)
       throw error
     }
   }
@@ -115,9 +106,6 @@ export class CircleAPI {
     maxMembers?: number
   }) {
     try {
-      console.log('=== 创建社区 ===')
-      console.log('API调用 - 发送数据:', data)
-
       // 🔧 获取认证token
       const userInstance = User.getInstance()
       const token = userInstance?.userAuth?.token
@@ -133,9 +121,6 @@ export class CircleAPI {
         categories: data.categories || '通用', // 确保有默认值
       }
 
-      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
-      console.log('👤 当前用户ID:', userInstance?.userAuth?.userId)
-
       const response = await fetch(`${API_BASE_URL}/api/circles`, {
         method: 'POST',
         headers: {
@@ -146,13 +131,10 @@ export class CircleAPI {
         credentials: 'include',
       })
 
-      console.log('创建社区响应状态:', response.status)
-
       // 🔧 检查401错误
       if (response.status === 401) {
-        console.error('🔐 认证失败，清除登录状态')
         if (userInstance) {
-          userInstance.logout()
+          await userInstance.logout()
         }
         throw new Error('登录已过期，请重新登录')
       }
@@ -172,7 +154,7 @@ export class CircleAPI {
             errorMessage += `, text: ${errorText}`
           }
         } catch (e) {
-          console.log('无法读取错误响应体')
+          return;
         }
 
         throw new Error(errorMessage)
@@ -180,15 +162,12 @@ export class CircleAPI {
 
       if (isJson) {
         const result = await response.json()
-        console.log('JSON响应:', result)
         return result
       } else {
         const textResult = await response.text()
-        console.log('文本响应:', textResult)
         return { success: true, message: textResult, rawResponse: textResult }
       }
     } catch (error) {
-      console.error('❌ API调用失败:', error)
       throw error
     }
   }
@@ -232,10 +211,8 @@ export class CircleAPI {
       // 合并并去重，保持API返回的分类在前面
       const allCategories = [...new Set([...apiCategories, ...commonCategories])]
 
-      console.log('合并后的分类列表:', allCategories)
       return allCategories
     } catch (error) {
-      console.error('获取分类列表失败，使用默认分类:', error)
       // 如果接口调用失败，返回默认分类
       return [
         '技术',
@@ -259,8 +236,6 @@ export class CircleAPI {
   // 加入圈子
   static async joinCircle(circleId: number): Promise<any> {
     try {
-      console.log('加入社区 ID:', circleId)
-
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/join`, {
         method: 'POST',
         headers: {
@@ -269,10 +244,7 @@ export class CircleAPI {
         credentials: 'include',
       })
 
-      console.log('加入社区响应状态:', response.status)
-
       const responseText = await response.text()
-      console.log('加入社区响应:', responseText)
 
       let result
       try {
@@ -303,7 +275,6 @@ export class CircleAPI {
 
       return result
     } catch (error) {
-      console.error('加入圈子失败:', error)
       throw error
     }
   }
@@ -311,8 +282,6 @@ export class CircleAPI {
   // 退出圈子
   static async leaveCircle(circleId: number): Promise<any> {
     try {
-      console.log('退出社区 ID:', circleId)
-
       const response = await fetch(`${API_BASE_URL}/api/circles/${circleId}/membership`, {
         method: 'DELETE',
         headers: {
@@ -321,9 +290,7 @@ export class CircleAPI {
         credentials: 'include',
       })
 
-      console.log('退出社区响应状态:', response.status)
       const responseText = await response.text()
-      console.log('退出社区响应:', responseText)
 
       let result
       try {
@@ -345,7 +312,6 @@ export class CircleAPI {
 
       return result
     } catch (error) {
-      console.error('退出圈子失败:', error)
       throw error
     }
   }
@@ -363,7 +329,6 @@ export class CircleAPI {
 
       if (response.ok) {
         const result = await response.json()
-        console.log('成员列表响应:', result)
 
         const currentUserId = 2 // 硬编码的用户ID，与后端保持一致
 
@@ -374,16 +339,13 @@ export class CircleAPI {
 
       return false
     } catch (error) {
-      console.error('检查成员状态失败:', error)
       return false
     }
   }
 
   static async getCircleDetails(circleId: number) {
     try {
-      console.log('=== API调用开始 ===')
       const url = `${API_BASE_URL}/api/circles/${circleId}`
-      console.log('请求URL:', url)
 
       const response = await fetch(url, {
         method: 'GET',
@@ -393,10 +355,7 @@ export class CircleAPI {
         credentials: 'include',
       })
 
-      console.log('HTTP状态码:', response.status)
-
       const responseText = await response.text()
-      console.log('原始响应内容:', responseText)
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${responseText}`)
@@ -406,18 +365,14 @@ export class CircleAPI {
       try {
         result = responseText ? JSON.parse(responseText) : null
       } catch (parseError) {
-        console.error('JSON解析失败:', parseError)
         throw new Error(`服务器响应格式错误: ${responseText}`)
       }
-
-      console.log('解析后的JSON:', result)
 
       if (!result) {
         throw new Error('服务器返回空响应')
       }
 
       if (result.code === 200) {
-        console.log('=== API调用成功 ===')
         return {
           success: true,
           data: result.data,
@@ -427,8 +382,6 @@ export class CircleAPI {
         throw new Error(result.msg || `服务器返回错误代码: ${result.code}`)
       }
     } catch (error) {
-      console.error('=== API调用失败 ===')
-      console.error('错误详情:', error)
       throw error
     }
   }
@@ -449,7 +402,6 @@ export class CircleAPI {
 
       return await response.json()
     } catch (error) {
-      console.error('获取圈子成员失败:', error)
       throw error
     }
   }
@@ -470,7 +422,6 @@ export class CircleAPI {
 
       return await response.json()
     } catch (error) {
-      console.error('获取圈子活动失败:', error)
       throw error
     }
   }
@@ -478,19 +429,10 @@ export class CircleAPI {
   // 上传圈子头像
   static async uploadCircleAvatar(circleId: number, file: File): Promise<any> {
     try {
-      console.log('=== 开始上传头像 ===')
-      console.log('圈子ID:', circleId)
-      console.log('文件信息:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      })
-
       const formData = new FormData()
       formData.append('file', file)
 
       const url = `${API_BASE_URL}/api/circles/${circleId}/avatar`
-      console.log('请求URL:', url)
 
       const response = await fetch(url, {
         method: 'POST',
@@ -498,11 +440,7 @@ export class CircleAPI {
         credentials: 'include',
       })
 
-      console.log('响应状态:', response.status)
-      console.log('响应头:', response.headers)
-
       const responseText = await response.text()
-      console.log('原始响应:', responseText)
 
       if (!response.ok) {
         throw new Error(`上传失败: HTTP ${response.status} - ${responseText}`)
@@ -516,11 +454,8 @@ export class CircleAPI {
         throw new Error(`响应格式错误: ${responseText}`)
       }
 
-      console.log('解析后的结果:', result)
       return result
     } catch (error) {
-      console.error('=== 头像上传失败 ===')
-      console.error('错误详情:', error)
       throw error
     }
   }
@@ -529,19 +464,10 @@ export class CircleAPI {
   // 上传圈子横幅
   static async uploadCircleBanner(circleId: number, file: File): Promise<any> {
     try {
-      console.log('=== 开始上传横幅 ===')
-      console.log('圈子ID:', circleId)
-      console.log('文件信息:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      })
-
       const formData = new FormData()
       formData.append('file', file)
 
       const url = `${API_BASE_URL}/api/circles/${circleId}/banner`
-      console.log('请求URL:', url)
 
       const response = await fetch(url, {
         method: 'POST',
@@ -549,10 +475,7 @@ export class CircleAPI {
         credentials: 'include',
       })
 
-      console.log('响应状态:', response.status)
-
       const responseText = await response.text()
-      console.log('原始响应:', responseText)
 
       if (!response.ok) {
         throw new Error(`上传失败: HTTP ${response.status} - ${responseText}`)
@@ -562,15 +485,11 @@ export class CircleAPI {
       try {
         result = responseText ? JSON.parse(responseText) : { success: true }
       } catch (parseError) {
-        console.error('JSON解析失败:', parseError)
         throw new Error(`响应格式错误: ${responseText}`)
       }
-
-      console.log('解析后的结果:', result)
       return result
     } catch (error) {
-      console.error('=== 横幅上传失败 ===')
-      console.error('错误详情:', error)
+      console.error('横幅上传失败错误详情:', error)
       throw error
     }
   }
@@ -643,20 +562,15 @@ export class FileBrowserAPI {
     }
 
     try {
-      console.log('=== 建立 FileBrowser 会话 ===')
-
       // 访问 /files 目录建立会话
       const response = await fetch(`${this.baseURL}/files/`, {
         method: 'GET',
         credentials: 'include', // 重要：包含cookies
       })
 
-      console.log('会话建立响应状态:', response.status)
-
       if (response.ok || response.status === 401) {
         // 即使是401，会话也可能已经建立
         this.sessionEstablished = true
-        console.log('✅ FileBrowser 会话已建立')
         return true
       }
 
@@ -672,8 +586,6 @@ export class FileBrowserAPI {
     // 先建立会话
     await this.establishSession()
 
-    // 直接返回原始URL，现在应该可以访问了
-    console.log('使用会话访问原始URL:', originalUrl)
     return originalUrl
   }
 }
@@ -683,16 +595,11 @@ export class CircleImageAPI {
   // 智能图片URL处理
   static async getOptimalImageUrl(imageUrl: string): Promise<string> {
     if (!imageUrl) {
-      console.log('图片URL为空')
       return ''
     }
 
-    console.log('=== 智能图片URL处理 ===')
-    console.log('原始URL:', imageUrl)
-
     // 如果是 FileBrowser 预览API路径
     if (imageUrl.includes('/api/preview/')) {
-      console.log('检测到 FileBrowser 预览API')
 
       // 优先尝试公开文件路径
       const publicUrl = FileBrowserAPI.convertToPublicUrl(imageUrl)
@@ -701,17 +608,15 @@ export class CircleImageAPI {
         // 测试公开路径是否可用
         const response = await fetch(publicUrl, { method: 'HEAD' })
         if (response.ok) {
-          console.log('✅ 公开路径可用:', publicUrl)
           return publicUrl
         }
       } catch (error) {
-        console.log('公开路径不可用，尝试认证路径')
+        console.error('公开路径不可用，尝试认证路径')
       }
 
       // 公开路径不可用，尝试认证
       try {
         const authenticatedUrl = await FileBrowserAPI.getAuthenticatedImageUrl(imageUrl)
-        console.log('✅ 使用认证URL:', authenticatedUrl)
         return authenticatedUrl
       } catch (error) {
         console.error('认证失败，返回原始URL')
@@ -774,9 +679,6 @@ export const activityApi = {
   // 报名参加活动
   joinActivity: async (circleId: number, activityId: number): Promise<ApiResponse<null>> => {
     try {
-      console.log('=== 报名活动 ===')
-      console.log('报名活动请求:', { circleId, activityId })
-
       // 🔧 获取认证信息
       const userInstance = User.getInstance()
       const token = userInstance?.userAuth?.token
@@ -784,9 +686,6 @@ export const activityApi = {
       if (!token) {
         throw new Error('用户未认证，请先登录')
       }
-
-      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
-      console.log('👤 当前用户ID:', userInstance?.userAuth?.userId)
 
       const response = await fetch(
         `${API_BASE_URL}/api/activities/${activityId}/participants/join`,
@@ -801,19 +700,16 @@ export const activityApi = {
         },
       )
 
-      console.log('报名响应状态:', response.status)
-
       // 🔧 处理401认证错误
       if (response.status === 401) {
         console.error('🔐 认证失败，清除登录状态')
         if (userInstance) {
-          userInstance.logout()
+          await userInstance.logout()
         }
         throw new Error('登录已过期，请重新登录')
       }
 
       const responseText = await response.text()
-      console.log('报名响应内容:', responseText)
 
       let result
       try {
@@ -867,8 +763,6 @@ export const activityApi = {
     },
   ): Promise<any> => {
     try {
-      console.log('=== 开始一键完成活动流程 ===')
-
       // 🔧 获取认证信息
       const userInstance = User.getInstance()
       const token = userInstance?.userAuth?.token
@@ -877,9 +771,6 @@ export const activityApi = {
         throw new Error('用户未认证，请先登录')
       }
 
-      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
-      console.log('👤 当前用户ID:', userInstance?.userAuth?.userId)
-
       // 🔧 统一的认证headers
       const authHeaders = {
         'Content-Type': 'application/json',
@@ -887,7 +778,6 @@ export const activityApi = {
       }
 
       // 第一步：报名参加活动
-      console.log('第一步：报名参加活动')
       try {
         const joinUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/join`
         const joinResponse = await fetch(joinUrl, {
@@ -897,20 +787,16 @@ export const activityApi = {
           credentials: 'include',
         })
 
-        console.log('报名响应状态:', joinResponse.status)
-
         // 🔧 处理401认证错误
         if (joinResponse.status === 401) {
-          console.error('🔐 认证失败，清除登录状态')
+          console.error('认证失败，清除登录状态')
           if (userInstance) {
-            userInstance.logout()
+            await userInstance.logout()
           }
           throw new Error('登录已过期，请重新登录')
         }
 
         const joinResponseText = await joinResponse.text()
-
-        console.log('报名响应内容:', joinResponseText)
 
         if (
           !joinResponse.ok &&
@@ -919,7 +805,6 @@ export const activityApi = {
         ) {
           throw new Error(`报名失败: ${joinResponseText}`)
         }
-        console.log('✅ 报名成功')
       } catch (joinError: any) {
         if (
           !joinError.message.includes('已参加') &&
@@ -931,11 +816,9 @@ export const activityApi = {
         if (joinError.message.includes('登录已过期')) {
           throw joinError // 直接抛出登录过期错误
         }
-        console.log('✅ 用户已报名，继续下一步')
       }
 
       // 第二步：提交心得完成活动
-      console.log('第二步：提交心得完成活动')
       const completeUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/complete`
       const completeResponse = await fetch(completeUrl, {
         method: 'PUT',
@@ -943,27 +826,21 @@ export const activityApi = {
         body: JSON.stringify(data),
         credentials: 'include',
       })
-
-      console.log('完成活动响应状态:', completeResponse.status)
       // 🔧 处理401认证错误
       if (completeResponse.status === 401) {
         console.error('🔐 认证失败，清除登录状态')
         if (userInstance) {
-          userInstance.logout()
+          await userInstance.logout()
         }
         throw new Error('登录已过期，请重新登录')
       }
       const completeResponseText = await completeResponse.text()
-      console.log('完成活动响应内容:', completeResponseText)
 
       if (!completeResponse.ok) {
         throw new Error(`完成活动失败: ${completeResponseText}`)
       }
 
-      console.log('✅ 活动完成成功')
-
       // 第三步：自动领取奖励
-      console.log('第三步：自动领取奖励')
       try {
         const rewardUrl = `${API_BASE_URL}/api/activities/${activityId}/participants/claim-reward`
         const rewardResponse = await fetch(rewardUrl, {
@@ -973,7 +850,6 @@ export const activityApi = {
           credentials: 'include',
         })
 
-        console.log('领取奖励响应状态:', rewardResponse.status)
         if (rewardResponse.status === 401) {
           console.error('🔐 奖励领取认证失败')
           return {
@@ -985,10 +861,8 @@ export const activityApi = {
           }
         }
         const rewardResponseText = await rewardResponse.text()
-        console.log('领取奖励响应内容:', rewardResponseText)
 
         if (rewardResponse.ok) {
-          console.log('✅ 奖励领取成功')
           return {
             success: true,
             message: '心得提交成功，活动完成，奖励已到账！',
@@ -998,7 +872,6 @@ export const activityApi = {
           }
         } else {
           // 奖励领取失败，但活动已完成
-          console.log('⚠️ 奖励领取失败，但活动已完成')
           return {
             success: true,
             message: '心得提交成功，活动已完成！',
@@ -1008,7 +881,6 @@ export const activityApi = {
           }
         }
       } catch (rewardError: any) {
-        console.log('⚠️ 奖励领取出错:', rewardError)
         // 即使奖励领取失败，活动也算完成了
         return {
           success: true,
@@ -1034,10 +906,6 @@ export const activityApi = {
       const userInstance = User.getInstance()
       const currentUserId = userInstance?.userAuth?.userId // 这应该是100247
 
-      console.log('=== 获取用户参与状态 ===')
-      console.log('当前用户ID:', currentUserId)
-      console.log('活动ID:', activityId)
-
       if (!currentUserId) {
         throw new Error('用户未登录')
       }
@@ -1053,7 +921,6 @@ export const activityApi = {
       }
       if (error.response?.status === 403) {
         // 403表示权限不足，可能是在查看其他用户的状态
-        console.log('权限不足，可能在查看其他用户的活动参与状态')
         return { success: true, data: null }
       }
       console.error('获取参与状态失败:', error)
@@ -1064,20 +931,10 @@ export const activityApi = {
   // 上传活动图片
   uploadActivityImage: async (circleId: number, activityId: number, file: File): Promise<any> => {
     try {
-      console.log('=== 开始上传活动图片 ===')
-      console.log('圈子ID:', circleId)
-      console.log('活动ID:', activityId)
-      console.log('文件信息:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      })
-
       const formData = new FormData()
       formData.append('file', file)
 
       const url = `${API_BASE_URL}/api/activities/${activityId}/image`
-      console.log('请求URL:', url)
 
       const response = await fetch(url, {
         method: 'POST',
@@ -1085,10 +942,7 @@ export const activityApi = {
         credentials: 'include',
       })
 
-      console.log('响应状态:', response.status)
-
       const responseText = await response.text()
-      console.log('原始响应:', responseText)
 
       if (!response.ok) {
         throw new Error(`上传失败: HTTP ${response.status} - ${responseText}`)
@@ -1101,12 +955,9 @@ export const activityApi = {
         console.error('JSON解析失败:', parseError)
         throw new Error(`响应格式错误: ${responseText}`)
       }
-
-      console.log('解析后的结果:', result)
       return result
     } catch (error: any) {
-      console.error('=== 活动图片上传失败 ===')
-      console.error('错误详情:', error)
+      console.error('活动图片上传失败,错误详情:', error)
       throw error
     }
   },
@@ -1146,9 +997,6 @@ export class PostAPI {
     tags?: number[]
   }): Promise<any> {
     try {
-      console.log('=== 发布帖子 ===')
-      console.log('请求数据:', data)
-
       const requestData = {
         circleId: data.circleId || null,
         title: data.title,
@@ -1167,28 +1015,20 @@ export class PostAPI {
         Authorization: `Bearer ${token}`,
       }
 
-      console.log('发送到后端的数据:', requestData)
-      console.log('🔐 使用认证Token:', token.substring(0, 20) + '...')
-      console.log('👤 当前用户ID:', this.getCurrentUserId())
-
       const response = await fetch(`${this.baseURL}/api/posts/publish`, {
         method: 'POST',
         headers,
         body: JSON.stringify(requestData),
         credentials: 'include',
       })
-
-      console.log('发帖响应状态:', response.status)
-
       const responseText = await response.text()
-      console.log('发帖响应内容:', responseText)
 
       if (!response.ok) {
         if (response.status === 401) {
           // 认证失败，清除本地token并提示登录
           const userInstance = User.getInstance()
           if (userInstance) {
-            userInstance.logout()
+            await userInstance.logout()
           }
           throw new Error('登录已过期，请重新登录')
         }
@@ -1225,7 +1065,6 @@ export class PostAPI {
         throw new Error(result.msg || '发布失败，请重试')
       }
 
-      console.log('发帖成功:', result)
       return result
     } catch (error) {
       console.error('=== 发帖失败 ===')

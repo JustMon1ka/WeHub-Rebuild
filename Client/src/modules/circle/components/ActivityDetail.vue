@@ -195,20 +195,16 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
     // 将返回的blob转换为可显示的URL
     return URL.createObjectURL(response.data)
   } catch (error) {
-    console.error('获取图片失败:', error)
     return ''
   }
 }
 
 // 处理图片URLs的函数 - 和详情页完全一样
 const processImageUrls = async (): Promise<void> => {
-  console.log('开始处理活动详情图片URL...')
 
   // 处理活动图片
   if (props.activity.imageUrl) {
-    console.log('原始活动图片URL:', props.activity.imageUrl)
     processedImageUrl.value = await getProxiedImageUrl(props.activity.imageUrl)
-    console.log('处理后活动图片URL:', processedImageUrl.value)
   }
 }
 

@@ -167,7 +167,6 @@ async function publish() {
     // 3. 关闭弹窗 / 返回
     close()
   } catch (err) {
-    console.error(err)
     alert(shareFrom ? '分享失败，请重试' : '发布失败，请重试')
   } finally {
     isLoading.value = false // <--- 新增：结束加载，隐藏蒙版

@@ -6,21 +6,18 @@ import type {
     replyNoticeResponse,
     repostNoticeResponse,
     atNoticeResponse,
-    likeNoticeListById,
-    BaseResp,
     markReadResponse,
     postDetailResponse,
     commentDetailResponse,
     getLikersByTargetParams,
     getLikersByTargetResponse
 } from './types'
-import { unwrap } from './types'
-import { getUserDetail } from '../message/api'
 import { User } from '@/modules/auth/public.ts'
+import { GATEWAY } from '@/modules/core/public.ts'
 
 // 创建独立的axios实例，避免全局配置冲突
 const apiClient = axios.create({
-    baseURL: 'http://localhost:5000'
+    baseURL: GATEWAY,
 })
 
 // 获取当前用户ID

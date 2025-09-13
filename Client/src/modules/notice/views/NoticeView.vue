@@ -1,22 +1,21 @@
  <template>
-  <div class="page-content-wrapper">
+  <div class="flex flex-row">
     <div class="divider-vertical" aria-hidden="true"></div>
 
-    <div class="center">
-      <div class="divider-horizontal"></div>
-      <div class="notice-heading">
-        <span>通知 > {{ noticeTypeTexts[selectedNoticeType] }}</span>
-      </div>
-      <div v-if="unreadError">{{ unreadError }}</div>
+    <div class="center w-full">
       <div class="divider-horizontal"></div>
 
-      <div class="notice-type">
+      <div class="text-3xl font-bold px-10 py-4 text-slate-200 flex justify-left items-center">
+        <span>通知</span>
+      </div>
+
+      <div class="flex flex-row justify-around">
         <button
           v-for="(text, index) in noticeTypeTexts"
           :key="index"
           :class="{ active: selectedNoticeType === index }"
           @click="onTabChange(index)"
-          class="notice-tab-button"
+          class="h-12 text-l hover:bg-slate-800 w-full transition-colors duration-200 text-slate-200"
         >
           {{ text }}
           <span
@@ -29,8 +28,10 @@
       </div>
       <div class="divider-horizontal"></div>
 
+      <div class="text-red-500 text-sm text-center" v-if="unreadError">{{ unreadError }}</div>
+
       <div class="notice-information">
-        <div v-if="selectedNotices.length === 0" class="empty-state">
+        <div v-if="selectedNotices.length === 0 && !unreadError" class="text-center text-slate-500 text-md py-3">
           <p>暂无通知</p>
         </div>
         <div v-else class="notice-list">
@@ -63,11 +64,8 @@ import {
   type commentNoticeItem,
   type replyNoticeItem,
   type repostNoticeItem,
-  type commentNoticeResponse,
-  type replyNoticeResponse,
   type atNoticeItem,
   type likeNoticeItem,
-  type postDetail,
   unwrap,
 } from '../types'
 import {
@@ -147,7 +145,7 @@ async function getUserInfo(userId: number): Promise<{ nickname: string; avatar: 
     const userDetail = await getUserDetail(userId)
     const userInfo = {
       nickname: userDetail.nickname,
-      avatar: userDetail.avatar,
+      avatar: userDetail.avatarUrl,
     }
     userCache.value.set(userId, userInfo)
     return userInfo
@@ -197,7 +195,6 @@ watch(
 function onTabChange(index: number) {
   selectedNoticeType.value = index
   const t = idxToType[index]
-  if (t) router.replace({ path: `/notice/${t}` })
 }
 
 // 获取点赞数
@@ -218,7 +215,6 @@ const handleShowLikeDetailsClick = (params: {
 }) => {
   // 跳转到点赞详情页面，传递目标类型和目标ID
   const url = `/notice/likeDetails/${params.targetType}/${params.targetId}`
-  console.log('跳转到点赞详情页面:', url)
   router.push(url)
 }
 
@@ -651,42 +647,16 @@ const selectedNotices = computed(() => {
 </script>
 
 <style scoped>
-.page-content-wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  padding: 20px 0; /* 上下内边距，保持与Message页一致 */
-  min-height: calc(100vh - 40px); /* 内容最小高度，减去上下padding */
-}
-
 .center {
-  width: 60%;
   display: flex;
   flex-direction: column;
   overflow-wrap: break-word;
   word-break: break-all;
 }
 
-.notice-heading {
-  display: flex;
-  padding: 12px 32px;
-  align-items: center;
-  gap: 8px;
-}
-
-.notice-type {
-  display: flex;
-  padding: 16px 0;
-}
-.notice-type button {
-  flex: 1;
-  text-align: center;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.notice-tab-button {
-  position: relative;
+.active {
+  font-weight: bold;
+  border-bottom: 2px solid #00aeec;
 }
 
 .unread-notice-type-count {
