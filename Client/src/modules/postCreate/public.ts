@@ -12,16 +12,8 @@ axios.interceptors.request.use(config => {
 
 export async function getCircles() {
   // TODO: replace with real API
-  // return axios.get('/circles')
-  //   .then(res => res.data);
-  return {data:
-      [
-        {circleId: 100000, name: "无"},
-        {circleId: 100001, name: "科技生活"},
-        {circleId: 100002, name: "电子竞技"},
-        {circleId: 100003, name: "体育赛事"}
-      ]
-  }
+  return axios.get('/circles')
+    .then(res => res.data);
 }
 
 export async function uploadMedia(file: File) {
