@@ -18,8 +18,8 @@ public class Reply
     [Column("CREATED_AT")]
     public DateTime CreatedAt { get; set; }
     [Column("IS_DELETED")]
-    public int? IsDeleted { get; set; } 
-    
+    public int? IsDeleted { get; set; }
+
     public virtual User? User { get; set; }
     public virtual Comments? Comment { get; set; }
 }

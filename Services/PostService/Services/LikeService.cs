@@ -33,12 +33,29 @@ namespace PostService.Services
 
         public async Task ToggleLikeAsync(long userId, LikeRequest request)
         {
+            // 获取目标用户ID
+            long? targetUserId = null;
+            if (request.Type == "post")
+            {
+                var post = await _postRepository.GetByIdAsync(request.TargetId);
+                targetUserId = post?.UserId;
+            }
+            else if (request.Type == "comment")
+            {
+                // 对于评论，需要从COMMENTS表获取TARGET_USER_ID
+                // 这里暂时设为null，后续可以通过CommentRepository获取
+                targetUserId = null;
+            }
+
             var like = new Like
             {
                 UserId = userId,
                 TargetId = request.TargetId,
                 TargetType = request.Type,
-                IsLike = request.Like
+                IsLike = request.Like,
+                TargetUserId = targetUserId,
+                LikeTime = DateTime.UtcNow,
+                LikeType = request.Like ? 1 : 0
             };
 
             // 调用仓库处理点赞/取消点赞

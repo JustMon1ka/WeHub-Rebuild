@@ -97,23 +97,21 @@ public class AppDbContext : DbContext
             entity.Property(t => t.TagId).HasColumnName("TAG_ID");
             entity.Property(t => t.TagName).HasColumnName("TAG_NAME").IsRequired(false);
         });
-        
+
         modelBuilder.Entity<Like>(entity =>
         {
             entity.ToTable("LIKES");
-            entity.HasKey(l => new { l.UserId, l.TargetId }); // 复合主键
+            entity.HasKey(l => new { l.UserId, l.TargetType, l.TargetId }); // 复合主键
 
             entity.Property(l => l.UserId).HasColumnName("USER_ID");
-            entity.Property(l => l.TargetId).HasColumnName("TARGET_ID");
             entity.Property(l => l.TargetType).HasColumnName("TARGET_TYPE");
-            entity.Property(l => l.IsLike).HasColumnName("LIKE_TYPE");
-            entity.Property(l => l.CreatedAt).HasColumnName("LIKE_TIME");
-            entity.Property(l => l.IsLike)
-            .HasColumnName("LIKE_TYPE")
-            .HasConversion(
-                v => v ? 1 : 0,    // 将 bool 转换为 1/0
-                v => v == 1        // 将 1/0 转换回 bool
-            );
+            entity.Property(l => l.TargetId).HasColumnName("TARGET_ID");
+            entity.Property(l => l.LikeType).HasColumnName("LIKE_TYPE");
+            entity.Property(l => l.LikeTime).HasColumnName("LIKE_TIME");
+            entity.Property(l => l.TargetUserId).HasColumnName("TARGET_USER_ID");
+
+            // IsLike 是 NotMapped 属性，不需要数据库映射
+            // CreatedAt 是 NotMapped 属性，通过 LikeTime 访问
         });
     }
 }

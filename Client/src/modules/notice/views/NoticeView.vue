@@ -97,6 +97,44 @@ import {
   getUnreadCountByType,
 } from '../utils/noticeUtils'
 
+// 动态生成头像颜色（与PlaceHolder组件保持一致）
+function simpleHash(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash += str.charCodeAt(i) * 7
+  }
+  return hash
+}
+
+function generateAvatarColors(text: string): { bgColor: string; textColor: string } {
+  const colorPalette = [
+    { bgColor: '7dd3fc', textColor: '0f172a' }, // 蓝-深蓝
+    { bgColor: 'ec4899', textColor: '831843' }, // 粉-深粉
+    { bgColor: '8b5cf6', textColor: '4c1d95' }, // 紫-深紫
+    { bgColor: '34d399', textColor: '064e3b' }, // 绿-深绿
+    { bgColor: 'facc15', textColor: '78350f' }, // 黄-深橙
+    { bgColor: 'a78bfa', textColor: '1e1b4b' }, // 浅紫-深紫
+    { bgColor: 'f472b6', textColor: '831843' }, // 浅粉-深粉
+    { bgColor: '60a5fa', textColor: '1e40af' }, // 浅蓝-深蓝
+  ]
+
+  if (!text || text.length === 0) {
+    return { bgColor: '7dd3fc', textColor: '0f172a' }
+  }
+
+  const charCode = simpleHash(text)
+  const colorIndex = charCode % colorPalette.length
+  return colorPalette[colorIndex]
+}
+
+function generateDynamicAvatarUrl(nickname: string): string {
+  const colors = generateAvatarColors(nickname)
+  const firstChar = nickname[0] || 'U'
+  return `https://placehold.co/100x100/${colors.bgColor}/${
+    colors.textColor
+  }?text=${encodeURIComponent(firstChar)}`
+}
+
 const selectedNoticeType = ref(0)
 const searchText = ref('')
 const noticeTypeTexts = ['收到的赞', '评论我的', '回复我的', '@我', '转发我的']
@@ -154,12 +192,17 @@ async function getUserInfoLocal(
   try {
     const userDetail = await getUserInfo(userId) // 使用新的UserDataService接口
     const MEDIA_BASE_URL = 'http://localhost:5000/api/media'
+    const nickname = userDetail.nickname || `用户${userId}`
+
+    // 生成默认头像URL，使用用户昵称的首字母和动态颜色
+    const defaultAvatarUrl = generateDynamicAvatarUrl(nickname)
+
     const avatarUrl = userDetail.avatarUrl
       ? `${MEDIA_BASE_URL}/${userDetail.avatarUrl}`
-      : 'https://placehold.co/100x100/facc15/78350f?text=U'
+      : defaultAvatarUrl
 
     const userInfo = {
-      nickname: userDetail.nickname || `用户${userId}`,
+      nickname: nickname,
       avatar: avatarUrl,
     }
     userCache.value.set(userId, userInfo)
@@ -177,9 +220,12 @@ async function getUserInfoLocal(
       fallbackNickname = `用户${userId} (网络错误)`
     }
 
+    // 生成默认头像URL，使用降级昵称的首字母和动态颜色
+    const fallbackAvatarUrl = generateDynamicAvatarUrl(fallbackNickname)
+
     const fallbackInfo = {
       nickname: fallbackNickname,
-      avatar: 'https://placehold.co/100x100/facc15/78350f?text=U',
+      avatar: fallbackAvatarUrl,
       profileUrl: `#/user/${userId}`,
     }
     userCache.value.set(userId, fallbackInfo) // 缓存降级信息，避免重复请求
