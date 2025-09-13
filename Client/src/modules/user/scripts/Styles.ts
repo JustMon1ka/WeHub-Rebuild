@@ -1,5 +1,4 @@
 import { ref } from 'vue';
-import type { Ref } from 'vue';
 
 const styles= ref({
     error: "text-red-400 text-sm mt-2",

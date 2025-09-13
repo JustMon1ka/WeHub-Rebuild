@@ -1,7 +1,8 @@
 ﻿import axios from 'axios';
 import User from '@/modules/auth/scripts/User.ts';
+import { GATEWAY } from '@/modules/core/public.ts'
 
-axios.defaults.baseURL = 'http://localhost:5000/api';
+axios.defaults.baseURL = `${GATEWAY}/api`;
 axios.interceptors.request.use(config => {
   // 设置 Bearer 认证
   let token = User.getInstance()?.userAuth?.token || null;

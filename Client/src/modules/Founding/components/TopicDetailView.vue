@@ -41,7 +41,7 @@ function handleError(e: any) {
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto">
+  <div class="max-w-2xl">
     <!-- 顶部：返回 + 话题信息 -->
     <div class="flex items-center space-x-4 p-4 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
       <button @click="goBack" class="p-2 hover:bg-slate-700 rounded-full">

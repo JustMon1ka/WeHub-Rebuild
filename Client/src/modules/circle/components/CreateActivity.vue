@@ -1,20 +1,20 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[9999]">
-    <div class="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+  <div class="fixed inset-0 bg-slate-950/50 backdrop-blur-md bg-opacity-60 flex items-center justify-center p-4 z-[9999]">
+    <div class="bg-slate-900 rounded-2xl shadow-2xl  border-2 border-slate-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
       <div class="create-activity-container">
         <!-- 页面头部 -->
         <div class="page-header">
           <h3 class="page-title">
             {{ isEditing ? '编辑活动' : '创建活动' }}
           </h3>
-          <button @click="$emit('close')" class="close-btn">×</button>
+          <button @click="$emit('close')" class="close-btn rounded-full">×</button>
         </div>
 
         <!-- 表单内容 -->
         <form @submit.prevent="handleSubmit" class="create-form">
-          <div class="form-grid">
+          <div class="form-grid p-8">
             <!-- 左侧表单区域 -->
-            <div class="form-left">
+            <div class="form-left space-y-8">
               <!-- 活动标题 -->
               <div class="form-section">
                 <label class="form-label required">活动标题</label>
@@ -131,7 +131,7 @@
           </div>
 
           <!-- 按钮区域 -->
-          <div class="form-actions">
+          <div class="form-actions flex flex-row justify-end-safe w-full px-6">
             <button type="button" @click="$emit('close')" class="btn btn-secondary">取消</button>
             <button type="submit" :disabled="isLoading || !isFormValid" class="btn btn-primary">
               {{ isLoading ? '保存中...' : isEditing ? '更新活动' : '创建活动' }}
@@ -146,7 +146,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { Activity, CreateActivityRequest, UpdateActivityRequest } from '../types'
-import { activityApi, CircleAPI } from '../api'
+import { activityApi } from '../api'
 
 interface Props {
   circleId: number
@@ -418,13 +418,11 @@ const handleSubmit = async () => {
 
     if (form.value.imageFile && result.data) {
       try {
-        console.log('开始上传活动图片...')
         const uploadResult = await activityApi.uploadActivityImage(
           props.circleId,
           result.data.activityId,
           form.value.imageFile,
         )
-        console.log('活动图片上传成功:', uploadResult)
 
         // 可以添加成功提示
         // alert('活动创建成功，图片上传成功！')
@@ -495,8 +493,9 @@ onMounted(() => {
   color: #94a3b8; /* slate-400 */
   font-size: 24px;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 100%;
   transition: background 0.2s;
 }
 
@@ -510,6 +509,9 @@ onMounted(() => {
   color: #f1f5f9; /* slate-100 */
   margin-bottom: 8px;
   font-size: 16px;
+  width: fit-content;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .form-input,
@@ -576,6 +578,12 @@ onMounted(() => {
 .btn-primary {
   background: #0ea5e9; /* sky-500 */
   color: #fff;
+  padding: 0.5rem 1rem;
+  width: 8rem;
+  border-radius: 0.75rem;
+  margin: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -586,10 +594,17 @@ onMounted(() => {
   background: #1e293b; /* slate-800 */
   color: #cbd5e1; /* slate-300 */
   border: 1px solid #334155; /* slate-700 */
+  padding: 0.5rem 1rem;
+  width: 8rem;
+  border-radius: 0.75rem;
+  margin: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .btn-secondary:hover {
   background: #334155; /* slate-700 */
+
 }
 
 /* 响应式设计 */
@@ -602,5 +617,14 @@ onMounted(() => {
   .create-form {
     padding: 16px;
   }
+}
+
+.error-message {
+  color: #f87171; /* red-400 */
+  font-size: 14px;
+  margin-top: 4px;
+  width: fit-content;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 </style>

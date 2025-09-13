@@ -5,6 +5,7 @@ import router from '@/router.ts'
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthCode, Email, Password, Phone, UserName } from '@/modules/auth/scripts/UserMetaData.ts'
 import { toggleLoginHover } from '@/router.ts'
+import { setCurrentUserId } from "@/modules/Founding/store/CurrentUser"
 
 enum AuthType {
   PasswordLogin,
@@ -134,9 +135,16 @@ class AuthData {
       if (this.authType.value === AuthType.Register) {
         await router.push('/user_guide');
       } else {
+        // ✅ 登录成功后立即更新全局 currentUserId
+        const uid = User.getInstance()?.userAuth.userId
+        if (uid) {
+          setCurrentUserId(uid)
+          console.log("✅ 已刷新 CurrentUser:", uid)
+        }
         await router.push('/mainpage');
       }
       toggleLoginHover(false);
+      location.reload();
     } else {
       this.error.value = true;
       this.errorMsg.value = result.error || AuthData.errorMsg.DefaultError;

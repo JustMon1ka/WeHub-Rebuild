@@ -17,10 +17,10 @@ namespace FollowService.Models
         [Column("CREATED_AT")]
         public DateTime CreatedAt { get; set; }
 
-        [ForeignKey("FollowerId")]
-        public virtual User Follower { get; set; }
-
-        [ForeignKey("FolloweeId")]
-        public virtual User Followee { get; set; }
+        // [ForeignKey("FollowerId")]
+        // public virtual User Follower { get; set; }
+        //
+        // [ForeignKey("FolloweeId")]
+        // public virtual User Followee { get; set; }
     }
 }

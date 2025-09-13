@@ -51,7 +51,7 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.followingCo
                 v-bind:class="styles.btnShape + styles.normalBtn">
           编辑个人资料
         </button>
-        <FollowButton v-else :user-id="userInfo.userId" class="w-24"
+        <FollowButton v-else :user-id="userInfo.userId.toString()" class="w-24"
                       @followed="userInfo.followerCount += 1"
                       @unfollowed="userInfo.followerCount -= 1" />
       </div>

@@ -2,8 +2,11 @@
   <div class="chat-message-wrapper">
     <div :class="isSelf ? 'my-message' : 'other-message'">
       <!-- 对方消息：头像在左 -->
-      <router-link v-if="!isSelf" to="/otherUserHomepage">
-        <img class="message-avatar" :src="props.message.sender.avatar" alt="对方头像" />
+      <router-link v-if="!isSelf" :to="`/user_page/${props.message.sender.id}`">
+        <img v-if="!!props.message.sender.avatar"
+             :src="props.message.sender.avatar" alt="user" />
+        <PlaceHolder v-else width="100" height="100" :text="props.message.sender.nickname || props.message.sender.OtherUserId"
+                     class="message-avatar" />
       </router-link>
 
       <div class="message-bubble" @contextmenu.prevent="handleContextMenuShow">
@@ -17,8 +20,11 @@
 
       <!-- 自己消息：头像在右 -->
       <div v-if="isSelf" class="avatar-wrapper">
-        <router-link to="/personalHomepage">
-          <img class="message-avatar" :src="props.message.sender.avatar" alt="我的头像" />
+        <router-link to="/user_page/Me">
+          <img v-if="!!props.message.sender.avatar"
+               :src="props.message.sender.avatar" alt="user" />
+          <PlaceHolder v-else width="100" height="100" :text="props.message.sender.nickname || props.message.sender.OtherUserId"
+                       class="message-avatar" />
         </router-link>
       </div>
 
@@ -39,6 +45,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { messageDisplay } from '../types'
 import ContextMenu, { type MenuItem } from './ContextMenu.vue'
+import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 
 const props = defineProps<{
   message: messageDisplay
@@ -167,8 +174,8 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.my-message router-link,
-.other-message router-link {
+.my-message .router-link,
+.other-message .router-link {
   display: contents;
 }
 

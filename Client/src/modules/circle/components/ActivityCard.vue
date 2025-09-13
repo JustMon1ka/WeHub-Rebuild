@@ -156,10 +156,7 @@ const formatDateTime = (dateStr: string) => {
 
 // 处理参加活动
 const handleJoinActivity = async () => {
-  console.log('ActivityCard: 触发参加活动事件')
-
   if (!props.activity) {
-    console.error('activity 对象为空')
     alert('活动信息缺失')
     return
   }
@@ -169,27 +166,15 @@ const handleJoinActivity = async () => {
 
 // 处理完成活动
 const handleCompleteActivity = async () => {
-  console.log('=== 开始完成活动调试 ===')
-  console.log('活动信息:', props.activity)
-  console.log('圈子ID:', props.circleId)
-
   if (!props.activity) {
-    console.error('活动信息为空')
     return
   }
 
   loading.value = true
   try {
-    console.log('调用 API:', `completeActivity(${props.circleId}, ${props.activity.activityId})`)
     const result = await activityApi.completeActivity(props.circleId, props.activity.activityId)
-    console.log('完成活动API响应成功:', result)
     emit('statusChanged')
   } catch (error: any) {
-    console.error('=== 完成活动失败详情 ===')
-    console.error('错误对象:', error)
-    console.error('响应状态:', error.response?.status)
-    console.error('响应数据:', error.response?.data)
-    console.error('请求URL:', error.config?.url)
 
     let errorMessage = '完成活动失败'
     if (error.response?.data?.msg) {
@@ -207,28 +192,15 @@ const handleCompleteActivity = async () => {
 
 // 处理领取奖励
 const handleClaimReward = async () => {
-  console.log('=== 开始领取奖励调试 ===')
-  console.log('活动信息:', props.activity)
-  console.log('圈子ID:', props.circleId)
-
   if (!props.activity) {
-    console.error('活动信息为空')
     return
   }
 
   loading.value = true
   try {
-    console.log('调用 API:', `claimReward(${props.circleId}, ${props.activity.activityId})`)
     const result = await activityApi.claimReward(props.circleId, props.activity.activityId)
-    console.log('领取奖励API响应成功:', result)
     emit('statusChanged')
   } catch (error: any) {
-    console.error('=== 领取奖励失败详情 ===')
-    console.error('错误对象:', error)
-    console.error('响应状态:', error.response?.status)
-    console.error('响应数据:', error.response?.data)
-    console.error('请求URL:', error.config?.url)
-
     let errorMessage = '领取奖励失败'
     if (error.response?.data?.msg) {
       errorMessage = error.response.data.msg

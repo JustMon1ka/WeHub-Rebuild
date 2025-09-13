@@ -55,7 +55,7 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.value.follo
       </div>
     </div>
     <div class="border-t border-slate-700 p-3 flex justify-center">
-      <FollowButton :user-id="userInfo.userId" class="w-full"/>
+      <FollowButton :user-id="userInfo.userId.toString()" class="w-full"/>
     </div>
   </div>
 </template>

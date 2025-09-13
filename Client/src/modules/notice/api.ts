@@ -6,17 +6,15 @@ import type {
     replyNoticeResponse,
     repostNoticeResponse,
     atNoticeResponse,
-    likeNoticeListById,
-    BaseResp,
     markReadResponse,
     postDetailResponse,
     commentDetailResponse,
     getLikersByTargetParams,
     getLikersByTargetResponse
 } from './types'
-import { unwrap } from './types'
-// 移除对message模块的依赖，直接使用UserDataService接口
+import { unwrap, type BaseResp } from './types'
 import { User } from '@/modules/auth/public.ts'
+import { GATEWAY } from '@/modules/core/public.ts'
 import { handleApiError } from './utils/errorHandler'
 
 // 创建独立的axios实例，避免全局配置冲突

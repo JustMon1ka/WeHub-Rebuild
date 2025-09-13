@@ -36,7 +36,9 @@
                   class="community-large-avatar"
                   :src="
                     processedAvatarUrl ||
-                    `https://placehold.co/150x150/1677ff/ffffff?text=${encodeURIComponent(communityData.name[0] || 'C')}`
+                    `https://placehold.co/150x150/1677ff/ffffff?text=${encodeURIComponent(
+                      communityData.name[0] || 'C'
+                    )}`
                   "
                   :alt="`${communityData.name} avatar`"
                 />
@@ -156,7 +158,7 @@
 
       <!-- 右侧边栏 -->
       <aside class="right-sidebar">
-        <div class="sidebar-content">
+        <div class="sidebar-content space-y-6">
           <!-- 社区信息 -->
           <div class="sidebar-card">
             <h2 class="sidebar-title">关于社区</h2>
@@ -387,7 +389,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { CircleAPI, getSpuPage, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
 import ActivityList from '../components/ActivityList.vue'
-import ActivityParticipation from '../components/ActivityParticipation.vue'
 import CreateActivity from '../components/CreateActivity.vue'
 import CreatePost from '../components/CreatePost.vue'
 import PostList from '../components/PostList.vue'
@@ -537,27 +538,20 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
     // 将返回的blob转换为可显示的URL
     return URL.createObjectURL(response.data)
   } catch (error) {
-    console.error('获取图片失败:', error)
     return ''
   }
 }
 
 //  processImageUrls 函数
 const processImageUrls = async (): Promise<void> => {
-  console.log('开始处理图片URL...')
-
   // 处理头像
   if (communityData.value.avatarUrl) {
-    console.log('原始头像URL:', communityData.value.avatarUrl)
     processedAvatarUrl.value = await getProxiedImageUrl(communityData.value.avatarUrl)
-    console.log('处理后头像URL:', processedAvatarUrl.value)
   }
 
   // 处理横幅
   if (communityData.value.bannerUrl) {
-    console.log('原始横幅URL:', communityData.value.bannerUrl)
     processedBannerUrl.value = await getProxiedImageUrl(communityData.value.bannerUrl)
-    console.log('处理后横幅URL:', processedBannerUrl.value)
   }
 }
 
@@ -864,7 +858,6 @@ const handleCreatePost = (): void => {
 
 // 处理帖子创建完成
 const handlePostCreated = async (post: any): Promise<void> => {
-  console.log('新帖子已创建:', post)
   showCreatePost.value = false
 
   // 刷新帖子列表
@@ -1020,7 +1013,7 @@ const approveApplication = async (targetUserId: number): Promise<void> => {
           approve: true,
           role: 2, // 默认设置为普通成员
         },
-      },
+      }
     )
 
     if (response.data && response.data.code === 200) {
@@ -1067,8 +1060,6 @@ const handleVote = async (postId: number, voteType: 'up' | 'down'): Promise<void
       post.userVote = voteType
       post.votes += voteType === 'up' ? 1 : -1
     }
-
-    console.log(`投票 ${voteType} 帖子 ${postId}`)
   } catch (error) {
     console.error('投票失败:', error)
   }
@@ -1080,7 +1071,6 @@ const handlePostClick = (postId: number): void => {
 
 // 新增活动相关方法
 const handleActivityCreated = (activity: any): void => {
-  console.log('新活动已创建:', activity)
   showCreateActivity.value = false
   // 刷新活动统计
   loadActivityStats()
@@ -1135,7 +1125,7 @@ watch(
         activityListRef.value.setActiveFilter('all')
       }
     }
-  },
+  }
 )
 
 // 监听路由变化
@@ -1145,7 +1135,7 @@ watch(
     if (newId) {
       loadCommunityData()
     }
-  },
+  }
 )
 
 // 监听活动标签页切换，加载统计数据
@@ -1162,7 +1152,7 @@ watch(
     if (newId) {
       loadCommunityPosts()
     }
-  },
+  }
 )
 
 // 监听申请弹窗显示状态，加载申请列表
@@ -1281,7 +1271,6 @@ onMounted(() => {
 .community-banner {
   height: 192px;
   background: #334155; /* slate-700 */
-  overflow: hidden;
 }
 
 .community-banner img {
@@ -1577,7 +1566,6 @@ onMounted(() => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .post-meta {

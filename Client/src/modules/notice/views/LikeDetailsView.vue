@@ -124,29 +124,17 @@ async function getLikeUsersList() {
     }
 
     // 获取所有点赞者的详细信息
-    const allLikerDetails = await Promise.all(
-      likersData.items.map(async (userId, index) => {
-        try {
-          const userDetail = await getUserInfo(userId)
-          return {
-            id: userId,
-            username: userDetail.nickname || `用户${userId}`,
-            avatar: userDetail.avatarUrl || 'https://placehold.co/100x100/facc15/78350f?text=U',
-            time: '刚刚', // API中没有提供点赞时间，使用默认值
-          }
-        } catch (userError) {
-          console.error(`[LikeDetailsView] 获取用户${userId}详情失败:`, userError)
-          return {
-            id: userId,
-            username: `用户${userId}`,
-            avatar: 'https://placehold.co/100x100/facc15/78350f?text=U',
-            time: '刚刚',
-          }
+    likeUsers.value = await Promise.all(
+      likersData.items.map(async (userId) => {
+        const userDetail = await getUserDetail(userId)
+        return {
+          id: userId,
+          username: userDetail.nickname,
+          avatar: userDetail.avatar,
+          time: '刚刚', // API中没有提供点赞时间，使用默认值
         }
       })
     )
-
-    likeUsers.value = allLikerDetails
   } catch (err: any) {
     console.error('[LikeDetailsView] 获取点赞用户列表失败:', err)
     console.error('[LikeDetailsView] 错误详情:', {
@@ -338,13 +326,6 @@ onMounted(async () => {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.user-details {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .item-content {

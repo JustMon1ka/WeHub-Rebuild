@@ -25,7 +25,6 @@ export const useFoundingStore = defineStore("founding", {
       } finally {
         this.loading = false
       }
-      console.log("store.loadAll called ✅")
     },
   },
 })

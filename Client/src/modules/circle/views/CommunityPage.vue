@@ -107,7 +107,7 @@
 
       <!-- 右侧边栏 -->
       <aside class="right-sidebar">
-        <div class="sidebar-content">
+        <div class="sidebar-content space-y-6">
           <!-- 热门社区 -->
           <div class="sidebar-card">
             <h2 class="sidebar-title">热门社区</h2>
@@ -196,30 +196,23 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
     // 将返回的blob转换为可显示的URL
     return URL.createObjectURL(response.data)
   } catch (error) {
-    console.error('获取图片失败:', error)
     return ''
   }
 }
 
 // 添加处理图片URLs的函数
 const processImageUrls = async (community: Community): Promise<void> => {
-  console.log('开始处理图片URL for community:', community.id)
-
   const processedAvatar = ref<string>('')
   const processedBanner = ref<string>('')
 
   // 处理头像
   if (community.avatarUrl) {
-    console.log('原始头像URL:', community.avatarUrl)
     processedAvatar.value = await getProxiedImageUrl(community.avatarUrl)
-    console.log('处理后头像URL:', processedAvatar.value)
   }
 
   // 处理横幅
   if (community.bannerUrl) {
-    console.log('原始横幅URL:', community.bannerUrl)
     processedBanner.value = await getProxiedImageUrl(community.bannerUrl)
-    console.log('处理后横幅URL:', processedBanner.value)
   }
 
   // 存储处理后的图片URL

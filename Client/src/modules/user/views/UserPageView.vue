@@ -8,9 +8,9 @@ import type { TabLabel} from '@/modules/user/scripts/TabController.ts'
 import { type Ref, ref, watch } from 'vue'
 import FollowList from '@/modules/user/components/UserPage/FollowList.vue'
 import router from '@/router.ts'
-import PrivacyView from '@/modules/auth/views/PrivacyView.vue'
 import { toggleLoginHover } from '@/router.ts'
 import MyPostList from '@/modules/post/components/MyPostList.vue'
+
 
 const { userId_p } = defineProps<{
   userId_p: string;
@@ -54,14 +54,14 @@ watch( () => userId_p, (newId, oldId) => {
       }
     }
     userInfo = ref<UserInfo>(new UserInfo(userId));
+    editMode.value = false;
+    followMode.value = false;
+    followTab.value = 0;
+    userInfoTemp.value = null;
+    tempCopied.value = false;
+    Tabs.switchTab(0);
     userInfo.value.loadUserData(); // 加载用户数据，必须在Ref包裹后调用，否则会丧失profileLoaded的响应性。
   }
-  editMode.value = false;
-  followMode.value = false;
-  followTab.value = 0;
-  userInfoTemp.value = undefined;
-  tempCopied.value = false;
-  Tabs.switchTab(0);
 }, { immediate: true });
 
 watch(() => userInfo.value.profileLoaded && userInfo.value.tagsLoaded,
@@ -80,12 +80,10 @@ function onCancel(){
 }
 
 function onSave(){
-  userInfo.value = new UserInfo(userId);
-  userInfo.value.loadUserData(); // 重新加载用户数据
+  userInfoTemp.value.copy(userInfo.value);
   editMode.value = false;
-  tempCopied.value = false;
   if (userInfo.value.isMe) {
-    User.getInstance()?.reloadUserInfo();
+    User.getInstance().userInfo.value = userInfo.value;
   }
 }
 </script>
@@ -113,7 +111,7 @@ function onSave(){
                 leave-active-class="transition duration-200 ease-in"
                 leave-from-class="opacity-100 translate-y-0"
                 leave-to-class="opacity-100 translate-y-full">
-      <FollowList v-show="followMode" @close="followMode=false" :user-id_p="userId"
+      <FollowList v-show="followMode" @close="followMode=false" :user-id="userId"
                   v-model:curTab="followTab" :nick-name="userInfo.nickname" :key="'follow'+userId"/>
     </transition>
 
@@ -142,8 +140,7 @@ function onSave(){
       <div v-for="( tab , index) in Tabs.tablabels" :key="index">
         <div v-show="Tabs.currentTab === index">
           <!-- 内容切换 Tab -->
-          <!--<privacy-view :key="'post'+index+userId"/>-->
-          <MyPostList />
+          <MyPostList/>
         </div>
       </div>
     </div>

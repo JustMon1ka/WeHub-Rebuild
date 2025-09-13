@@ -41,8 +41,7 @@ async function fetchMedia() {
   mediaSrc.value = '';
 
   try {
-    const url = await getMediaUrl(props.fileId);
-    mediaSrc.value = url;
+    mediaSrc.value = await getMediaUrl(props.fileId);
   } catch (error) {
     console.error(`Failed to load video (fileId: ${props.fileId}):`, error);
     mediaSrc.value = '';

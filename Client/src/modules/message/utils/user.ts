@@ -6,14 +6,6 @@ import type { user } from '../types'
 import { getUserDetail } from '../api'
 
 /**
- * 获取默认头像URL
- * @returns 默认头像URL
- */
-export function getDefaultAvatar(): string {
-    return 'https://placehold.co/100x100/facc15/78350f?text=U'
-}
-
-/**
  * 用户信息缓存
  */
 class UserCache {
@@ -71,7 +63,7 @@ export async function ensureUser(userId: number): Promise<user> {
         const u: user = {
             id: detail.userId,
             nickname: detail.nickname || detail.username,
-            avatar: detail.avatar || getDefaultAvatar(),
+            avatar: detail.avatar || '',
             url: `/user/${detail.userId}`,
         }
         userCache.set(userId, u)
@@ -82,7 +74,7 @@ export async function ensureUser(userId: number): Promise<user> {
         const defaultUser: user = {
             id: userId,
             nickname: '用户' + userId,
-            avatar: getDefaultAvatar(),
+            avatar: '',
             url: `/user/${userId}`,
         }
         userCache.set(userId, defaultUser)
@@ -115,7 +107,7 @@ export function createUserInfo(
     return {
         id: userId,
         nickname,
-        avatar: avatar || getDefaultAvatar(),
+        avatar: avatar || '',
         url: `/user/${userId}`,
     }
 }

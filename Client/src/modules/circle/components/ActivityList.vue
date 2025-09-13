@@ -400,7 +400,6 @@ const loadActivities = async () => {
     // 并行加载所有活动的参与状态
     await loadAllParticipationStatuses()
   } catch (err: any) {
-    console.error('加载活动失败:', err)
     error.value = err.message || '加载失败，请重试'
   } finally {
     loading.value = false
@@ -435,8 +434,6 @@ const handleActivityClick = (activity: Activity) => {
 
 // 参加活动 - 修改为直接显示心得表单，不调用API
 const handleJoinActivity = async (activity: Activity) => {
-  console.log('点击参加活动，直接显示心得表单')
-
   // 直接显示参与心得表单，不调用joinActivity API
   selectedActivity.value = activity
   showParticipationForm.value = true

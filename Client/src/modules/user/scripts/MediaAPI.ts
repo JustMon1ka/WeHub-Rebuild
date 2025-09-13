@@ -21,7 +21,6 @@ async function uploadMediaAPI(userId: string, file: File) {
     },
     body: formData,
   });
-  console.log(result);
   const resultData = await result.json();
   if (!result.ok) {
 
