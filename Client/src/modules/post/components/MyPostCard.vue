@@ -1,5 +1,5 @@
 <template>
-  <article class="w-full p-4 md:p-5 border border-slate-800 rounded-2xl bg-slate-900/30 mb-4">
+  <article class="w-full p-4 md:p-5 border-b-1 border-b-slate-800 bg-slate-900/30 mb-4">
     <!-- 标题（跳转浏览页） -->
     <h2 class="text-lg md:text-xl font-bold text-slate-100 hover:text-sky-400 cursor-pointer" @click="goDetail">{{
       post.title }}</h2>

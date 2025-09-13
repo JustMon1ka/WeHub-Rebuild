@@ -135,13 +135,7 @@ class AuthData {
       if (this.authType.value === AuthType.Register) {
         await router.push('/user_guide');
       } else {
-        // ✅ 登录成功后立即更新全局 currentUserId
-        const uid = User.getInstance()?.userAuth.userId
-        if (uid) {
-          setCurrentUserId(uid)
-          console.log("✅ 已刷新 CurrentUser:", uid)
-        }
-        await router.push('/mainpage');
+        await router.push('/');
       }
       toggleLoginHover(false);
       location.reload();

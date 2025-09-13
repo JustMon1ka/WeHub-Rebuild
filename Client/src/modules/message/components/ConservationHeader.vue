@@ -1,6 +1,6 @@
 <template>
   <div class="avatar">
-    <img v-if="!!props.conversation.contactUser?.avatar"
+    <img v-if="!!props.conversation.contactUser?.avatar" class="w-10 h-10 rounded-full"
       :src="props.conversation.contactUser?.avatar" alt="user" />
     <PlaceHolder v-else width="100" height="100" :text="props.conversation.contactUser?.nickname || props.conversation.OtherUserId"
                   class="w-10 h-10 rounded-full" />

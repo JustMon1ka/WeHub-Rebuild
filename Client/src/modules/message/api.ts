@@ -109,7 +109,7 @@ export interface UserDetailApiResp extends BaseResp<{
     username: string
     email: string
     nickname: string
-    avatar: string
+    avatarUrl: string
     bio: string
     createdAt: string
     lastLoginAt: string
@@ -120,7 +120,7 @@ export type UserDetail = {
     username: string
     email: string
     nickname: string
-    avatar: string
+    avatarUrl: string
     bio: string
     createdAt: string
     lastLoginAt: string

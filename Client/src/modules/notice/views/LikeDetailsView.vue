@@ -130,7 +130,7 @@ async function getLikeUsersList() {
         return {
           id: userId,
           username: userDetail.nickname,
-          avatar: userDetail.avatar,
+          avatar: userDetail.avatarUrl,
           time: '刚刚', // API中没有提供点赞时间，使用默认值
         }
       })
