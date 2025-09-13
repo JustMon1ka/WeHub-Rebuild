@@ -17,7 +17,7 @@ public class DbTestController : ControllerBase
     [HttpGet("tables")]
     public IActionResult GetTables()
     {
-        var connStr = _config.GetConnectionString("OracleDb");
+        var connStr = _config.GetConnectionString("DefaultConnection");
         var tables = new List<string>();
 
         try
@@ -45,7 +45,7 @@ public class DbTestController : ControllerBase
     [HttpGet("columns")]
     public IActionResult GetColumns([FromQuery] string table)
     {
-        var connStr = _config.GetConnectionString("OracleDb");
+        var connStr = _config.GetConnectionString("DefaultConnection");
         var columns = new List<object>();
 
         try
@@ -84,7 +84,7 @@ public class DbTestController : ControllerBase
    [HttpGet("tag")]
     public IActionResult GetTags()
     {
-        var connStr = _config.GetConnectionString("OracleDb");
+        var connStr = _config.GetConnectionString("DefaultConnection");
         var tags = new List<object>();
 
         try

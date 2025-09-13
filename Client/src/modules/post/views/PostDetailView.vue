@@ -78,11 +78,11 @@ function handleLikeCountUpdate(newCount: number) {
 
 // 处理评论数更新
 function handleCommentAdded() {
-  commentCount.value = (commentCount.value || 0) + 1;
+  //commentCount.value = (commentCount.value || 0) + 1;
 }
 
 function handleCommentDeleted() {
-  commentCount.value = Math.max(0, (commentCount.value || 0) - 1);
+  //commentCount.value = Math.max(0, (commentCount.value || 0) - 1);
 }
 
 // 处理错误

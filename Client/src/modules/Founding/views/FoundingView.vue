@@ -2,6 +2,8 @@
 import HotTopics from "../components/HotTopics.vue"
 import { useFoundingStore } from "../store"
 
+
+
 const store = useFoundingStore()
 store.loadAll()
 </script>

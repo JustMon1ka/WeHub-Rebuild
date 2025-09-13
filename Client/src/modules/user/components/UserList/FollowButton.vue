@@ -11,6 +11,7 @@ const { userId } = defineProps<{
 const emit = defineEmits<{
   (e: 'followed'): void;
   (e: 'unfollowed'): void;
+  (e: 'updated'): void   // ✅ 新增事件
 }>();
 
 const login = !!User.getInstance();
@@ -40,6 +41,7 @@ function toggleFollow() {
     emit('followed');
   }
   following.value = !following.value;
+  emit('updated')   // ✅ 每次切换后都通知父组件
 }
 
 </script>

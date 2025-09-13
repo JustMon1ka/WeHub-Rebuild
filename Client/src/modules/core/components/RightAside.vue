@@ -1,12 +1,26 @@
 <script setup lang="ts">
-import SearchBar from "@/modules/post/components/SearchBar.vue"   // 你的搜索框路径
+import SearchBar from "@/modules/post/components/SearchBar.vue"
 import TodayHot from "@/modules/Founding/components/TodayHot.vue"
 import RecommendUsers from "@/modules/Founding/components/RecommendUsers.vue"
 import { useFoundingStore } from "@/modules/Founding/store"
+import { watch } from "vue"
+import { currentUserId } from "@/modules/Founding/store/CurrentUser"
 
 // 使用 Pinia Store
 const store = useFoundingStore()
-store.loadAll()
+
+// 如果启动时已经有 userId，则直接加载
+if (currentUserId.value) {
+  store.loadAll()
+}
+
+// 监听登录状态变化，重新加载
+watch(currentUserId, (newVal) => {
+  if (newVal) {
+    console.log("✅ 右侧栏组件刷新数据，userId:", newVal)
+    store.loadAll()
+  }
+})
 </script>
 
 <template>
@@ -19,11 +33,10 @@ store.loadAll()
       <TodayHot :items="store.todayHot" />
 
       <!-- 推荐关注 -->
-      <RecommendUsers :users="store.recommendUsers" />
+      <RecommendUsers
+        :users="store.recommendUsers"
+        @updated="store.loadAll()"   
+      />
     </div>
   </aside>
 </template>
-
-<style scoped>
-/* 可以在这里单独调整右侧栏的布局样式 */
-</style>
