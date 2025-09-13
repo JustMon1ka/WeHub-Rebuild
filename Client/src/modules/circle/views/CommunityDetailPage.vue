@@ -136,13 +136,14 @@
           </div>
 
           <!-- 帖子列表 -->
-          <div v-if="activeTab !== 'activities'" class="posts-list">
+          <div v-if="activeTab !== 'activities'" class="posts-list scrollable-content">
             <!-- 真实帖子列表 -->
             <PostList :circleId="communityData.id" ref="postListRef" />
           </div>
 
           <!-- 活动列表 -->
-          <div v-if="activeTab === 'activities'" class="activities-container">
+
+          <div v-if="activeTab === 'activities'" class="activities-container scrollable-content">
             <ActivityList
               ref="activityListRef"
               :circle-id="communityData.id"
@@ -789,23 +790,71 @@ const formatVoteCount = (count: number): string => {
   return count.toString()
 }
 
-const formatDate = (dateString: string): string => {
-  if (!dateString) return '未知'
-  const date = new Date(dateString)
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  return `${year}年${month}月`
+// 处理UTC时间转北京时间
+const convertUTCToBeijingTime = (dateString: string): Date => {
+  if (!dateString) return new Date()
+
+  // 如果时间字符串没有时区标识，则认为是UTC时间
+  let utcTime: Date
+
+  if (dateString.includes('Z') || dateString.includes('+') || dateString.includes('-')) {
+    // 已经有时区信息
+    utcTime = new Date(dateString)
+  } else {
+    // 没有时区信息，手动添加Z标识表示UTC时间
+    utcTime = new Date(dateString + 'Z')
+  }
+
+  return utcTime
 }
 
+// 替换你现有的 formatDateTime 函数
 const formatDateTime = (dateString: string): string => {
   if (!dateString) return '未知'
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN', {
+
+  console.log('原始时间字符串:', dateString) // 调试用
+
+  // 直接手动处理时间转换
+  let date: Date
+
+  try {
+    // 如果没有时区信息，假设是UTC时间并手动加8小时
+    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-')) {
+      // 创建UTC时间
+      const utcDate = new Date(dateString + 'Z')
+      // 手动加8小时转为北京时间
+      date = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000)
+    } else {
+      // 有时区信息的情况
+      const utcDate = new Date(dateString)
+      date = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000)
+    }
+
+    console.log('转换后时间:', date) // 调试用
+
+    // 格式化输出
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch (error) {
+    console.error('时间转换错误:', error)
+    return '时间格式错误'
+  }
+}
+
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '未知'
+
+  const date = convertUTCToBeijingTime(dateString)
+
+  return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: 'long',
+    timeZone: 'Asia/Shanghai',
   })
 }
 
@@ -1183,8 +1232,46 @@ onMounted(() => {
   background: #1e293b; /* slate-800 */
   border-radius: 12px;
   border: 1px solid #334155; /* slate-700 */
-  overflow: visible; /* 改为 visible，允许内容溢出和滚动 */
-  height: auto; /* 确保高度自适应 */
+  overflow: hidden; /* 改为hidden，因为内部有滚动区域 */
+  height: calc(100vh - 48px); /* 设置固定高度，48px为容器的padding */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 新增：可滚动内容区域的通用样式 */
+.scrollable-content {
+  height: calc(100vh - 400px); /* 减去头部、tab等区域的高度 */
+  overflow-y: auto; /* 垂直滚动 */
+  overflow-x: hidden; /* 隐藏水平滚动 */
+}
+
+/* 自定义滚动条样式 */
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: #1e293b; /* slate-800 */
+  border-radius: 3px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: #475569; /* slate-600 */
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: #64748b; /* slate-500 */
+}
+
+/* 社区头部区域保持固定，不参与滚动 */
+.community-header-section {
+  flex-shrink: 0; /* 防止缩放 */
+}
+
+.content-tabs {
+  flex-shrink: 0; /* 防止缩放 */
 }
 
 .community-header-section {
@@ -1357,7 +1444,6 @@ onMounted(() => {
 
 /* 确保帖子列表和活动容器可以滚动 */
 .posts-list {
-  min-height: 400px;
   overflow: visible; /* 添加这行 */
 }
 
@@ -1866,7 +1952,6 @@ onMounted(() => {
   }
 
   .activities-container {
-    min-height: 400px;
     overflow: visible; /* 添加这行 */
     padding: 24px;
   }
