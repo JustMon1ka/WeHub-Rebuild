@@ -160,7 +160,7 @@ export async function getMyPosts(): Promise<PostListItem[]> {
   return unwrap<PostListItem[]>(resp.data);
 }
 
-export async function getPosts(ids?: string, userId?: number): Promise<PostListItem[]>{
+export async function getPosts(ids?: string, userId?: number): Promise<PostListItem[]> {
   const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts", {params: {ids, userId}});
   return unwrap<PostListItem[]>(resp.data);
 }
