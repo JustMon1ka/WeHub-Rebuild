@@ -3,7 +3,7 @@
     <div :class="isSelf ? 'my-message' : 'other-message'">
       <!-- 对方消息：头像在左 -->
       <router-link v-if="!isSelf" :to="`/user_page/${props.message.sender.id}`">
-        <img v-if="!!props.message.sender.avatar"
+        <img v-if="!!props.message.sender.avatar" class="message-avatar"
              :src="props.message.sender.avatar" alt="user" />
         <PlaceHolder v-else width="100" height="100" :text="props.message.sender.nickname || props.message.sender.OtherUserId"
                      class="message-avatar" />
@@ -21,7 +21,7 @@
       <!-- 自己消息：头像在右 -->
       <div v-if="isSelf" class="avatar-wrapper">
         <router-link to="/user_page/Me">
-          <img v-if="!!props.message.sender.avatar"
+          <img v-if="!!props.message.sender.avatar" class="message-avatar"
                :src="props.message.sender.avatar" alt="user" />
           <PlaceHolder v-else width="100" height="100" :text="props.message.sender.nickname || props.message.sender.OtherUserId"
                        class="message-avatar" />
@@ -167,8 +167,8 @@ onUnmounted(() => {
 }
 
 .message-avatar {
-  width: 36px;
-  height: 36px;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 99%;
   object-fit: cover;
   flex-shrink: 0;

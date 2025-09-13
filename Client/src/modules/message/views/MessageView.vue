@@ -284,7 +284,7 @@ onMounted(async () => {
         myUser.value = {
           id: userDetail.userId,
           nickname: userDetail.nickname || userDetail.username,
-          avatar: `${GATEWAY}/api/media/${userDetail.avatar}` || '',
+          avatar: `${GATEWAY}/api/media/${userDetail.avatarUrl}` || '',
           url: `/user/${userDetail.userId}`,
         }
       } catch (error) {
@@ -710,7 +710,7 @@ const startHorizontalResize = (e: MouseEvent) => {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  background: linear-gradient(135deg, #1f2937 0%, #485a60 100%);
+  background: linear-gradient(135deg, #1f2137 0%, #485a60 100%);
 }
 
 .chat-content {

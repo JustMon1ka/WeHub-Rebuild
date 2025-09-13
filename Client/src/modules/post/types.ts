@@ -1,4 +1,6 @@
 // 点赞请求体（按你们后端 LikeRequest）
+import { GATEWAY } from '@/modules/core/public.ts'
+
 export type ToggleLikeRequest = {
   type: 'post' | 'comment' | 'reply';
   targetId: number;
@@ -104,7 +106,7 @@ export interface Comment {
     id: number;
     name: string;
     username: string;
-    avatar: string;
+    avatarUrl: string;
     nickName: string;
   };
   content: string;
@@ -164,10 +166,10 @@ export function convertCommentResponseToFrontend(response: CommentResponse): Com
     name: response.nickName || response.userName, // 显示用：优先nickName
     username: response.userName,                  // 用户名：保持原样
     nickName: response.nickName,                  // 保留nickName字段
-    avatar: response.avatarUrl || getDefaultAvatar(response.userId),
+    avatarUrl: response.avatarUrl ? `${GATEWAY}/api/media/${response.avatarUrl}` : "",
     email: '' // 可选
   };
-  
+
   return {
     type: response.type === 1 ? 'reply' : 'comment',
     comment_id: response.id,
@@ -180,12 +182,6 @@ export function convertCommentResponseToFrontend(response: CommentResponse): Com
   };
 }
 
-// 确保默认头像函数可用
-export function getDefaultAvatar(userId: number): string {
-  const colors = ['7dd3fc', 'ec4899', '8b5cf6', '34d399', 'facc15'];
-  const color = colors[userId % colors.length];
-  return `https://placehold.co/100x100/${color}/0f172a?text=用户${userId}`;
-}
 
 // 转换函数：将前端Comment转换为后端CommentRequest
 export function convertCommentToBackendRequest(comment: Partial<Comment>): CommentRequest {
