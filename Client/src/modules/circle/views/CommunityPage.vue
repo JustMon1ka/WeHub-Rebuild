@@ -34,34 +34,6 @@
           <button class="btn btn-primary" @click="handleCreateCommunity">创建社区</button>
         </div>
 
-        <!-- 内容切换 Tab -->
-        <div class="content-tabs">
-          <a
-            href="#"
-            class="tab-link"
-            :class="{ active: activeTab === 'all' }"
-            @click.prevent="changeTab('all')"
-          >
-            全部社区
-          </a>
-          <a
-            href="#"
-            class="tab-link"
-            :class="{ active: activeTab === 'joined' }"
-            @click.prevent="changeTab('joined')"
-          >
-            已加入
-          </a>
-          <a
-            href="#"
-            class="tab-link"
-            :class="{ active: activeTab === 'recommended' }"
-            @click.prevent="changeTab('recommended')"
-          >
-            推荐
-          </a>
-        </div>
-
         <!-- 加载状态 -->
         <div v-if="loading" class="loading-state">
           <div class="loading-spinner"></div>
@@ -128,17 +100,6 @@
                 <span class="community-tag">{{ community.category || '通用' }}</span>
                 <span v-if="community.isPrivate" class="community-tag private">私有</span>
               </div>
-
-              <div class="community-actions">
-                <button
-                  class="btn btn-sm"
-                  :class="[getButtonClass(community)]"
-                  @click.stop="toggleJoinCommunity(community.id)"
-                  :disabled="communityStore.getCommunityLoadingState(community.id)"
-                >
-                  {{ getButtonText(community) }}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -168,12 +129,7 @@
             <h2 class="sidebar-title">快速导航</h2>
             <ul class="category-list">
               <li class="category-item">
-                <a href="#" @click.prevent="changeTab('all')" class="category-link"> 全部社区 </a>
-              </li>
-              <li class="category-item">
-                <a href="#" @click.prevent="changeTab('joined')" class="category-link">
-                  我的社区
-                </a>
+                <a href="#" @click.prevent="" class="category-link"> 全部社区 </a>
               </li>
               <li class="category-item">
                 <a href="#" @click.prevent="handleCreateCommunity" class="category-link">
@@ -203,11 +159,9 @@ interface Community {
   memberCount: number
   category: string
   isPrivate: boolean
-  isJoined: boolean
-  isLoading: boolean
   createdAt: string
   ownerId?: number
-  avatarUrl?: string // 新增
+  avatarUrl?: string
   bannerUrl?: string
 }
 
@@ -217,21 +171,16 @@ const router = useRouter()
 const communityStore = useCommunityStore()
 
 // 状态
-const activeTab = ref<'all' | 'joined' | 'recommended'>('all')
 const loading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 
 // 数据
 const allCommunities = ref<Community[]>([])
-const joinedCommunities = ref<Community[]>([])
-
-// 当前用户ID（与后端硬编码保持一致）
-const currentUserId = 2
 
 const processedImages = ref<Record<number, { avatar: string; banner: string }>>({})
 
-// 添加图片处理函数（和详情页完全一样）
+// 添加图片处理函数
 const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
   if (!imageUrl) return ''
 
@@ -251,7 +200,7 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
   }
 }
 
-// 添加处理图片URLs的函数（和详情页完全一样）
+// 添加处理图片URLs的函数
 const processImageUrls = async (community: Community): Promise<void> => {
   const processedAvatar = ref<string>('')
   const processedBanner = ref<string>('')
@@ -275,20 +224,7 @@ const processImageUrls = async (community: Community): Promise<void> => {
 
 // 计算属性
 const filteredCommunities = computed(() => {
-  let communities: Community[] = []
-
-  // 根据标签页选择数据源
-  if (activeTab.value === 'joined') {
-    communities = joinedCommunities.value
-  } else if (activeTab.value === 'recommended') {
-    // 推荐逻辑：按成员数排序
-    communities = allCommunities.value
-      .slice()
-      .sort((a, b) => b.memberCount - a.memberCount)
-      .slice(0, 10)
-  } else {
-    communities = allCommunities.value
-  }
+  let communities = allCommunities.value
 
   // 按搜索关键词筛选
   if (searchQuery.value.trim()) {
@@ -310,110 +246,13 @@ const popularCommunities = computed(() => {
     .slice(0, 5)
 })
 
-// 加载所有社区
-const loadAllCommunities = async (): Promise<void> => {
-  try {
-    const response = await CircleAPI.getCircles()
-
-    if (response && response.code === 200 && Array.isArray(response.data)) {
-      const communities = await Promise.all(
-        response.data.map(async (item: any) => {
-          const community: Community = {
-            id: item.circleId || item.id,
-            name: item.name || '未知社区',
-            description: item.description || '',
-            memberCount: item.memberCount || 0,
-            category: item.categories || item.category || '通用',
-            isPrivate: item.isPrivate || false,
-            isJoined: false,
-            isLoading: false,
-            createdAt: item.createdAt || new Date().toISOString(),
-            ownerId: item.ownerId,
-            // 兼容多种命名方式 - 和详情页完全一样
-            avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
-            bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
-          }
-
-          // 检查用户是否已加入该社区
-          try {
-            community.isJoined = await CircleAPI.checkMembership(community.id)
-          } catch (error) {
-            console.error(`检查社区 ${community.id} 成员状态失败:`, error)
-            community.isJoined = false
-          }
-
-          // 处理图片URL - 和详情页完全一样的方式
-          await processImageUrls(community)
-
-          return community
-        }),
-      )
-
-      // 使用store管理状态
-      communityStore.setAllCommunities(communities)
-      allCommunities.value = communities
-    } else {
-      throw new Error('社区列表数据格式错误')
-    }
-  } catch (err) {
-    console.error('加载所有社区失败:', err)
-    throw err
-  }
-}
-
-// 加载已加入的社区
-const loadJoinedCommunities = async (): Promise<void> => {
-  try {
-    const response = await CircleAPI.getUserJoinedCircles(currentUserId)
-
-    if (response && response.code === 200 && Array.isArray(response.data)) {
-      const communities = await Promise.all(
-        response.data.map(async (item: any) => {
-          const community: Community = {
-            id: item.circleId || item.id,
-            name: item.name || '未知社区',
-            description: item.description || '',
-            memberCount: item.memberCount || 0,
-            category: item.categories || item.category || '通用',
-            isPrivate: item.isPrivate || false,
-            isJoined: true,
-            isLoading: false,
-            createdAt: item.createdAt || new Date().toISOString(),
-            ownerId: item.ownerId,
-            // 兼容多种命名方式 - 和详情页完全一样
-            avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
-            bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
-          }
-
-          // 处理图片URL - 和详情页完全一样的方式
-          await processImageUrls(community)
-
-          return community
-        }),
-      )
-
-      // 使用store管理状态
-      communityStore.setJoinedCommunities(communities)
-      joinedCommunities.value = communities
-    } else {
-      joinedCommunities.value = []
-      communityStore.setJoinedCommunities([])
-    }
-  } catch (err) {
-    console.error('加载已加入社区失败:', err)
-    joinedCommunities.value = []
-    communityStore.setJoinedCommunities([])
-  }
-}
-
 // 加载社区数据
 const loadCommunities = async (): Promise<void> => {
   try {
     loading.value = true
     error.value = null
 
-    // 并行加载所有社区和已加入社区
-    await Promise.all([loadAllCommunities(), loadJoinedCommunities()])
+    await loadAllCommunities()
   } catch (err) {
     console.error('加载社区数据失败:', err)
     error.value = '加载社区列表失败，请稍后重试'
@@ -423,10 +262,6 @@ const loadCommunities = async (): Promise<void> => {
 }
 
 // 方法
-const changeTab = (tab: 'all' | 'joined' | 'recommended'): void => {
-  activeTab.value = tab
-}
-
 const handleSearch = (): void => {
   // 搜索逻辑已在 computed 中处理
 }
@@ -446,39 +281,50 @@ const handleCommunityClick = (communityId: number): void => {
   router.push(`/community/${communityId}`)
 }
 
-const toggleJoinCommunity = async (communityId: number): Promise<void> => {
-  try {
-    await communityStore.toggleCommunityMembership(communityId)
-  } catch (error) {
-    console.error('操作失败:', error)
-  }
-}
-
 // 生命周期
 onMounted(() => {
   loadCommunities()
 })
 
-const getButtonText = (community: Community): string => {
-  if (communityStore.getCommunityLoadingState(community.id)) {
-    return '处理中...'
+// 加载所有社区的函数
+const loadAllCommunities = async (): Promise<void> => {
+  try {
+    console.log('加载所有社区列表...')
+    const response = await CircleAPI.getCircles()
+    console.log('所有社区响应:', response)
+
+    if (response && response.code === 200 && Array.isArray(response.data)) {
+      const communities = await Promise.all(
+        response.data.map(async (item: any) => {
+          const community: Community = {
+            id: item.circleId || item.id,
+            name: item.name || '未知社区',
+            description: item.description || '',
+            memberCount: item.memberCount || 0,
+            category: item.categories || item.category || '通用',
+            isPrivate: item.isPrivate || false,
+            createdAt: item.createdAt || new Date().toISOString(),
+            ownerId: item.ownerId,
+            avatarUrl: item.avatarUrl || item.avatar_url || item.AVATAR_URL,
+            bannerUrl: item.bannerUrl || item.banner_url || item.BANNER_URL,
+          }
+
+          await processImageUrls(community)
+          return community
+        }),
+      )
+
+      communityStore.setAllCommunities(communities)
+      allCommunities.value = communities
+
+      console.log('处理后的所有社区列表:', allCommunities.value)
+    } else {
+      throw new Error('社区列表数据格式错误')
+    }
+  } catch (err) {
+    console.error('加载所有社区失败:', err)
+    throw err
   }
-
-  if (activeTab.value === 'joined') {
-    return '退出'
-  }
-
-  const isJoined = communityStore.getCommunityJoinStatus(community.id)
-  return isJoined ? '退出' : '加入'
-}
-
-const getButtonClass = (community: Community): string => {
-  if (activeTab.value === 'joined') {
-    return 'btn-secondary'
-  }
-
-  const isJoined = communityStore.getCommunityJoinStatus(community.id)
-  return isJoined ? 'btn-secondary' : 'btn-primary'
 }
 </script>
 
@@ -561,30 +407,6 @@ const getButtonClass = (community: Community): string => {
   height: 20px;
 }
 
-.content-tabs {
-  display: flex;
-  border-bottom: 1px solid #334155; /* slate-700 */
-  margin-bottom: 24px;
-}
-
-.tab-link {
-  padding: 16px 24px;
-  color: #64748b; /* slate-500 */
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.tab-link.active {
-  color: #38bdf8; /* sky-400 */
-  border-bottom-color: #38bdf8; /* sky-400 */
-}
-
-.tab-link:hover {
-  color: #38bdf8; /* sky-400 */
-}
-
 .loading-state,
 .error-state {
   text-align: center;
@@ -611,13 +433,12 @@ const getButtonClass = (community: Community): string => {
 }
 
 .communities-grid {
-  display: flex; /* 改为flex布局 */
-  flex-direction: column; /* 垂直排列 */
-  gap: 20px; /* 保持间距 */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .empty-communities {
-  grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
   color: #64748b; /* slate-500 */
@@ -635,9 +456,9 @@ const getButtonClass = (community: Community): string => {
   cursor: pointer;
   transition: all 0.2s;
   background: #0f172a;
-  display: flex; /* 改为水平flex布局 */
-  align-items: stretch; /* 让内容高度一致 */
-  width: 100%; /* 占满容器宽度 */
+  display: flex;
+  align-items: stretch;
+  width: 100%;
 }
 
 .community-card:hover {
@@ -646,29 +467,29 @@ const getButtonClass = (community: Community): string => {
 }
 
 .community-banner {
-  width: 200px; /* 固定横幅宽度 */
-  height: 140px; /* 稍微增加高度 */
+  width: 200px;
+  height: 140px;
   overflow: hidden;
   background: #334155;
-  flex-shrink: 0; /* 防止压缩 */
-  display: flex; /* 新增：用于居中图片 */
-  align-items: center; /* 新增：垂直居中 */
-  justify-content: center; /* 新增：水平居中 */
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .community-banner img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center; /* 新增：确保图片居中裁剪 */
+  object-position: center;
 }
 
 .community-info {
-  padding: 20px; /* 稍微增加内边距 */
-  flex: 1; /* 占据剩余空间 */
+  padding: 20px;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* 让内容分布均匀 */
+  justify-content: space-between;
 }
 
 .community-header {
@@ -683,8 +504,8 @@ const getButtonClass = (community: Community): string => {
   border-radius: 50%;
   margin-right: 12px;
   background: #475569;
-  object-fit: cover; /* 新增：确保头像正确显示 */
-  object-position: center; /* 新增：头像居中 */
+  object-fit: cover;
+  object-position: center;
 }
 
 .community-meta {
@@ -707,19 +528,18 @@ const getButtonClass = (community: Community): string => {
 .community-description {
   font-size: 14px;
   color: #cbd5e1;
-  line-height: 1.5; /* 稍微增加行高 */
+  line-height: 1.5;
   margin-bottom: 12px;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* 保持2行 */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  flex: 1; /* 让描述占据可用空间 */
+  flex: 1;
 }
 
 .community-tags {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
 }
 
 .community-tag {
@@ -735,12 +555,6 @@ const getButtonClass = (community: Community): string => {
   color: #f87171; /* red-400 */
 }
 
-.community-actions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center; /* 新增：垂直居中按钮 */
-}
-
 .btn {
   padding: 10px 20px;
   border: none;
@@ -749,11 +563,6 @@ const getButtonClass = (community: Community): string => {
   cursor: pointer;
   transition: all 0.2s;
   font-size: 14px;
-}
-
-.btn-sm {
-  padding: 6px 16px;
-  font-size: 12px;
 }
 
 .btn:disabled {
@@ -768,17 +577,6 @@ const getButtonClass = (community: Community): string => {
 
 .btn-primary:hover:not(:disabled) {
   background: #0284c7; /* sky-600 */
-}
-
-.btn-secondary {
-  border: 1px solid #475569; /* slate-600 */
-  background: #1e293b; /* slate-800 */
-  color: #cbd5e1; /* slate-300 */
-}
-
-.btn-secondary:hover:not(:disabled) {
-  border-color: #0ea5e9; /* sky-500 */
-  color: #0ea5e9; /* sky-500 */
 }
 
 .right-sidebar {
@@ -798,6 +596,7 @@ const getButtonClass = (community: Community): string => {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 16px;
+  color: #f1f5f9;
 }
 
 .popular-list,
@@ -868,12 +667,12 @@ const getButtonClass = (community: Community): string => {
   }
 
   .community-card {
-    flex-direction: column; /* 移动端改为垂直布局 */
+    flex-direction: column;
   }
 
   .community-banner {
-    width: 100%; /* 移动端横幅占满宽度 */
-    height: 120px; /* 移动端高度稍小 */
+    width: 100%;
+    height: 120px;
   }
 
   .community-info {
