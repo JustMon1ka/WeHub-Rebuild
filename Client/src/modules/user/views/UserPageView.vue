@@ -12,6 +12,7 @@ import PrivacyView from '@/modules/auth/views/PrivacyView.vue'
 import { toggleLoginHover } from '@/router.ts'
 import MyPostList from '@/modules/post/components/MyPostList.vue'
 
+
 const { userId_p } = defineProps<{
   userId_p: string;
 }>();

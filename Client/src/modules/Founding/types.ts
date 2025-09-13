@@ -8,6 +8,9 @@ export interface HotTopic {
 export interface RecommendUser {
   user_id: number
   username: string
+  nickname: string
+  avatar_url: string | null
+  similarity: number
 }
 
 export interface TodayHot {

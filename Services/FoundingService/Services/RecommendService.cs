@@ -169,23 +169,42 @@ public class RecommendService
             scores.Add((uid, sim));
         }
 
-        // 4. 查用户名并组装结果
-        string userSql = "SELECT USERNAME FROM USERS WHERE USER_ID = :p_uid";
+        // 4. 查用户名+昵称+头像并组装结果
+        string userSql = @"
+        SELECT u.USERNAME,
+            NVL(p.NICKNAME, u.USERNAME) AS NICKNAME,
+            NVL(p.AVATAR_URL, p.PROFILE_URL) AS AVATAR_URL
+        FROM USERS u
+        LEFT JOIN USERPROFILE p ON u.USER_ID = p.USER_ID
+        WHERE u.USER_ID = :p_uid";
+
         foreach (var (uid, score) in scores.OrderByDescending(s => s.Item2).Take(topN))
         {
             using var userCmd = new OracleCommand(userSql, conn);
             userCmd.Parameters.Add(new OracleParameter("p_uid", uid));
 
-            var usernameObj = userCmd.ExecuteScalar();
-            string username = usernameObj != null ? usernameObj.ToString()! : "未知用户";
+            using var reader = userCmd.ExecuteReader();
+            string username = "未知用户";
+            string nickname = "未知用户";
+            string? avatarUrl = null;
+
+            if (reader.Read())
+            {
+                username = reader["USERNAME"]?.ToString() ?? "未知用户";
+                nickname = reader["NICKNAME"]?.ToString() ?? username;
+                avatarUrl = reader["AVATAR_URL"]?.ToString();
+            }
 
             results.Add(new
             {
                 user_id = uid,
                 username = username,
+                nickname = nickname,
+                avatar_url = avatarUrl,
                 similarity = score
             });
         }
+
 
         return results;
     }

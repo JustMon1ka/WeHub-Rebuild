@@ -26,7 +26,7 @@ const listRef = ref<InstanceType<typeof PostList> | null>(null)
             ref="listRef"
             :num="10"
             :tailPostId="null"
-            :PostMode="0"
+            :PostMode="3"
             :tagName="null"
           />
         </div>
@@ -35,3 +35,6 @@ const listRef = ref<InstanceType<typeof PostList> | null>(null)
     </div>
   </div>
 </template>
+
+
+<!-- 为主页面 -->

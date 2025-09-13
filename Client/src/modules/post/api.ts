@@ -178,7 +178,7 @@ postHttp.interceptors.request.use(cfg => {
 export async function checkLike(type: 'post' | 'comment' | 'reply', targetId: number): Promise<boolean> {
   const resp = await axios.post<BaseResp<{ Liked: boolean }>>("/posts/CheckLike", { type, targetId });
   const data = unwrap<ToggleLikeResponse>(resp.data);
-  return data.Liked;
+  return data.isLiked;
 }
 
 export async function updatePost(payload: {
