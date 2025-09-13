@@ -1,13 +1,12 @@
 <template>
   <div class="conversation-item" :class="{ selected: props.selected }">
     <div class="avatar">
-      <img
-        :src="
-          props.conversation.contactUser?.avatar ||
-          'https://placehold.co/100x100/facc15/78350f?text=U'
-        "
-        :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.otherUserId}`"
+      <img v-if="!!props.conversation.contactUser?.avatar"
+           :src="props.conversation.contactUser?.avatar"
+           :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
       />
+      <PlaceHolder v-else width="100" height="100" :text="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
+                   class="w-12 h-12 rounded-full" />
       <!-- 未读消息红点 - 放在头像右上角 -->
       <div v-if="props.conversation.unreadCount > 0" class="unread-count">
         {{ displayUnreadCount(props.conversation.unreadCount) }}
@@ -15,8 +14,8 @@
     </div>
     <div class="content">
       <div class="header">
-        <span class="nickname" v-html="highlightedNickname"></span>
-        <span class="time">{{ diffime }}</span>
+        <span class="nickname w-full truncate" v-html="highlightedNickname"></span>
+        <span class="time w-26">{{ diffime }}</span>
       </div>
       <div class="newest-message" v-html="highlightedMessage"></div>
     </div>
@@ -27,6 +26,7 @@
 import { computed } from 'vue'
 import { formatTime } from '../../core/utils/time'
 import type { conversation } from '../types'
+import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 
 const props = defineProps<{
   conversation: conversation
@@ -72,7 +72,7 @@ const highlightedMessage = computed(() => {
   display: flex;
   align-items: center;
   min-width: 0;
-  padding: 8px 0;
+  padding: 0.75rem 0.25rem;
   cursor: pointer;
   transition: background 0.2s;
   position: relative;

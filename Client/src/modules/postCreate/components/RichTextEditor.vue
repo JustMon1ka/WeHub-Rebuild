@@ -2,9 +2,9 @@
   <div>
     <!-- Toolbar: 保持原有布局 -->
     <div
-      class="toolbar flex space-x-1 p-2 bg-slate-800 rounded-t-lg border-x border-t border-slate-700"
+      class="toolbar flex space-x-1 p-2 bg-slate-800 "
     >
-      <div class="flex items-center space-x-2 px-3 py-2 border-b border-slate-700 bg-slate-800">
+      <div class="w-full flex items-center space-x-2 px-3 py-2 border-b border-slate-700 bg-slate-800">
         <!-- 上传资源 -->
         <button
           type="button"
@@ -75,7 +75,7 @@
     </div>
 
     <!-- CodeMirror 编辑区 -->
-    <div ref="cmContainer" class="bg-slate-800 p-4 rounded-b-lg min-h-[300px] text-white"></div>
+    <div ref="cmContainer" class="bg-slate-800 text-md p-4 rounded-b-lg min-h-[300px] text-white"></div>
   </div>
 </template>
 
@@ -504,6 +504,7 @@ async function handleFileChange(e: Event) {
    color: white;
    white-space: pre-wrap;
    word-break: break-word;
+   font-size: 1rem;
  }
 :deep(.cm-editor) {
   outline: none !important;
