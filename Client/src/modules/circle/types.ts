@@ -1,4 +1,4 @@
-// src/types/community.ts
+// src/types.ts
 export interface Community {
   id: string | number
   name: string
@@ -119,17 +119,6 @@ export interface ActivityStatus {
   canClaimReward: boolean
 }
 
-// 活动相关类型
-export interface Activity {
-  activityId: number
-  circleId: number
-  title: string
-  description?: string
-  reward?: string
-  startTime: string
-  endTime: string
-}
-
 export interface CreateActivityRequest {
   title: string
   description?: string
@@ -221,19 +210,6 @@ export interface Activity {
 }
 
 // 在 types.ts 中添加帖子相关类型定义
-
-// 帖子相关类型
-export interface Post {
-  postId: number
-  userId: number
-  circleId?: number
-  title: string
-  content: string
-  tags: string[]
-  createdAt: string
-  views: number
-  likes: number
-}
 
 export interface CreatePostRequest {
   circleId?: number
