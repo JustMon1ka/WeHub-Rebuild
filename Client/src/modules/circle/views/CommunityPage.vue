@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- 顶部导航 -->
-    <NavBar />
-
     <!-- 主要内容 -->
     <div class="main-container">
       <!-- 中间主内容区 -->
@@ -150,7 +147,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import NavBar from '../components/NavBar.vue'
 import { CircleAPI, getProxiedImageUrl } from '../api.ts'
 import { useCommunityStore } from '../store.ts'
 import request from '../utils/request.ts'
