@@ -30,7 +30,7 @@ export default {
         path: '/create-community',
         name: 'create-community',
         component: CreateCommunity,
-        meta: { title: '创建社区', navi: false, recommend: false, requireLogin: false },
+        meta: { title: '创建社区', navi: false, recommend: false, requireLogin: true },
       },
       // 圈子活动路由
       {

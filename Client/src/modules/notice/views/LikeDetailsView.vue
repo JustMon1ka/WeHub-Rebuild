@@ -10,9 +10,13 @@
       </div>
       <div class="divider-horizontal"></div>
       <div class="post-info">
-        <span class="post-title"
-          >{{ targetType === 'post' ? '帖子' : '评论' }}：{{ targetTitle }}</span
+        <span
+          class="post-title clickable-title"
+          @click="goToTarget"
+          :title="`点击查看${targetType === 'post' ? '帖子' : '评论'}详情`"
         >
+          {{ targetType === 'post' ? '帖子' : '评论' }}：{{ targetTitle }}
+        </span>
       </div>
       <div class="divider-horizontal"></div>
 
@@ -55,8 +59,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getLikersByTarget, getPostDetail, getCommentDetail } from '../api'
-import { getUserDetail } from '../../message/api'
+import { getLikersByTarget, getPostDetail, getCommentDetail, getUserInfo } from '../api'
 import { unwrap } from '../types'
 
 const route = useRoute()
@@ -82,7 +85,7 @@ async function getTargetTitle() {
     if (targetType.value === 'post') {
       const postDetailResp = await getPostDetail(targetId.value)
       const postDetail = unwrap(postDetailResp)
-      targetTitle.value = postDetail.title
+      targetTitle.value = postDetail.title || `帖子${targetId.value}`
     } else if (targetType.value === 'comment') {
       const commentDetailResp = await getCommentDetail(targetId.value)
       const commentDetail = unwrap(commentDetailResp)
@@ -93,8 +96,10 @@ async function getTargetTitle() {
           : commentDetail.content
     }
   } catch (err) {
-    console.error('获取目标标题失败:', err)
-    targetTitle.value = `${targetType.value === 'post' ? '帖子' : '评论'}${targetId.value}`
+    console.error('[LikeDetailsView] 获取目标标题失败:', err)
+    targetTitle.value = `${targetType.value === 'post' ? '帖子' : '评论'}${
+      targetId.value
+    } (资源不存在)`
   }
 }
 
@@ -113,6 +118,11 @@ async function getLikeUsersList() {
     })
     const likersData = unwrap(likersResp)
 
+    if (likersData.items.length === 0) {
+      likeUsers.value = []
+      return
+    }
+
     // 获取所有点赞者的详细信息
     likeUsers.value = await Promise.all(
       likersData.items.map(async (userId) => {
@@ -126,7 +136,13 @@ async function getLikeUsersList() {
       })
     )
   } catch (err: any) {
-    console.error('获取点赞用户列表失败:', err)
+    console.error('[LikeDetailsView] 获取点赞用户列表失败:', err)
+    console.error('[LikeDetailsView] 错误详情:', {
+      message: err?.message,
+      status: err?.response?.status,
+      statusText: err?.response?.statusText,
+      data: err?.response?.data,
+    })
     error.value = err?.message ?? '获取点赞用户列表失败'
   } finally {
     loading.value = false
@@ -147,8 +163,54 @@ const goBackToNotice = () => {
   router.push('/notice/like')
 }
 
+// 跳转到目标页面（帖子或评论）
+const goToTarget = () => {
+  if (targetType.value === 'post') {
+    // 跳转到帖子详情页面
+    router.push(`/post/${targetId.value}`)
+  } else if (targetType.value === 'comment') {
+    // 跳转到评论详情页面（如果有的话）
+    router.push(`/comment/${targetId.value}`)
+  }
+}
+
+// 调试函数：手动测试API调用
+const testApiCalls = async () => {
+  console.log('[LikeDetailsView] 开始手动测试API调用')
+
+  try {
+    console.log('[LikeDetailsView] 测试getLikersByTarget...')
+    const testResp = await getLikersByTarget({
+      targetType: 'post',
+      targetId: 99999,
+      page: 1,
+      pageSize: 10,
+    })
+    console.log('[LikeDetailsView] getLikersByTarget测试结果:', testResp)
+  } catch (error) {
+    console.error('[LikeDetailsView] getLikersByTarget测试失败:', error)
+  }
+
+  try {
+    console.log('[LikeDetailsView] 测试getPostDetail...')
+    const testResp = await getPostDetail(99999)
+    console.log('[LikeDetailsView] getPostDetail测试结果:', testResp)
+  } catch (error) {
+    console.error('[LikeDetailsView] getPostDetail测试失败:', error)
+  }
+}
+
+// 暴露测试函数到全局，方便在控制台调用
+if (typeof window !== 'undefined') {
+  ;(window as any).testLikeDetailsApi = testApiCalls
+}
+
 onMounted(async () => {
-  await Promise.all([getTargetTitle(), getLikeUsersList()])
+  try {
+    await Promise.all([getTargetTitle(), getLikeUsersList()])
+  } catch (error) {
+    console.error('[LikeDetailsView] 数据获取失败:', error)
+  }
 })
 </script>
 
@@ -199,6 +261,24 @@ onMounted(async () => {
   align-items: center;
 }
 
+.clickable-title {
+  color: #3b82f6 !important; /* 使用蓝色，更亮更明显 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.clickable-title:hover {
+  color: #1d4ed8 !important; /* 悬停时更深的蓝色 */
+  text-decoration: underline;
+  transform: translateY(-1px); /* 轻微上移效果 */
+}
+
+.clickable-title:active {
+  color: #1e40af !important; /* 点击时的颜色 */
+  transform: translateY(0); /* 点击时回到原位置 */
+}
+
 .like-users-list {
   flex: 10;
   overflow-y: auto;
@@ -212,7 +292,7 @@ onMounted(async () => {
 }
 
 .like-user-item:hover {
-  background-color: #f8f9fa;
+  background-color: #273549;
 }
 
 .item-left {

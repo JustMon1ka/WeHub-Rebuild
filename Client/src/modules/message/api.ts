@@ -30,6 +30,21 @@ apiClient.interceptors.request.use((config) => {
     return config
 })
 
+// 添加响应拦截器处理错误
+apiClient.interceptors.response.use(
+    (response) => {
+        console.log('[MessageAPI] 响应成功:', response.status, response.config.url)
+        return response
+    },
+    (error) => {
+        console.error('[MessageAPI] 请求失败:', error.response?.status, error.response?.data, error.config?.url)
+        if (error.response?.status === 401) {
+            console.error('[MessageAPI] 认证失败，可能需要重新登录')
+        }
+        return Promise.reject(error)
+    }
+)
+
 // 获取会话列表
 export async function getConversationList(): Promise<conversationList> {
     try {
