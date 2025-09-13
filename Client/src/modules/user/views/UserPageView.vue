@@ -10,6 +10,7 @@ import FollowList from '@/modules/user/components/UserPage/FollowList.vue'
 import router from '@/router.ts'
 import { toggleLoginHover } from '@/router.ts'
 import MyPostList from '@/modules/post/components/MyPostList.vue'
+import UserPostList from '@/modules/post/components/UserPostList.vue'
 
 
 const { userId_p } = defineProps<{
@@ -141,6 +142,7 @@ function onSave(){
         <div v-show="Tabs.currentTab === index">
           <!-- 内容切换 Tab -->
           <MyPostList/>
+          <UserPostList :user-id="userId" />
         </div>
       </div>
     </div>

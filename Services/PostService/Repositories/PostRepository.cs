@@ -89,9 +89,27 @@ namespace PostService.Repositories
         public async Task<List<Post>> GetPostsByUserIdAsync(long userId)
         {
             await using var context = _contextFactory.CreateDbContext();
-            return await context.Posts
+            var posts = await context.Posts
                 .Where(p => p.UserId == userId)
+                .Include(p => p.PostTags)       // 包含联接表实体 (PostTag)
+                .ThenInclude(pt => pt.Tag)      // 基于联接表实体，继续包含实际的 Tag 实体
                 .ToListAsync();
+
+            if (!posts.Any()) return posts;
+
+            // 数据已全部加载到内存中，现在为每个帖子填充 [NotMapped] 的 TagNames 属性
+            foreach (var post in posts)
+            {
+                if (post.PostTags != null)
+                {
+                    post.TagNames = post.PostTags
+                        .Select(pt => pt.Tag?.TagName) // 从已加载的 Tag 实体中选择标签名
+                        .Where(tagName => !string.IsNullOrEmpty(tagName)) // 过滤掉可能存在的 null 或空字符串
+                        .ToList()!; // 将最终的名称列表赋值给 TagNames 属性
+                }
+            }
+            
+            return posts;
         }
 
         public async Task MarkAsDeletedAsync(long postId)
