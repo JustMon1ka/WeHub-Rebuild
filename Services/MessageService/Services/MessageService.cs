@@ -73,5 +73,13 @@ namespace MessageService.Services
 
             await _messageRepository.MarkAsReadAsync(currentUserId, otherUserId);
         }
+
+        public async Task<int> GetUnreadCountAsync(long? currentUserId)
+        {
+            if (currentUserId <= 0)
+                throw new ArgumentException("用户ID不能为空或无效");
+
+            return await _messageRepository.GetUnreadCountAsync(currentUserId);
+        }
     }
 }

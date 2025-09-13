@@ -146,6 +146,46 @@ namespace MessageService.Controllers
             }
         }
 
+        [HttpGet("unread-count")]
+        public async Task<IActionResult> GetUnreadCount()
+        {
+            try
+            {
+                Console.WriteLine($"[MessageController] GetUnreadCount called");
+                Console.WriteLine($"[MessageController] User.Identity.IsAuthenticated: {User.Identity?.IsAuthenticated}");
+                Console.WriteLine($"[MessageController] User.Identity.Name: {User.Identity?.Name}");
+
+                // 打印所有claims用于调试
+                foreach (var claim in User.Claims)
+                {
+                    Console.WriteLine($"[MessageController] Claim: {claim.Type} = {claim.Value}");
+                }
+
+                var currentUserId = GetCurrentUserId();
+                Console.WriteLine($"[MessageController] CurrentUserId: {currentUserId}");
+
+                var unreadCount = await _messageService.GetUnreadCountAsync(currentUserId);
+
+                var response = new
+                {
+                    code = 200,
+                    msg = "OK",
+                    data = new { unreadCount }
+                };
+                return Ok(response);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"[MessageController] UnauthorizedAccessException: {ex.Message}");
+                return Unauthorized(new { code = 401, msg = ex.Message, data = (object)null });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetUnreadCount Error: {ex}");
+                return StatusCode(500, new { code = 500, msg = $"获取未读消息数量失败: {ex.Message}", data = (object)null });
+            }
+        }
+
         // 临时测试端点，不需要认证
         [HttpGet("test")]
         public async Task<IActionResult> TestConversations()

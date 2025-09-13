@@ -120,5 +120,56 @@ namespace NoticeService.Services
             Console.WriteLine($"GetCommentsAsync returned {comments.Count} comments");
             return _mapper.Map<List<CommentNotificationDto>>(comments);
         }
+
+        public async Task CreateLikeNotificationAsync(CreateLikeNotificationDto dto, IDatabase redis)
+        {
+            if (redis == null) throw new ArgumentNullException(nameof(redis));
+
+            Console.WriteLine($"Creating like notification: LikerId={dto.LikerId}, TargetUserId={dto.TargetUserId}, TargetId={dto.TargetId}, TargetType={dto.TargetType}");
+
+            // 创建Like实体
+            var like = new Like
+            {
+                UserId = dto.LikerId, // 点赞者ID
+                TargetId = dto.TargetId, // 被点赞的内容ID
+                TargetType = dto.TargetType.ToLower(), // post 或 comment (数据库约束要求小写)
+                LikeType = dto.LikeType,
+                LikeTime = DateTime.UtcNow,
+                TargetUserId = dto.TargetUserId // 被点赞内容的作者ID
+            };
+
+            // 保存到数据库
+            await _repository.CreateLikeAsync(like);
+
+            // 更新Redis缓存
+            await UpdateLikeNotificationCache(dto.TargetUserId, dto.TargetType, dto.TargetId, redis);
+
+            Console.WriteLine($"Like notification created successfully");
+        }
+
+        private async Task UpdateLikeNotificationCache(int targetUserId, string targetType, int targetId, IDatabase redis)
+        {
+            try
+            {
+                // 更新未读点赞通知计数
+                var unreadKey = $"unread_likes:{targetUserId}";
+                await redis.StringIncrementAsync(unreadKey);
+
+                // 设置过期时间（7天）
+                await redis.KeyExpireAsync(unreadKey, TimeSpan.FromDays(7));
+
+                // 更新特定目标的点赞通知
+                var targetKey = $"like_notifications:{targetUserId}:{targetType.ToUpper()}:{targetId}";
+                await redis.StringIncrementAsync(targetKey);
+                await redis.KeyExpireAsync(targetKey, TimeSpan.FromDays(7));
+
+                Console.WriteLine($"Updated like notification cache for user {targetUserId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating like notification cache: {ex.Message}");
+                // 不抛出异常，因为数据库操作已经成功
+            }
+        }
     }
 }

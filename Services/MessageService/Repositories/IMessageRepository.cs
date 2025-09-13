@@ -11,5 +11,6 @@ namespace MessageService.Repositories
         Task<IEnumerable<MessageDto>> GetMessagesAsync(long? currentUserId, long? otherUserId);
         Task AddMessageAsync(Message message);
         Task MarkAsReadAsync(long? currentUserId, long? otherUserId);
+        Task<int> GetUnreadCountAsync(long? currentUserId);
     }
 }

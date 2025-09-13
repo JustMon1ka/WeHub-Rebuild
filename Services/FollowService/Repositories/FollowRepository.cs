@@ -23,7 +23,7 @@ namespace FollowService.Repositories
             return follow;
         }
 
-        public async Task<Follow> GetFollowAsync(int followerId, int followeeId)
+        public async Task<Follow?> GetFollowAsync(int followerId, int followeeId)
         {
             return await _context.Follows
                 .FirstOrDefaultAsync(f => f.FollowerId == followerId && f.FolloweeId == followeeId);

@@ -11,37 +11,63 @@
     <nav class="flex-grow">
       <ul class="space-y-2">
         <li>
-          <router-link to="/" class="router-link">
+          <router-link
+            to="/"
+            :class="['router-link', { 'router-link-active': isActive('/').value }]"
+          >
             <img src="@/modules/core/assets/home.svg" alt="Home" class="svg" />
             首页
           </router-link>
         </li>
         <li>
-          <router-link to="/founding" class="router-link">
+          <router-link
+            to="/founding"
+            :class="['router-link', { 'router-link-active': isActive('/founding').value }]"
+          >
             <img src="@/modules/core/assets/discover.svg" alt="Discover" class="svg" />
             发现
           </router-link>
         </li>
         <li>
-          <router-link to="/community" class="router-link">
+          <router-link
+            to="/community"
+            :class="['router-link', { 'router-link-active': isActive('/community').value }]"
+          >
             <img src="@/modules/core/assets/community.svg" alt="Community" class="svg" />
             社区
           </router-link>
         </li>
         <li>
-          <router-link to="/notice" class="router-link">
+          <router-link
+            to="/notice"
+            :class="['router-link', { 'router-link-active': isActive('/notice').value }]"
+          >
             <img src="@/modules/core/assets/notifications.svg" alt="Notifications" class="svg" />
             通知
           </router-link>
         </li>
         <li>
-          <router-link to="/message" class="router-link">
-            <img src="@/modules/core/assets/messages.svg" alt="Messages" class="svg" />
+          <router-link
+            to="/message"
+            :class="['router-link', { 'router-link-active': isActive('/message').value }]"
+          >
+            <div class="relative">
+              <img src="@/modules/core/assets/messages.svg" alt="Messages" class="svg" />
+              <span
+                v-if="unreadCount > 0"
+                class="absolute -top-1 -right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center min-w-[20px]"
+              >
+                {{ unreadCount > 99 ? '99+' : unreadCount }}
+              </span>
+            </div>
             私信
           </router-link>
         </li>
         <li>
-          <router-link to="/user_page/Me" class="router-link">
+          <router-link
+            to="/user_page/Me"
+            :class="['router-link', { 'router-link-active': isActive('/user_page/Me').value }]"
+          >
             <img src="@/modules/core/assets/profile.svg" alt="Profile" class="svg" />
             个人
           </router-link>
@@ -108,16 +134,20 @@
 </template>
 
 <script setup lang="ts">
-import { type Ref, ref } from 'vue'
+import { type Ref, ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User } from '@/modules/auth/public.ts'
-import { UserInfo } from '@/modules/user/public.ts'
+import { User } from '@/modules/auth/public'
+import { UserInfo } from '@/modules/user/public'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
+import { getUnreadMessageCount } from '@/modules/message/api'
+import { eventBus, EVENTS } from '@/modules/core/utils/eventBus'
 
 const router = useRouter()
 const route = useRoute()
 
 const postButton = ref<HTMLButtonElement | null>(null)
+const unreadCount = ref(0)
+let refreshInterval: number | null = null
 
 const openPostCreate = () => {
   if (route.name === 'post-create') {
@@ -138,6 +168,74 @@ const openPostCreate = () => {
     router.push({ name: 'post-create' })
   }
 }
+
+// 计算当前活跃的路由
+const isActive = (path: string) => {
+  return computed(() => {
+    if (path === '/notice') {
+      return route.path.startsWith('/notice')
+    }
+    if (path === '/message') {
+      return route.path.startsWith('/message')
+    }
+    return route.path === path
+  })
+}
+
+// 获取未读消息数量
+const fetchUnreadCount = async () => {
+  try {
+    // 检查用户是否已登录
+    const user = User.getInstance()
+    if (!user?.userAuth?.token) {
+      unreadCount.value = 0
+      return
+    }
+
+    const count = await getUnreadMessageCount()
+    unreadCount.value = count
+  } catch (error) {
+    console.error('获取未读消息数量失败:', error)
+    unreadCount.value = 0
+  }
+}
+
+// 启动定时刷新
+const startRefresh = () => {
+  if (refreshInterval) return
+
+  // 立即获取一次
+  fetchUnreadCount()
+
+  // 每30秒刷新一次
+  refreshInterval = setInterval(fetchUnreadCount, 30000)
+}
+
+// 停止定时刷新
+const stopRefresh = () => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+}
+
+// 监听消息已读事件
+const handleMessageMarkedAsRead = () => {
+  // 立即刷新未读数量
+  fetchUnreadCount()
+}
+
+onMounted(() => {
+  startRefresh()
+  // 监听消息已读事件
+  eventBus.on(EVENTS.MESSAGE_MARKED_AS_READ, handleMessageMarkedAsRead)
+})
+
+onUnmounted(() => {
+  stopRefresh()
+  // 移除事件监听
+  eventBus.off(EVENTS.MESSAGE_MARKED_AS_READ, handleMessageMarkedAsRead)
+})
 
 let userInfo: Ref<Ref<UserInfo> | undefined> = ref(undefined)
 
@@ -167,7 +265,14 @@ if (User.loading) {
   transition-duration: 200ms;
 }
 .router-link:hover {
-  background-color: #1e293b; /* 对应 bg-slate-800 */
+  background-color: #1e293b !important; /* 对应 bg-slate-800 */
+}
+.router-link-active {
+  background-color: #334155 !important; /* 对应 bg-slate-700，比悬停状态更深 */
+  color: #f1f5f9 !important; /* 对应 text-slate-100，更亮的文字颜色 */
+}
+.router-link-active:hover {
+  background-color: #334155 !important; /* 保持选中状态的背景色 */
 }
 
 .user:hover .logout {

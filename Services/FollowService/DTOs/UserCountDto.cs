@@ -2,7 +2,7 @@
 {
     public class UserCountDto
     {
-        public int FollowingCount { get; set; } // 关注数
-        public int FollowerCount { get; set; }  // 被关注数
+        public int followingCount { get; set; } // 关注数
+        public int followerCount { get; set; }  // 被关注数
     }
 }

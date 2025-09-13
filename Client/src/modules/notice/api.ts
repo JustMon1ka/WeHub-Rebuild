@@ -271,4 +271,31 @@ export async function getUserInfo(userId: number): Promise<UserInfoResponse> {
     }
 }
 
+// 创建点赞通知的接口
+export interface CreateLikeNotificationRequest {
+    likerId: number        // 点赞者ID (用户A)
+    targetUserId: number   // 被点赞内容的作者ID (用户B)
+    targetId: number       // 被点赞的内容ID (帖子ID或评论ID)
+    targetType: string     // "POST" 或 "COMMENT"
+    likeType?: number      // 点赞类型，默认为1
+}
+
+export interface CreateLikeNotificationResponse extends BaseResp<{ success: boolean; message: string }> { }
+
+// 创建点赞通知
+export async function createLikeNotification(request: CreateLikeNotificationRequest): Promise<{ success: boolean; message: string }> {
+    try {
+        console.log('[NoticeAPI] 创建点赞通知:', request)
+
+        const { data } = await apiClient.post<CreateLikeNotificationResponse>('/api/notifications/likes', request)
+        const result = unwrap(data)
+
+        console.log('[NoticeAPI] 点赞通知创建成功:', result)
+        return result
+    } catch (error: any) {
+        console.error('[NoticeAPI] 创建点赞通知失败:', error)
+        throw error
+    }
+}
+
 

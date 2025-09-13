@@ -20,10 +20,11 @@ namespace NoticeService.Data
             modelBuilder.Entity<Reply>()
                 .HasIndex(r => new { r.TargetUserId, r.IsDeletedNumber, r.CreatedAt });
 
-            // 配置Reply的IsDeleted字段
+            // 配置Reply的IsDeleted字段类型转换
             modelBuilder.Entity<Reply>()
                 .Property(r => r.IsDeletedNumber)
-                .HasColumnName("IS_DELETED");
+                .HasColumnName("IS_DELETED")
+                .HasColumnType("NUMBER(22)");
 
             modelBuilder.Entity<Like>()
                 .HasKey(l => new { l.UserId, l.TargetType, l.TargetId });
@@ -35,6 +36,10 @@ namespace NoticeService.Data
                 .Property(l => l.LikeTime)
                 .HasColumnName("LIKE_TIME")
                 .HasColumnType("DATETIME");
+
+            modelBuilder.Entity<Like>()
+                .Property(l => l.TargetUserId)
+                .HasColumnName("TARGET_USER_ID");
 
             modelBuilder.Entity<Repost>()
                 .HasKey(rp => rp.RepostId);
@@ -51,10 +56,11 @@ namespace NoticeService.Data
             modelBuilder.Entity<Comment>()
                 .HasIndex(c => new { c.TargetUserId, c.IsDeletedNumber, c.CreatedAt });
 
-            // 配置Comment的IsDeleted字段
+            // 配置Comment的IsDeleted字段类型转换
             modelBuilder.Entity<Comment>()
                 .Property(c => c.IsDeletedNumber)
-                .HasColumnName("IS_DELETED");
+                .HasColumnName("IS_DELETED")
+                .HasColumnType("NUMBER(22)");
         }
     }
 }

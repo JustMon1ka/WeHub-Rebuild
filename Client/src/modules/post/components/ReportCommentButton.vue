@@ -34,3 +34,4 @@ const handleReport = () => {
   window.open(reportUrl, '_blank')
 }
 </script>
+
