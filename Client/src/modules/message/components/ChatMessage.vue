@@ -3,10 +3,19 @@
     <div :class="isSelf ? 'my-message' : 'other-message'">
       <!-- 对方消息：头像在左 -->
       <router-link v-if="!isSelf" :to="`/user_page/${props.message.sender.id}`">
-        <img v-if="!!props.message.sender.avatar" class="message-avatar"
-             :src="props.message.sender.avatar" alt="user" />
-        <PlaceHolder v-else width="100" height="100" :text="props.message.sender.nickname || props.message.sender.OtherUserId"
-                     class="message-avatar" />
+        <img
+          v-if="!!props.message.sender.avatar"
+          class="message-avatar"
+          :src="props.message.sender.avatar"
+          alt="user"
+        />
+        <PlaceHolder
+          v-else
+          width="100"
+          height="100"
+          :text="props.message.sender.nickname || props.message.sender.OtherUserId"
+          class="message-avatar"
+        />
       </router-link>
 
       <div class="message-bubble" @contextmenu.prevent="handleContextMenuShow">
@@ -21,10 +30,19 @@
       <!-- 自己消息：头像在右 -->
       <div v-if="isSelf" class="avatar-wrapper">
         <router-link to="/user_page/Me">
-          <img v-if="!!props.message.sender.avatar" class="message-avatar"
-               :src="props.message.sender.avatar" alt="user" />
-          <PlaceHolder v-else width="100" height="100" :text="props.message.sender.nickname || props.message.sender.OtherUserId"
-                       class="message-avatar" />
+          <img
+            v-if="!!props.message.sender.avatar"
+            class="message-avatar"
+            :src="props.message.sender.avatar"
+            alt="user"
+          />
+          <PlaceHolder
+            v-else
+            width="100"
+            height="100"
+            :text="props.message.sender.nickname || props.message.sender.OtherUserId"
+            class="message-avatar"
+          />
         </router-link>
       </div>
 
@@ -95,11 +113,6 @@ const contenxtMenuItems = computed((): MenuItem[] => {
   //   icon: "forward",
   // });
 
-  items.push({
-    key: 'report',
-    text: '举报',
-    icon: 'report',
-  })
   return items
 })
 

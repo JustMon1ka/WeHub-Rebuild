@@ -9,6 +9,7 @@ import type {
     markReadResponse,
     postDetailResponse,
     commentDetailResponse,
+    commentDetail,
     getLikersByTargetParams,
     getLikersByTargetResponse
 } from './types'
@@ -179,12 +180,42 @@ export async function getPostDetail(postId: number): Promise<postDetailResponse>
 // 根据评论ID获取评论详细信息
 export async function getCommentDetail(commentId: number): Promise<commentDetailResponse> {
     try {
-        const { data } = await apiClient.get<commentDetailResponse>(`/api/posts/comment?ids=${commentId}&type=Comment`)
+        const { data } = await apiClient.get<BaseResp<any[]>>(`/api/posts/comment?ids=${commentId}&type=Comment`)
         console.log('[帖子数据] 评论详情:', data)
-        return data
+
+        // 转换PostService返回的数据结构为前端期望的格式
+        if (data.code === 200 && data.data && data.data.length > 0) {
+            const comment = data.data[0]
+            console.log('[调试] PostService返回的评论数据:', comment)
+
+            // 检查必要字段是否存在
+            if (!comment.userId) {
+                console.error('[错误] 评论数据中缺少userId字段:', comment)
+                throw new Error('评论数据不完整：缺少用户ID')
+            }
+
+            const commentDetailData: commentDetail = {
+                commentId: comment.id,
+                userId: comment.userId,
+                postId: comment.targetId || 0,
+                content: comment.content || '',
+                createdAt: comment.createdAt,
+                likes: comment.likes,
+                parentCommentId: comment.type === 'Reply' ? comment.targetId : undefined
+            }
+
+            console.log('[调试] 转换后的评论详情:', commentDetailData)
+
+            return {
+                code: 200,
+                data: commentDetailData
+            } as commentDetailResponse
+        } else {
+            console.error('[错误] PostService返回空数据或错误:', data)
+            throw new Error(`评论不存在或数据为空: ${data.message || '未知错误'}`)
+        }
     } catch (error: any) {
         console.error('[NoticeAPI] 获取评论详情失败:', error)
-
         throw error
     }
 }
