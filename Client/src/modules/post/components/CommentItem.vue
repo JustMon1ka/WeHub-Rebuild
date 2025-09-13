@@ -1,8 +1,8 @@
 <template>
   <article class="p-4" :data-comment-id="comment.comment_id || comment.reply_id" :data-type="comment.type">
     <div class="flex space-x-4">
-      <img class="w-10 h-10 rounded-full flex-shrink-0" :src="comment.user?.avatar || getDefaultAvatar(comment.user_id)"
-           :alt="comment.user?.nickName || comment.user?.username || `用户${comment.user_id}`">
+      <img v-if="!!comment.user?.avatarUrl" :src="comment.user?.avatarUrl" class="w-16 h-16 rounded-full" alt="avatar">
+      <PlaceHolder v-else width="80" height="80" :text="comment.user?.nickName || comment.user?.username" class="w-16 h-16 rounded-full"/>
       <div class="flex-1">
         <div class="flex items-baseline space-x-2">
           <!-- 主要修改这里：username → nickname -->
@@ -27,6 +27,7 @@ import { ref, computed } from 'vue';
 import type { Comment } from '../types';
 import { postService } from '../api';
 import { useAuthState } from '../utils/useAuthState';
+import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 const props = defineProps<{
   comment: Comment;
 }>();

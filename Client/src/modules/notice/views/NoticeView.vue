@@ -36,10 +36,7 @@
       <div class="text-red-500 text-sm text-center" v-if="unreadError">{{ unreadError }}</div>
 
       <div class="notice-information">
-        <div
-          v-if="selectedNotices.length === 0 && !unreadError"
-          class="text-center text-slate-500 text-md"
-        >
+        <div v-if="selectedNotices.length === 0 && !unreadError" class="text-center text-slate-500 text-md py-3">
           <p>暂无通知</p>
         </div>
         <div v-else class="notice-list">
@@ -154,9 +151,8 @@ async function getUserInfoLocal(
   try {
     const userDetail = await getUserInfo(userId) // 使用新的UserDataService接口
     const userInfo = {
-      nickname: userDetail.nickname || `用户${userId}`,
-      avatar: userDetail.avatarUrl || 'https://placehold.co/100x100/facc15/78350f?text=U',
-      profileUrl: userDetail.profileUrl || `#/user/${userId}`,
+      nickname: userDetail.nickname,
+      avatar: userDetail.avatarUrl,
     }
     userCache.value.set(userId, userInfo)
     return userInfo
@@ -235,7 +231,6 @@ watch(
 function onTabChange(index: number) {
   selectedNoticeType.value = index
   const t = idxToType[index]
-  if (t) router.replace({ path: `/notice/${t}` })
 }
 
 // 获取点赞数

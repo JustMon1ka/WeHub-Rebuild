@@ -4,6 +4,7 @@
 
 import type { user } from '../types'
 import { getUserDetail } from '../api'
+import { GATEWAY } from '@/modules/core/public.ts'
 
 /**
  * 用户信息缓存
@@ -63,7 +64,7 @@ export async function ensureUser(userId: number): Promise<user> {
         const u: user = {
             id: detail.userId,
             nickname: detail.nickname || detail.username,
-            avatar: detail.avatar || '',
+            avatar: detail?.avatarUrl ? `${GATEWAY}/api/media/${detail.avatarUrl}` : '',
             url: `/user/${detail.userId}`,
         }
         userCache.set(userId, u)

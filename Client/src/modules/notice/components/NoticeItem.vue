@@ -219,14 +219,14 @@ const handleAvatarError = (event: Event) => {
   flex-direction: column;
   width: 100%;
   padding: 12px 16px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid #1e293b;
   transition: background-color 0.2s;
   cursor: pointer;
   box-sizing: border-box;
 }
 
 .notice-item:hover {
-  background-color: #273549;
+  background-color: #1e293b;
 }
 
 .notice-item.clickable {
