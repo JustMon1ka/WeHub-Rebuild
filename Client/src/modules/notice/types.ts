@@ -177,7 +177,6 @@ export interface baseNotice {
     objectType: 'post' | 'comment' | 'user';
     targetPostId: number;
     targetPostTitle: string;
-    targetPostTitleImage: string;
 }
 
 // 评论通知

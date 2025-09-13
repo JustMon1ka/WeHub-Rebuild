@@ -82,7 +82,7 @@ import {
   getCommentDetail,
   getLikersByTarget,
 } from '../api'
-import { getUserDetail } from '../../message/api'
+import { getUserInfo } from '../api'
 import {
   indexToType,
   optimisticMarkRead,
@@ -90,6 +90,11 @@ import {
   displayUnreadNoticeCount,
   getUnreadCountByType,
 } from '../utils/noticeUtils'
+import {
+  checkAllServices,
+  logServiceHealth,
+  isCriticalServiceAvailable,
+} from '../utils/serviceHealth'
 
 const selectedNoticeType = ref(0)
 const searchText = ref('')
@@ -137,28 +142,48 @@ const idxToType: Record<number, string> = {
   4: 'repost',
 }
 
-// 获取用户信息的辅助函数
-async function getUserInfo(userId: number): Promise<{ nickname: string; avatar: string }> {
+// 获取用户信息的辅助函数（使用UserDataService）
+async function getUserInfoLocal(
+  userId: number
+): Promise<{ nickname: string; avatar: string; profileUrl?: string }> {
   if (userCache.value.has(userId)) {
     return userCache.value.get(userId)!
   }
 
   try {
-    const userDetail = await getUserDetail(userId)
+    const userDetail = await getUserInfo(userId) // 使用新的UserDataService接口
     const userInfo = {
-      nickname: userDetail.nickname,
-      avatar: userDetail.avatar,
+      nickname: userDetail.nickname || `用户${userId}`,
+      avatar: userDetail.avatarUrl || 'https://placehold.co/100x100/facc15/78350f?text=U',
+      profileUrl: userDetail.profileUrl || `#/user/${userId}`,
     }
     userCache.value.set(userId, userInfo)
     return userInfo
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取用户信息失败:', error)
-    return { nickname: `用户${userId}`, avatar: '' }
+
+    // 根据错误类型提供不同的降级信息
+    let fallbackNickname = `用户${userId}`
+    if (error.response?.status === 404) {
+      fallbackNickname = `用户${userId} (不存在)`
+    } else if (error.response?.status >= 500) {
+      fallbackNickname = `用户${userId} (服务错误)`
+    } else if (error.code === 'NETWORK_ERROR' || !navigator.onLine) {
+      fallbackNickname = `用户${userId} (网络错误)`
+    }
+
+    const fallbackInfo = {
+      nickname: fallbackNickname,
+      avatar: 'https://placehold.co/100x100/facc15/78350f?text=U',
+      profileUrl: `#/user/${userId}`,
+    }
+    userCache.value.set(userId, fallbackInfo) // 缓存降级信息，避免重复请求
+    return fallbackInfo
   }
 }
 
 // 获取帖子信息的辅助函数
-async function getPostInfo(postId: number): Promise<{ title: string; image?: string }> {
+async function getPostInfo(postId: number): Promise<{ title: string }> {
   if (postCache.value.has(postId)) {
     return postCache.value.get(postId)!
   }
@@ -167,14 +192,26 @@ async function getPostInfo(postId: number): Promise<{ title: string; image?: str
     const postDetailResp = await getPostDetail(postId)
     const postDetail = unwrap(postDetailResp)
     const postInfo = {
-      title: postDetail.title,
-      image: undefined, // API响应中没有图片字段，可以根据需要添加
+      title: postDetail.title || `帖子${postId}`,
     }
     postCache.value.set(postId, postInfo)
     return postInfo
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取帖子信息失败:', error)
-    return { title: `帖子${postId}` }
+
+    // 根据错误类型提供不同的降级信息
+    let fallbackTitle = `帖子${postId}`
+    if (error.response?.status === 404) {
+      fallbackTitle = `帖子${postId} (不存在)`
+    } else if (error.response?.status >= 500) {
+      fallbackTitle = `帖子${postId} (服务错误)`
+    } else if (error.code === 'NETWORK_ERROR' || !navigator.onLine) {
+      fallbackTitle = `帖子${postId} (网络错误)`
+    }
+
+    const fallbackInfo = { title: fallbackTitle }
+    postCache.value.set(postId, fallbackInfo) // 缓存降级信息，避免重复请求
+    return fallbackInfo
   }
 }
 
@@ -234,6 +271,19 @@ onMounted(async () => {
     selectedNoticeType.value = 0
   }
 
+  // 检查服务健康状态
+  try {
+    const healthResult = await checkAllServices()
+    logServiceHealth(healthResult)
+
+    const isServiceAvailable = await isCriticalServiceAvailable()
+    if (!isServiceAvailable) {
+      console.warn('[NoticeView] 关键服务不可用，通知功能可能受限')
+    }
+  } catch (error) {
+    console.error('[NoticeView] 服务健康检查失败:', error)
+  }
+
   loadingUnread.value = true
   try {
     // 并行请求：未读汇总 + 各种通知列表
@@ -248,6 +298,7 @@ onMounted(async () => {
 
     // 处理未读数据
     unreadSummary.value = unwrap(unreadResp)
+
     for (const t of ['at', 'comment', 'reply', 'like', 'repost'] as const) {
       if (readOnce.value.has(t)) {
         unreadSummary.value.unreadByType[t] = 0
@@ -275,6 +326,14 @@ onMounted(async () => {
 
 // 将API数据转换为通知列表格式
 async function convertApiDataToNoticeList() {
+  console.log('[通知数据] 原始数据统计:', {
+    评论通知: commentItems.value.length,
+    回复通知: replyItems.value.length,
+    转发通知: repostItems.value.length,
+    '@通知': atItems.value.length,
+    点赞通知: likeItems.value.length,
+  })
+
   const convertedNotices: notice[] = []
 
   // 处理评论通知
@@ -287,7 +346,8 @@ async function convertApiDataToNoticeList() {
   }
 
   for (const comment of uniqueComments.values()) {
-    const userInfo = await getUserInfo(comment.userId)
+    const userInfo = await getUserInfoLocal(comment.userId)
+
     // 根据新接口格式，现在有postId字段
     const postId = comment.postId
     const postInfo = await getPostInfo(postId)
@@ -306,7 +366,6 @@ async function convertApiDataToNoticeList() {
       objectType: 'post' as const,
       targetPostId: postId,
       targetPostTitle: postInfo.title,
-      targetPostTitleImage: postInfo.image || '',
       newCommentContent: comment.contentPreview,
     }
 
@@ -323,12 +382,12 @@ async function convertApiDataToNoticeList() {
   }
 
   for (const reply of uniqueReplies.values()) {
-    const userInfo = await getUserInfo(reply.replyPoster)
+    const userInfo = await getUserInfoLocal(reply.replyPoster)
 
     // 由于回复通知API中没有postId字段，且/comments/{commentId}接口不存在
     // 暂时使用降级方案，显示评论ID
     // TODO: 需要后端API支持，在replyNoticeItem中添加postId字段
-    const postInfo = { title: `评论${reply.commentId}`, image: '' }
+    const postInfo = { title: `评论${reply.commentId}` }
     const targetPostId = reply.commentId
 
     convertedNotices.push({
@@ -345,7 +404,6 @@ async function convertApiDataToNoticeList() {
       objectType: 'comment',
       targetPostId: targetPostId,
       targetPostTitle: postInfo.title,
-      targetPostTitleImage: postInfo.image,
       replyContent: reply.contentPreview,
     })
   }
@@ -360,7 +418,7 @@ async function convertApiDataToNoticeList() {
   }
 
   for (const repost of uniqueReposts.values()) {
-    const userInfo = await getUserInfo(repost.userId)
+    const userInfo = await getUserInfoLocal(repost.userId)
     const postInfo = await getPostInfo(repost.postId)
 
     convertedNotices.push({
@@ -377,7 +435,6 @@ async function convertApiDataToNoticeList() {
       objectType: 'post',
       targetPostId: repost.postId,
       targetPostTitle: postInfo.title,
-      targetPostTitleImage: postInfo.image || '',
       repostContent: repost.commentPreview || '',
     })
   }
@@ -393,18 +450,16 @@ async function convertApiDataToNoticeList() {
   }
 
   for (const at of uniqueAts.values()) {
-    const userInfo = await getUserInfo(at.userId)
+    const userInfo = await getUserInfoLocal(at.userId)
 
     let targetTitle = ''
     let targetPostId = at.targetId
-    let targetPostTitleImage = ''
 
     try {
       if (at.targetType === 'post') {
         // 如果是@帖子，直接获取帖子信息
         const postInfo = await getPostInfo(at.targetId)
         targetTitle = postInfo.title
-        targetPostTitleImage = postInfo.image || ''
       } else if (at.targetType === 'comment') {
         // 如果是@评论，通过评论ID获取评论详情，然后获取帖子信息
         const commentDetailResp = await getCommentDetail(at.targetId)
@@ -413,7 +468,6 @@ async function convertApiDataToNoticeList() {
 
         targetTitle = postInfo.title
         targetPostId = commentDetail.postId
-        targetPostTitleImage = postInfo.image || ''
       }
     } catch (error) {
       console.error('获取@通知的目标信息失败:', error)
@@ -460,7 +514,6 @@ async function convertApiDataToNoticeList() {
       objectType: at.targetType,
       targetPostId: targetPostId,
       targetPostTitle: targetTitle,
-      targetPostTitleImage: targetPostTitleImage,
       atContent: atContent,
     })
   }
@@ -468,7 +521,7 @@ async function convertApiDataToNoticeList() {
   // 处理点赞通知
   for (const like of likeItems.value) {
     // 根据目标类型获取不同的信息
-    let postInfo = { title: `目标${like.targetId}`, image: '' }
+    let postInfo = { title: `目标${like.targetId}` }
     let targetPostId = like.targetId
 
     if (like.targetType === 'post') {
@@ -476,7 +529,6 @@ async function convertApiDataToNoticeList() {
       const fetchedPostInfo = await getPostInfo(like.targetId)
       postInfo = {
         title: fetchedPostInfo.title,
-        image: fetchedPostInfo.image || '',
       }
     } else if (like.targetType === 'comment') {
       // 如果是点赞评论，先获取评论详情，再获取帖子信息
@@ -487,12 +539,11 @@ async function convertApiDataToNoticeList() {
         const fetchedPostInfo = await getPostInfo(commentDetail.postId)
         postInfo = {
           title: fetchedPostInfo.title,
-          image: fetchedPostInfo.image || '',
         }
       } catch (error) {
         console.error('获取评论详情失败:', error)
         // 如果API失败，使用降级方案
-        postInfo = { title: `评论${like.targetId}`, image: '' }
+        postInfo = { title: `评论${like.targetId}` }
       }
     }
 
@@ -508,7 +559,7 @@ async function convertApiDataToNoticeList() {
 
       if (likersData.items.length > 0) {
         // 获取第一个点赞者的信息作为主要显示
-        const firstLikerInfo = await getUserInfo(likersData.items[0])
+        const firstLikerInfo = await getUserInfoLocal(likersData.items[0])
 
         // 验证时间字段，如果无效则使用当前时间
         const validTime = (() => {
@@ -537,14 +588,13 @@ async function convertApiDataToNoticeList() {
           objectType: like.targetType,
           targetPostId: targetPostId,
           targetPostTitle: postInfo.title,
-          targetPostTitleImage: postInfo.image || '',
         })
       }
     } catch (error) {
       console.error('获取点赞者详情失败:', error)
       // 如果API失败，使用原有的likerIds作为备选
       if (like.likerIds.length > 0) {
-        const firstLikerInfo = await getUserInfo(like.likerIds[0])
+        const firstLikerInfo = await getUserInfoLocal(like.likerIds[0])
 
         // 验证时间字段，如果无效则使用当前时间
         const validTime = (() => {
@@ -573,7 +623,6 @@ async function convertApiDataToNoticeList() {
           objectType: like.targetType,
           targetPostId: targetPostId,
           targetPostTitle: postInfo.title,
-          targetPostTitleImage: postInfo.image || '',
         })
       }
     }

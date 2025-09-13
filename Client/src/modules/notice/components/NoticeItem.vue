@@ -13,12 +13,13 @@
         <span class="icon">{{ getNoticeIcon(notice.type) }}</span>
         <img
           class="user-avatar clickable-avatar"
-          v-if="notice.sender.avatar"
+          v-if="notice.sender.avatar && notice.sender.avatar.trim() !== ''"
           :src="notice.sender.avatar"
           :alt="notice.sender.nickname"
           @click="handleAvatarClick"
+          @error="handleAvatarError"
         />
-        <span v-else class="clickable-avatar" @click="handleAvatarClick">
+        <span v-else class="clickable-avatar avatar-fallback" @click="handleAvatarClick">
           {{ notice.sender.nickname.charAt(0).toUpperCase() }}
         </span>
       </div>
@@ -66,34 +67,8 @@
       </div>
 
       <!-- 帖子/评论内容 -->
-      <div class="notice-target" v-if="notice.type === 'like'">
-        <span v-if="notice.targetPostTitleImage" class="clickable-post" @click="handlePostClick">
-          <img class="target-post-image" :src="notice.targetPostTitleImage" alt="帖子封面" />
-        </span>
-        <span v-else class="post-or-comment-title clickable-post" @click="handlePostClick">
-          "{{ notice.targetPostTitle }}"
-        </span>
-      </div>
-      <div class="notice-target" v-else>
-        <span
-          v-if="notice.objectType === 'post' && notice.targetPostTitleImage"
-          class="clickable-post"
-          @click="handlePostClick"
-        >
-          <img class="target-post-image" :src="notice.targetPostTitleImage" alt="帖子封面" />
-        </span>
-        <span
-          class="post-or-comment-title clickable-post"
-          v-else-if="notice.objectType === 'post'"
-          @click="handlePostClick"
-        >
-          "{{ notice.targetPostTitle }}"
-        </span>
-        <span
-          class="post-or-comment-title clickable-post"
-          v-else-if="notice.objectType === 'comment'"
-          @click="handlePostClick"
-        >
+      <div class="notice-target">
+        <span class="post-or-comment-title clickable-post" @click="handlePostClick">
           "{{ notice.targetPostTitle }}"
         </span>
       </div>
@@ -228,6 +203,14 @@ const handleSubmitComment = () => {
 const handleCancelComment = () => {
   showCommentInput.value = false
 }
+
+// 头像加载失败处理
+const handleAvatarError = (event: Event) => {
+  console.warn('头像加载失败:', props.notice.sender.avatar)
+  // 隐藏图片，显示fallback文字
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+}
 </script>
 
 <style scoped>
@@ -243,7 +226,7 @@ const handleCancelComment = () => {
 }
 
 .notice-item:hover {
-  background-color: #f5f5f5;
+  background-color: #273549;
 }
 
 .notice-item.clickable {
@@ -251,7 +234,7 @@ const handleCancelComment = () => {
 }
 
 .notice-item.clickable:hover {
-  background-color: #f0f8ff;
+  background-color: #273549;
 }
 
 .notice-main-content {
@@ -277,6 +260,19 @@ const handleCancelComment = () => {
   width: 48px;
   height: 48px;
   border-radius: 100%;
+}
+
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 100%;
+  background-color: #4a9eff;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
 }
 
 .clickable-avatar {
@@ -365,13 +361,6 @@ const handleCancelComment = () => {
 .notice-target {
   display: flex;
   align-items: center;
-}
-
-.target-post-image {
-  width: 72px;
-  height: 72px;
-  border-radius: 4px;
-  object-fit: cover;
 }
 
 .post-or-comment-title {
