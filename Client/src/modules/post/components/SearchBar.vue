@@ -48,14 +48,18 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue';
+
+import { useRouter, useRoute } from "vue-router"
+const router = useRouter()
+import {computed, onMounted, ref, watch} from 'vue';
 // 这里假设你已经提供了这两个方法
 import {getPosts, getSearch, getSearchSuggestion} from '../api.ts';
 import {type SearchResponse, type SearchSuggestions} from "../types.ts"
 
 const inputRef = ref<HTMLInputElement | null>(null);
 const query = ref('');
-const placeholderText = ref('');
+// const placeholderText = ref('');
+const placeholderText = ref('搜索帖子...'); // ✅ 固定占位符
 const isFocused = ref(false);
 const showSuggestions = ref(false);
 const searchSuggestions = ref<SearchSuggestions['data']>([]);
@@ -76,14 +80,23 @@ const fetchSuggestions = async (keyword?: string, limits?: number) => {
   }
 };
 
-// 获取初始建议
+// ✅ 回到页面时自动清空搜索框
 onMounted(() => {
-  fetchSuggestions('', 1).then(() => {
-    if (searchSuggestions.value.length > 0) {
-      placeholderText.value = searchSuggestions.value[0].keyword;
-    }
-  });
-});
+  query.value = ""
+})
+const route = useRoute()
+// ✅ 如果你想更保险，每次路由切换也清空
+watch(() => route.fullPath, () => {
+  query.value = ""
+})
+// 获取初始建议
+// onMounted(() => {
+//   fetchSuggestions('', 1).then(() => {
+//     if (searchSuggestions.value.length > 0) {
+//       placeholderText.value = searchSuggestions.value[0].keyword;
+//     }
+//   });
+// });
 
 // 处理输入焦点
 const handleFocus = () => {
@@ -104,13 +117,13 @@ const handleBlur = () => {
     isFocused.value = false;
     showSuggestions.value = false;
     // 如果输入框为空，恢复初始占位符
-    if (query.value.trim() === '') {
-      fetchSuggestions('', 1).then(() => {
-        if (searchSuggestions.value.length > 0) {
-          placeholderText.value = searchSuggestions.value[0].keyword;
-        }
-      });
-    }
+    // if (query.value.trim() === '') {
+    //   fetchSuggestions('', 1).then(() => {
+    //     if (searchSuggestions.value.length > 0) {
+    //       placeholderText.value = searchSuggestions.value[0].keyword;
+    //     }
+    //   });
+    // }
   }, 150);
 };
 
@@ -153,34 +166,50 @@ const highlightKeyword = (suggestion: string) => {
 };
 
 // 搜索操作
-const performSearch = async (searchQuery: string) => {
-  try {
-    const searchResult: SearchResponse = await getSearch(searchQuery);
-    if (!searchResult.data || searchResult.data.length === 0) {
-      return [];
-    }
-    const ids: string = searchResult.data.map(item => item.postId).join(',');
-    return await getPosts(ids);
-  } catch (error) {
-    alert('搜索失败，请稍后重试。');
-  }
-};
+// const performSearch = async (searchQuery: string) => {
+//   try {
+//     const searchResult: SearchResponse = await getSearch(searchQuery);
+//     if (!searchResult.data || searchResult.data.length === 0) {
+//       return [];
+//     }
+//     const ids: string = searchResult.data.map(item => item.postId).join(',');
+//     return await getPosts(ids);
+//   } catch (error) {
+//     alert('搜索失败，请稍后重试。');
+//   }
+// };
+
+// const handleSearch = () => {
+//   let finalQuery = query.value.trim();
+//   // 如果输入框为空，则使用占位符内容进行搜索
+//   if (!finalQuery && placeholderText.value) {
+//     finalQuery = placeholderText.value;
+//   }
+//   if (finalQuery) {
+//     const searchResults = performSearch(finalQuery);
+//     // 跳转到xxxView
+
+//   }
+//   // 搜索后隐藏建议栏
+//   showSuggestions.value = false;
+//   inputRef.value?.blur();
+// };
+
+
 
 const handleSearch = () => {
   let finalQuery = query.value.trim();
-  // 如果输入框为空，则使用占位符内容进行搜索
   if (!finalQuery && placeholderText.value) {
     finalQuery = placeholderText.value;
   }
   if (finalQuery) {
-    const searchResults = performSearch(finalQuery);
-    // 跳转到xxxView
-
+    router.push({ path: "/search", query: { q: finalQuery } });
   }
-  // 搜索后隐藏建议栏
   showSuggestions.value = false;
   inputRef.value?.blur();
 };
+
+
 
 // 选择搜索建议
 const selectSuggestion = (suggestion: string) => {
