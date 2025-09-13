@@ -72,17 +72,10 @@ const handleReply = () => {
 const handleLike = async () => {
   try {
     const targetId = props.comment.comment_id || props.comment.reply_id;
-    
+
     if (!targetId) {
-      console.error('缺少必要的参数:', { targetId });
       return;
     }
-
-    console.log('👍 点赞请求参数:', {
-      type: props.comment.type,
-      targetId: targetId,      // 小驼峰
-      like: !isLiked.value,
-    });
 
     // 使用小驼峰命名规范
     const result = await postService.toggleLike({
@@ -90,8 +83,6 @@ const handleLike = async () => {
       targetId: targetId,      // 小驼峰
       like: !isLiked.value,
     });
-
-    console.log('✅ 点赞响应:', result);
 
     if (result.code === 200) {
       isLiked.value = !isLiked.value;
@@ -101,16 +92,9 @@ const handleLike = async () => {
         isLiked: isLiked.value  // 也改为小驼峰
       };
       emit('update:comment', updatedComment);
-    } else {
-      console.error('点赞操作失败，返回码:', result.code, '消息:', result.msg);
     }
   } catch (error) {
-    console.error('点赞失败:', error);
-    
-    // 显示详细的错误信息
-    if (error.response?.data) {
-      console.error('后端错误详情:', error.response.data);
-    }
+    return;
   }
 };
 
@@ -127,7 +111,7 @@ const handleDelete = async () => {
       emit('delete', props.comment);
     }
   } catch (error) {
-    console.error('删除失败:', error);
+    return;
   }
 };
 </script>

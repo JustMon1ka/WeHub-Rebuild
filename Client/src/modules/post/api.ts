@@ -90,15 +90,12 @@ export const postService = {
       }
     });
 
-    console.log('📊 评论API响应:', resp.data);
-
     const data = unwrap<any>(resp.data);
     return data.data || [];
   },
 
   // 发表评论 - 修正参数
 async submitComment(commentData: CommentRequest): Promise<any> {
-  console.log('📨 提交评论请求:', commentData);
 
   try {
     const resp = await axios.post("/posts/comment", commentData, {
@@ -107,11 +104,9 @@ async submitComment(commentData: CommentRequest): Promise<any> {
       }
     });
 
-    console.log('📩 提交评论响应:', resp.data);
     return unwrap(resp.data);
 
   } catch (error: any) {
-    console.error('❌ 提交评论API错误详情:', error.response?.data || error);
     throw error;
   }
 },
@@ -172,7 +167,6 @@ export async function getPosts(ids?: string, userId?: number): Promise<PostListI
 
 // （可选）调试日志，看看最终请求是什么
 postHttp.interceptors.request.use(cfg => {
-  console.debug('[postHttp]', { baseURL: cfg.baseURL, url: cfg.url, params: cfg.params });
   return cfg;
 });
 

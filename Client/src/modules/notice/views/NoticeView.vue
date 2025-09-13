@@ -216,7 +216,6 @@ const handleShowLikeDetailsClick = (params: {
 }) => {
   // 跳转到点赞详情页面，传递目标类型和目标ID
   const url = `/notice/likeDetails/${params.targetType}/${params.targetId}`
-  console.log('跳转到点赞详情页面:', url)
   router.push(url)
 }
 

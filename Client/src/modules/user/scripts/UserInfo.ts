@@ -291,7 +291,6 @@ class UserInfo implements UserData{
 
   handleError(error: any) {
     this.error = true;
-    console.error(error);
     if (error.message && UserInfo.msgTranslation.has(error.message)) {
       this.errorMsg = UserInfo.msgTranslation.get(error.message) || UserInfo.errorMsg.DefaultError;
     } else {

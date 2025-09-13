@@ -418,13 +418,11 @@ const handleSubmit = async () => {
 
     if (form.value.imageFile && result.data) {
       try {
-        console.log('开始上传活动图片...')
         const uploadResult = await activityApi.uploadActivityImage(
           props.circleId,
           result.data.activityId,
           form.value.imageFile,
         )
-        console.log('活动图片上传成功:', uploadResult)
 
         // 可以添加成功提示
         // alert('活动创建成功，图片上传成功！')

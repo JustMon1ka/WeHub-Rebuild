@@ -224,7 +224,6 @@ const loadCategories = async () => {
   try {
     availableCategories.value = await CircleAPI.getCategories()
   } catch (error) {
-    console.error('加载分类失败:', error)
     categoriesError.value = '加载分类失败，请刷新页面重试'
     // 如果加载失败，使用默认分类作为备选
     availableCategories.value = ['技术', '生活', '娱乐', '教育', '商业', '体育', '其他']
@@ -388,8 +387,6 @@ const handleSubmit = async (): Promise<void> => {
   if (!validateForm()) return
 
   try {
-    console.log('开始创建社区...')
-
     const createData = {
       name: form.value.name.trim(),
       description: form.value.description.trim(),
@@ -397,11 +394,8 @@ const handleSubmit = async (): Promise<void> => {
       isPrivate: form.value.isPrivate,
     }
 
-    console.log('发送的数据:', createData)
-
     // 1. 创建社区
     const response = await CircleAPI.createCircle(createData)
-    console.log('创建社区响应:', response)
 
     // 获取新创建的社区ID
     let newCircleId: number | null = null
@@ -411,8 +405,6 @@ const handleSubmit = async (): Promise<void> => {
         response.circleId ||
         response.id ||
         (response.data && (response.data.circleId || response.data.id))
-
-      console.log('提取的社区ID:', newCircleId)
     }
 
     if (!newCircleId) {
@@ -422,27 +414,13 @@ const handleSubmit = async (): Promise<void> => {
     // 2. 上传头像
     if (form.value.avatarFile) {
       try {
-        console.log('准备上传头像，文件信息:', {
-          name: form.value.avatarFile.name,
-          size: form.value.avatarFile.size,
-          type: form.value.avatarFile.type,
-        })
         const avatarResult = await CircleAPI.uploadCircleAvatar(newCircleId, form.value.avatarFile)
-        console.log('头像上传成功，返回结果:', avatarResult)
 
         if (avatarResult.success && avatarResult.data?.imageUrl) {
-          console.log('头像上传成功！')
-          console.log('头像URL:', avatarResult.data.imageUrl)
-          console.log('文件名:', avatarResult.data.fileName)
-          console.log('文件大小:', avatarResult.data.fileSize)
 
           // 验证URL是否可访问
           const testImg = new Image()
-          testImg.onload = () => console.log('头像URL可访问')
-          testImg.onerror = () => console.log('头像URL无法访问')
           testImg.src = avatarResult.data.imageUrl
-        } else {
-          console.log('头像上传响应格式异常:', avatarResult)
         }
       } catch (error) {
         console.error('头像上传失败:', error)
@@ -453,27 +431,13 @@ const handleSubmit = async (): Promise<void> => {
     // 3. 上传横幅
     if (form.value.bannerFile) {
       try {
-        console.log('准备上传横幅，文件信息:', {
-          name: form.value.bannerFile.name,
-          size: form.value.bannerFile.size,
-          type: form.value.bannerFile.type,
-        })
         const bannerResult = await CircleAPI.uploadCircleBanner(newCircleId, form.value.bannerFile)
-        console.log('横幅上传成功，返回结果:', bannerResult)
 
         if (bannerResult.success && bannerResult.data?.imageUrl) {
-          console.log('横幅上传成功！')
-          console.log('横幅URL:', bannerResult.data.imageUrl)
-          console.log('文件名:', bannerResult.data.fileName)
-          console.log('文件大小:', bannerResult.data.fileSize)
 
           // 验证URL是否可访问
           const testImg = new Image()
-          testImg.onload = () => console.log('横幅URL可访问')
-          testImg.onerror = () => console.log('横幅URL无法访问')
           testImg.src = bannerResult.data.imageUrl
-        } else {
-          console.log('横幅上传响应格式异常:', bannerResult)
         }
       } catch (error) {
         console.error('横幅上传失败:', error)
@@ -483,9 +447,7 @@ const handleSubmit = async (): Promise<void> => {
 
     // 4. 自动加入社区
     try {
-      console.log('自动加入社区，ID:', newCircleId)
       await CircleAPI.joinCircle(newCircleId)
-      console.log('加入社区成功')
     } catch (joinError) {
       console.error('自动加入失败:', joinError)
     }

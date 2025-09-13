@@ -72,7 +72,6 @@ const fetchSuggestions = async (keyword?: string, limits?: number) => {
     const data: SearchSuggestions = await getSearchSuggestion(keyword, limits);
     searchSuggestions.value = data.data;
   } catch (error) {
-    console.error('获取搜索建议失败:', error);
     searchSuggestions.value = [];
   }
 };
@@ -156,16 +155,13 @@ const highlightKeyword = (suggestion: string) => {
 // 搜索操作
 const performSearch = async (searchQuery: string) => {
   try {
-    console.log(`正在搜索：${searchQuery}`);
     const searchResult: SearchResponse = await getSearch(searchQuery);
     if (!searchResult.data || searchResult.data.length === 0) {
-      console.log("没有找到任何搜索结果。");
       return [];
     }
     const ids: string = searchResult.data.map(item => item.postId).join(',');
     return await getPosts(ids);
   } catch (error) {
-    console.error('搜索失败:', error);
     alert('搜索失败，请稍后重试。');
   }
 };

@@ -331,8 +331,6 @@ const handleSubmitClick = () => {
     reportedId: route.query.reportedId || 0, // 被举报人ID
   }
 
-  console.log('提交举报:', reportData)
-
   // 这里应该调用实际的举报API
   // await submitReport(reportData)
 

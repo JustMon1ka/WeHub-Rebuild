@@ -50,7 +50,6 @@ async function onShare() {
     });
 
   } catch (e) {
-    console.error("分享失败：", e);
     handleShareError(e);
   } finally {
     pending.value = false;
@@ -76,7 +75,6 @@ async function handleSharePost(postId: number) {
 async function tryAlternativeShareMethods(postId: number) {
   try {
     // 方法1: 尝试使用GET请求
-    console.log("尝试使用GET方法调用分享API");
     const response = await fetch(`/api/posts/${postId}/share`, {
       method: 'GET',
       headers: {
@@ -103,7 +101,7 @@ async function tryAlternativeShareMethods(postId: number) {
         });
         return { success: true, method: 'navigator.share' };
       } catch (shareError) {
-        console.log('用户取消了分享', shareError);
+        return;
       }
     }
 

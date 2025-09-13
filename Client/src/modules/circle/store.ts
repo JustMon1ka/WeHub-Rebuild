@@ -54,14 +54,11 @@ export const useCommunityStore = () => {
           const joinedCommunity = { ...allCommunity }
           joinedCommunities.value.push(joinedCommunity)
         }
-
-        console.log('成功加入社区')
         return { success: true }
       }
 
       return response
     } catch (error) {
-      console.error('加入社区失败:', error)
       throw error
     } finally {
       loadingStates[communityId] = false
@@ -86,13 +83,11 @@ export const useCommunityStore = () => {
         // 从已加入列表中移除
         joinedCommunities.value = joinedCommunities.value.filter((c) => c.id !== communityId)
 
-        console.log('成功退出社区')
         return { success: true }
       }
 
       return response
     } catch (error) {
-      console.error('退出社区失败:', error)
       throw error
     } finally {
       loadingStates[communityId] = false

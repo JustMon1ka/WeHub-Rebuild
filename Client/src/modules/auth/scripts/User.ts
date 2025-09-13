@@ -229,7 +229,7 @@ class User {
         try {
           callback();
         } catch (e) {
-          console.error('USER_ERROR_REPORT: Error in afterLoad callback:',callback.toString(),'ERROR_MESSAGE: ', e);
+          return;
         }
       });
       User.afterLoadCallbacks = [];
@@ -327,7 +327,6 @@ class User {
   followUser(userId: string) {
     try {
       const result = addFollowingAPI(userId);
-      console.log(result);
       this.followingList.add(userId);
     } catch (error: any) {
       return User.handleError(error);
@@ -337,7 +336,6 @@ class User {
   unfollowUser(userId: string) {
     try {
       const result = removeFollowingAPI(userId);
-      console.log(result);
       this.followingList.delete(userId);
     } catch (error: any) {
       return User.handleError(error);

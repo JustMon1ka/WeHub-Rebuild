@@ -440,27 +440,20 @@ const getAuthenticatedImageUrl = async (imageUrl: string): Promise<string> => {
     // 将返回的blob转换为可显示的URL
     return URL.createObjectURL(response.data)
   } catch (error) {
-    console.error('获取图片失败:', error)
     return ''
   }
 }
 
 //  processImageUrls 函数
 const processImageUrls = async (): Promise<void> => {
-  console.log('开始处理图片URL...')
-
   // 处理头像
   if (communityData.value.avatarUrl) {
-    console.log('原始头像URL:', communityData.value.avatarUrl)
     processedAvatarUrl.value = await getProxiedImageUrl(communityData.value.avatarUrl)
-    console.log('处理后头像URL:', processedAvatarUrl.value)
   }
 
   // 处理横幅
   if (communityData.value.bannerUrl) {
-    console.log('原始横幅URL:', communityData.value.bannerUrl)
     processedBannerUrl.value = await getProxiedImageUrl(communityData.value.bannerUrl)
-    console.log('处理后横幅URL:', processedBannerUrl.value)
   }
 }
 
@@ -677,7 +670,6 @@ const handleCreatePost = (): void => {
 
 // 处理帖子创建完成
 const handlePostCreated = async (post: any): Promise<void> => {
-  console.log('新帖子已创建:', post)
   showCreatePost.value = false
 
   // 重新加载帖子列表
@@ -744,8 +736,6 @@ const handleVote = async (postId: number, voteType: 'up' | 'down'): Promise<void
       post.userVote = voteType
       post.votes += voteType === 'up' ? 1 : -1
     }
-
-    console.log(`投票 ${voteType} 帖子 ${postId}`)
   } catch (error) {
     console.error('投票失败:', error)
   }
@@ -757,7 +747,6 @@ const handlePostClick = (postId: number): void => {
 
 // 新增活动相关方法
 const handleActivityCreated = (activity: any): void => {
-  console.log('新活动已创建:', activity)
   showCreateActivity.value = false
   // 刷新活动统计
   loadActivityStats()
