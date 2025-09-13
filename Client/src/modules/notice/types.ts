@@ -16,7 +16,7 @@ export type unreadNoticeCount = BaseResp<{
         reply: number  // 回复
         like: number  // 点赞
         repost: number  // 转发
-        at: number  // @
+        mention: number  // @ (API返回的字段名)
     }
 }>
 

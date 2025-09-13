@@ -71,6 +71,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// 添加 CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5000",
+                "http://localhost:5173") // 允许前端端口
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // 添加日志
 builder.Services.AddLogging(logging =>
 {
@@ -91,6 +103,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(); // 启用 CORS，必须在 UseAuthentication 之前
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -84,10 +84,30 @@ export async function sendMessage(params: {
     type: 'text' | 'image';
 }): Promise<{ messageId: number; success: boolean }> {
     try {
-        const { data } = await apiClient.post<sendMessageResponse>(`/api/Messages/${params.receiverId}`, { content: params.content })
-        return unwrap(data)
+        const response = await apiClient.post<sendMessageResponse>(`/api/Messages/${params.receiverId}`, { content: params.content })
+        console.log('[发送消息] 完整响应:', response.data)
+
+        const result = unwrap(response.data)
+        console.log('[发送消息] unwrap后:', result)
+
+        // 确保返回正确的格式
+        if (typeof result === 'object' && result !== null) {
+            const messageId = (result as any).messageId || 0
+            // 如果有 messageId 且大于 0，说明发送成功
+            const success = messageId > 0 && ((result as any).success !== false)
+
+            console.log('[发送消息] 解析结果:', { messageId, success, originalResult: result })
+
+            return {
+                messageId,
+                success
+            }
+        }
+
+        console.log('[发送消息] 结果不是对象:', result)
+        return { messageId: 0, success: false }
     } catch (error) {
-        console.warn('MessageService未运行，无法发送消息')
+        console.warn('MessageService未运行，无法发送消息:', error)
         return { messageId: 0, success: false }
     }
 }

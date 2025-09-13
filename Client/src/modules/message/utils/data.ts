@@ -21,7 +21,7 @@ export function convertMessagesToDisplay(
         content: msg.content,
         sentAt: msg.sentAt,
         isRead: msg.isRead,
-        sendTime: msg.sentAt,
+        sendTime: new Date(msg.sentAt).toLocaleString(), // 确保时间格式一致
         sender: userCache.get(msg.senderId)!,
         receiver: userCache.get(msg.receiverId)!,
         type: 'text' as const,

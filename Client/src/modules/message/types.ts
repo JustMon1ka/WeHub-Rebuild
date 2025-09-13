@@ -26,7 +26,10 @@ export interface message {
 // 扩展的消息类型（用于前端显示）
 export interface messageDisplay extends message {
     messageId: number; // 前端使用的id
+    senderId: number; // 发送者ID
+    receiverId: number; // 接收者ID
     content: string; // 前端使用的内容
+    sentAt: string; // 发送时间
     sendTime: string; // 前端使用的时间格式
     sender: user; // 发送者信息
     receiver: user; // 接收者信息

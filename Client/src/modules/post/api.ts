@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { PostDetail, ToggleLikeResponse} from "./types";
+import type { PostDetail, ToggleLikeResponse } from "./types";
 import { unwrap } from "./types";
 import { useAuthState } from './utils/useAuthState';
 
@@ -54,12 +54,12 @@ export async function getMyFavorites() {
 }
 
 export async function getSearchSuggestion(keyword?: string, limits: number = 10) {
-  const resp = await postHttp.get<SearchSuggestions>("posts/search/suggest", { params: { keyword, limits }});
+  const resp = await postHttp.get<SearchSuggestions>("posts/search/suggest", { params: { keyword, limits } });
   return resp.data;
 }
 
 export async function getSearch(query?: string, limits?: number) {
-  const resp = await postHttp.get<SearchResponse>("posts/search", { params: { query, limits }});
+  const resp = await postHttp.get<SearchResponse>("posts/search", { params: { query, limits } });
   return resp.data;
 }
 
@@ -95,21 +95,21 @@ export const postService = {
   },
 
   // 发表评论 - 修正参数
-async submitComment(commentData: CommentRequest): Promise<any> {
+  async submitComment(commentData: CommentRequest): Promise<any> {
 
-  try {
-    const resp = await axios.post("/posts/comment", commentData, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    try {
+      const resp = await axios.post("/posts/comment", commentData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
-    return unwrap(resp.data);
+      return unwrap(resp.data);
 
-  } catch (error: any) {
-    throw error;
-  }
-},
+    } catch (error: any) {
+      throw error;
+    }
+  },
   // 删除评论 - 修正参数传递方式
   async deleteComment(type: 'comment' | 'reply', targetId: number): Promise<boolean> {
     const resp = await axios.delete("/posts/comment", {
@@ -134,7 +134,7 @@ export async function publishPost(postData: any) {
 }
 
 export async function deletePost(postId: number) {
-  const resp = await postHttp.delete("posts", { params: { post_id: postId }});
+  const resp = await postHttp.delete("posts", { params: { post_id: postId } });
   return unwrap(resp.data);
 }
 
@@ -151,7 +151,7 @@ export async function increaseViewsById(postId: number): Promise<void> {
 }
 
 export async function togglePostHidden(postId: number, next: boolean): Promise<void> {
-  await postHttp.put<BaseResp<BaseResp>>(`posts/${postId}/hidden`,null,{params:{next}});
+  await postHttp.put<BaseResp<BaseResp>>(`posts/${postId}/hidden`, null, { params: { next } });
   return;
 }
 
@@ -160,8 +160,8 @@ export async function getMyPosts(): Promise<PostListItem[]> {
   return unwrap<PostListItem[]>(resp.data);
 }
 
-export async function getPosts(ids?: string, userId?: number): Promise<PostListItem[]>{
-  const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts", {params: {ids, userId}});
+export async function getPosts(ids?: string, userId?: number): Promise<PostListItem[]> {
+  const resp = await postHttp.get<BaseResp<PostListItem[]>>("posts", { params: { ids, userId } });
   return unwrap<PostListItem[]>(resp.data);
 }
 

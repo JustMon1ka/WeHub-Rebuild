@@ -15,12 +15,17 @@
           :key="index"
           :class="{ active: selectedNoticeType === index }"
           @click="onTabChange(index)"
-          class="h-12 text-l hover:bg-slate-800 w-full transition-colors duration-200 text-slate-200"
+          class="h-12 text-l hover:bg-slate-800 w-full transition-colors duration-200 text-slate-200 relative"
         >
           {{ text }}
           <span
             v-if="getUnreadCountByType(index, unreadSummary, readOnce) > 0"
             class="unread-notice-type-count"
+            :title="`${noticeTypeTexts[index]}: ${getUnreadCountByType(
+              index,
+              unreadSummary,
+              readOnce
+            )}条未读`"
           >
             {{ displayUnreadNoticeCount(getUnreadCountByType(index, unreadSummary, readOnce)) }}
           </span>
@@ -31,7 +36,10 @@
       <div class="text-red-500 text-sm text-center" v-if="unreadError">{{ unreadError }}</div>
 
       <div class="notice-information">
-        <div v-if="selectedNotices.length === 0 && !unreadError" class="text-center text-slate-500 text-md">
+        <div
+          v-if="selectedNotices.length === 0 && !unreadError"
+          class="text-center text-slate-500 text-md"
+        >
           <p>暂无通知</p>
         </div>
         <div v-else class="notice-list">
@@ -88,11 +96,6 @@ import {
   displayUnreadNoticeCount,
   getUnreadCountByType,
 } from '../utils/noticeUtils'
-import {
-  checkAllServices,
-  logServiceHealth,
-  isCriticalServiceAvailable,
-} from '../utils/serviceHealth'
 
 const selectedNoticeType = ref(0)
 const searchText = ref('')
@@ -268,19 +271,6 @@ onMounted(async () => {
     selectedNoticeType.value = 0
   }
 
-  // 检查服务健康状态
-  try {
-    const healthResult = await checkAllServices()
-    logServiceHealth(healthResult)
-
-    const isServiceAvailable = await isCriticalServiceAvailable()
-    if (!isServiceAvailable) {
-      console.warn('[NoticeView] 关键服务不可用，通知功能可能受限')
-    }
-  } catch (error) {
-    console.error('[NoticeView] 服务健康检查失败:', error)
-  }
-
   loadingUnread.value = true
   try {
     // 并行请求：未读汇总 + 各种通知列表
@@ -295,10 +285,20 @@ onMounted(async () => {
 
     // 处理未读数据
     unreadSummary.value = unwrap(unreadResp)
+    console.log('[通知数据] 未读通知汇总:', unreadSummary.value)
+    console.log('[通知数据] 各类型未读数量:', {
+      like: unreadSummary.value.unreadByType.like,
+      comment: unreadSummary.value.unreadByType.comment,
+      reply: unreadSummary.value.unreadByType.reply,
+      mention: unreadSummary.value.unreadByType.mention,
+      repost: unreadSummary.value.unreadByType.repost,
+    })
 
     for (const t of ['at', 'comment', 'reply', 'like', 'repost'] as const) {
       if (readOnce.value.has(t)) {
-        unreadSummary.value.unreadByType[t] = 0
+        // 将内部类型映射到API字段名
+        const apiField = t === 'at' ? 'mention' : t
+        unreadSummary.value.unreadByType[apiField] = 0
       }
     }
 
@@ -720,7 +720,10 @@ const selectedNotices = computed(() => {
   color: #fff;
   font-size: 12px;
   text-align: center;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  z-index: 10;
 }
 
 .notice-type button:hover {

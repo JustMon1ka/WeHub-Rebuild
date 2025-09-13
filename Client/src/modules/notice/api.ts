@@ -13,13 +13,13 @@ import type {
     getLikersByTargetResponse
 } from './types'
 import { unwrap, type BaseResp } from './types'
+// 移除对message模块的依赖，直接使用UserDataService接口
 import { User } from '@/modules/auth/public.ts'
 import { GATEWAY } from '@/modules/core/public.ts'
-import { handleApiError } from './utils/errorHandler'
 
 // 创建独立的axios实例，避免全局配置冲突
 const apiClient = axios.create({
-    baseURL: 'http://localhost:5000'
+    baseURL: GATEWAY,
 })
 
 // 创建UserDataService的axios实例
@@ -172,17 +172,6 @@ export async function getPostDetail(postId: number): Promise<postDetailResponse>
     } catch (error: any) {
         console.error('[NoticeAPI] 获取帖子详情失败:', error)
 
-        // 使用统一的错误处理
-        const fallbackData = handleApiError(error, 'post', postId, 'getPostDetail')
-        if (fallbackData) {
-            const defaultPostDetail: postDetailResponse = {
-                code: 200,
-                msg: '使用降级数据',
-                data: fallbackData
-            }
-            return defaultPostDetail
-        }
-
         throw error
     }
 }
@@ -195,17 +184,6 @@ export async function getCommentDetail(commentId: number): Promise<commentDetail
         return data
     } catch (error: any) {
         console.error('[NoticeAPI] 获取评论详情失败:', error)
-
-        // 使用统一的错误处理
-        const fallbackData = handleApiError(error, 'comment', commentId, 'getCommentDetail')
-        if (fallbackData) {
-            const defaultCommentDetail: commentDetailResponse = {
-                code: 200,
-                msg: '使用降级数据',
-                data: fallbackData
-            }
-            return defaultCommentDetail
-        }
 
         throw error
     }
@@ -257,24 +235,6 @@ export async function getUserInfo(userId: number): Promise<UserInfoResponse> {
         return unwrap(data)
     } catch (error: any) {
         console.error('[UserDataAPI] 获取用户信息失败:', error)
-
-        // 使用统一的错误处理
-        const fallbackData = handleApiError(error, 'user', userId, 'getUserInfo')
-        if (fallbackData) {
-            const defaultUserInfo: UserInfoResponse = {
-                userId: userId,
-                username: `用户${userId}`,
-                email: '',
-                status: 0,
-                experience: 0,
-                level: 1,
-                nickname: `用户${userId}`,
-                avatarUrl: 'https://placehold.co/100x100/facc15/78350f?text=U',
-                profileUrl: `#/user/${userId}`,
-                ...fallbackData
-            }
-            return defaultUserInfo
-        }
 
         throw error
     }
