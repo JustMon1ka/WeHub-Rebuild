@@ -44,14 +44,14 @@ const formattedFollowingCount = computed(() => numberFormat(userInfo.followingCo
         <div class="w-32 h-32 rounded-full border-4 border-slate-900 bg-slate-800">
           <img v-if="!!userInfo.avatarUrl" v-bind:src="userInfo.avatarUrl"
                v-bind:class="styles.userPic" alt="User avatar">
-          <PlaceHolder width="150"  height="150" :text="userInfo.nickname"
+          <PlaceHolder v-else width="150"  height="150" :text="userInfo.nickname"
                        v-bind:class="styles.userPic"></PlaceHolder>
         </div>
         <button v-if="userInfo.isMe" @click="$emit('editProfile')"
                 v-bind:class="styles.btnShape + styles.normalBtn">
           编辑个人资料
         </button>
-        <FollowButton v-else :user-id="userInfo.userId" class="w-24"
+        <FollowButton v-else :user-id="userInfo.userId.toString()" class="w-24"
                       @followed="userInfo.followerCount += 1"
                       @unfollowed="userInfo.followerCount -= 1" />
       </div>

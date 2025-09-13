@@ -1,9 +1,14 @@
-import { ref } from "vue";
+import { ref } from "vue"
+import { User } from '@/modules/auth/public.ts'
 
-// 默认测试 uid=100247
-export const currentUserId = ref<number>(100247);
+if (User.loading) {
+  User.afterLoadCallbacks.push(() => {
+    setCurrentUserId(User.getInstance()?.userAuth.userId || '');
+  })
+}
 
-// 登录成功后调用这个方法修改
-export function setCurrentUserId(uid: number) {
-  currentUserId.value = uid;
+export const currentUserId = ref<string | null>(null)
+
+export function setCurrentUserId(uid: string | number) {
+  currentUserId.value = String(uid)
 }

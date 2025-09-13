@@ -40,8 +40,7 @@ async function fetchMedia() {
 
   try {
     // Call the API function to get the blob URL
-    const url = await getMediaUrl(props.fileId);
-    mediaSrc.value = url;
+    mediaSrc.value = await getMediaUrl(props.fileId);
   } catch (error) {
     console.error(`Failed to load image (fileId: ${props.fileId}):`, error);
     mediaSrc.value = ''; // Ensure it's empty on failure

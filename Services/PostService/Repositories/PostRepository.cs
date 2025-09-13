@@ -242,6 +242,44 @@ namespace PostService.Repositories
                     q = q.OrderByDescending(p => p.Likes ?? 0)
                         .ThenByDescending(p => p.PostId);
                     break;
+                case 3: // 首页推荐（热度综合公式）  热度分数 = 浏览量 * 0.5 + 点赞 * 0.3 – 踩 * 0.2
+                    if (lastId.HasValue && lastId.Value > 0)
+                    {
+                        var lastPost = await context.Posts
+                            .Where(p => p.PostId == lastId.Value)
+                            .Select(p => new {
+                                p.PostId,
+                                Score = (p.Views ?? 0) * 0.5
+                                    + (p.Likes ?? 0) * 0.3
+                                    - (p.Dislikes ?? 0) * 0.2
+                            })
+                            .FirstOrDefaultAsync();
+
+                        if (lastPost != null)
+                        {
+                            q = q.Where(p =>
+                                ((p.Views ?? 0) * 0.5 + (p.Likes ?? 0) * 0.3 - (p.Dislikes ?? 0) * 0.2) < lastPost.Score
+                                || (((p.Views ?? 0) * 0.5 + (p.Likes ?? 0) * 0.3 - (p.Dislikes ?? 0) * 0.2) == lastPost.Score
+                                    && p.PostId < lastPost.PostId));
+                        }
+                    }
+
+                    q = q.OrderByDescending(p => (p.Views ?? 0) * 0.5
+                                            + (p.Likes ?? 0) * 0.3
+                                            - (p.Dislikes ?? 0) * 0.2)
+                        .ThenByDescending(p => p.PostId);
+                    break;
+
+
+                case 4: // 发现页推荐（最新帖子）
+                    if (lastId.HasValue && lastId.Value > 0)
+                    {
+                        q = q.Where(p => p.PostId < lastId.Value);
+                    }
+
+                    q = q.OrderByDescending(p => p.CreatedAt ?? DateTime.MinValue)
+                        .ThenByDescending(p => p.PostId);
+                    break;
 
                 default: // 按时间（PostId）
                     if (desc)

@@ -5,6 +5,7 @@ import router from '@/router.ts'
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthCode, Email, Password, Phone, UserName } from '@/modules/auth/scripts/UserMetaData.ts'
 import { toggleLoginHover } from '@/router.ts'
+import { setCurrentUserId } from "@/modules/Founding/store/CurrentUser"
 
 enum AuthType {
   PasswordLogin,
@@ -134,9 +135,10 @@ class AuthData {
       if (this.authType.value === AuthType.Register) {
         await router.push('/user_guide');
       } else {
-        await router.push('/mainpage');
+        await router.push('/');
       }
       toggleLoginHover(false);
+      location.reload();
     } else {
       this.error.value = true;
       this.errorMsg.value = result.error || AuthData.errorMsg.DefaultError;

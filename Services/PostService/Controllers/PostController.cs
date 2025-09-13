@@ -119,9 +119,9 @@ public class PostController : ControllerBase
             if (take > 100) take = 100;
             
             int take_PostMode = PostMode.GetValueOrDefault(0);
-            if (take_PostMode < 0 || take_PostMode > 2) take_PostMode = 0;
+            if (take_PostMode < 0 || take_PostMode > 4) take_PostMode = 0;
 
-            Console.WriteLine($"Controller 接收到 tagName={tagName}");
+            Console.WriteLine($"🔍 Controller 收到 PostMode={PostMode}");
 
             var posts = await _postService.GetPagedPostsAsync(lastId, take, true, take_PostMode, tagName);
 

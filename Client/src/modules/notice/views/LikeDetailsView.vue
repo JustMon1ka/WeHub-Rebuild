@@ -114,19 +114,17 @@ async function getLikeUsersList() {
     const likersData = unwrap(likersResp)
 
     // 获取所有点赞者的详细信息
-    const allLikerDetails = await Promise.all(
+    likeUsers.value = await Promise.all(
       likersData.items.map(async (userId) => {
         const userDetail = await getUserDetail(userId)
         return {
           id: userId,
           username: userDetail.nickname,
-          avatar: userDetail.avatar,
+          avatar: userDetail.avatarUrl,
           time: '刚刚', // API中没有提供点赞时间，使用默认值
         }
       })
     )
-
-    likeUsers.value = allLikerDetails
   } catch (err: any) {
     console.error('获取点赞用户列表失败:', err)
     error.value = err?.message ?? '获取点赞用户列表失败'
@@ -248,13 +246,6 @@ onMounted(async () => {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.user-details {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .item-content {

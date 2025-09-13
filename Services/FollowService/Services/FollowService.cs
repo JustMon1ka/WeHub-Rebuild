@@ -3,9 +3,10 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using FollowService.DTOs;
-using FollowService.Models;
+using FollowService.Models; 
 using FollowService.Repositories;
 using Microsoft.AspNetCore.Http;
+using Models;
 
 namespace FollowService.Services
 {
@@ -68,11 +69,10 @@ namespace FollowService.Services
             return await _followRepository.DeleteFollowAsync(currentUserId, followeeId);
         }
 
-        public async Task<UserCountDto> GetFollowCountsAsync()
+        public async Task<UserCountDto> GetFollowCountsAsync(int userId)
         {
-            int currentUserId = GetCurrentUserId();
-            var followingCount = await _followRepository.GetFollowingCountAsync(currentUserId);
-            var followerCount = await _followRepository.GetFollowerCountAsync(currentUserId);
+            var followingCount = await _followRepository.GetFollowingCountAsync(userId);
+            var followerCount = await _followRepository.GetFollowerCountAsync(userId);
 
             return new UserCountDto
             {
@@ -81,11 +81,10 @@ namespace FollowService.Services
             };
         }
 
-        public async Task<PagedFollowListDto> GetFollowingListAsync(int page, int pageSize)
+        public async Task<PagedFollowListDto> GetFollowingListAsync(int userId, int page, int pageSize)
         {
-            int currentUserId = GetCurrentUserId();
-            var totalCount = await _followRepository.GetFollowingCountAsync(currentUserId);
-            var follows = await _followRepository.GetFollowingListAsync(currentUserId, page, pageSize);
+            var totalCount = await _followRepository.GetFollowingCountAsync(userId);
+            var follows = await _followRepository.GetFollowingListAsync(userId, page, pageSize);
 
             return new PagedFollowListDto
             {
@@ -101,11 +100,10 @@ namespace FollowService.Services
             };
         }
 
-        public async Task<PagedFollowListDto> GetFollowersListAsync(int page, int pageSize)
+        public async Task<PagedFollowListDto> GetFollowersListAsync(int userId, int page, int pageSize)
         {
-            int currentUserId = GetCurrentUserId();
-            var totalCount = await _followRepository.GetFollowerCountAsync(currentUserId);
-            var follows = await _followRepository.GetFollowerListAsync(currentUserId, page, pageSize);
+            var totalCount = await _followRepository.GetFollowerCountAsync(userId);
+            var follows = await _followRepository.GetFollowerListAsync(userId, page, pageSize);
 
             return new PagedFollowListDto
             {

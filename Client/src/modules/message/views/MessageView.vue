@@ -1,17 +1,14 @@
 <template>
-  <div class="page-content-wrapper">
+  <div class="flex md:flex-row flex-col h-full">
     <!-- 中间内容 -->
-    <div class="divider-vertical"></div>
+    <div class="divider-vertical "></div>
     <div class="center" :style="{ width: centerWidth + '%' }">
-      <div class="divider-horizontal"></div>
-      <div class="message-heading">
-        <h2>私信</h2>
-      </div>
-      <div class="divider-horizontal"></div>
+
       <div class="message-search">
         <SearchInput v-model="searchText" placeholder="🔍搜索" />
       </div>
       <div class="divider-horizontal"></div>
+
       <!-- 搜索结果 -->
       <div class="message-list">
         <div v-if="loading" class="loading">加载中...</div>
@@ -61,14 +58,10 @@
                 @click="handleConversationSelect(result.conversation)"
               >
                 <div class="message-search-header">
-                  <img
-                    :src="
-                      result.conversation.contactUser?.avatar ||
-                      'https://placehold.co/100x100/facc15/78350f?text=U'
-                    "
-                    :alt="result.conversation.contactUser?.nickname"
-                    class="message-search-avatar"
-                  />
+                  <img v-if="!!result.conversation.contactUser?.avatar"
+                       :src="result.conversation.contactUser?.avatar" alt="user" />
+                  <PlaceHolder v-else width="100" height="100" :text="result.conversation.contactUser?.nickname || `${result.conversation.OtherUserId}`"
+                               class="w-12 h-12 rounded-full" />
                   <div class="message-search-info">
                     <span class="message-search-name">{{
                       result.conversation.contactUser?.nickname
@@ -88,7 +81,9 @@
       <div class="divider-horizontal"></div>
     </div>
     <div class="resizer" @mousedown="startResize" :class="{ resizing: isResizing }"></div>
+
     <div class="divider-vertical"></div>
+
     <div class="right" :style="{ width: rightWidth + '%' }">
       <div class="divider-horizontal"></div>
       <div class="chat-header">
@@ -96,7 +91,7 @@
       </div>
       <div class="divider-horizontal"></div>
       <!-- 聊天窗口 -->
-      <div class="chat-window" :style="{ height: chatWindowHeight + '%' }">
+      <div class="chat-window bg-slate-800" :style="{ height: chatWindowHeight + '%' }">
         <div class="chat-content">
           <ChatMessage
             v-for="message in currentChatHistory"
@@ -108,14 +103,16 @@
           />
         </div>
       </div>
+
       <div
         class="horizontal-resizer"
         @mousedown="startHorizontalResize"
         :class="{ resizing: isHorizontalResizing }"
       ></div>
       <div class="divider-horizontal"></div>
+
       <!-- 聊天输入框 -->
-      <div class="chat-input" :style="{ height: chatInputHeight + '%' }">
+      <div class="chat-input bg-slate-900" :style="{ height: chatInputHeight + '%' }">
         <ChatInput @sendMessage="handleSendMessage" />
       </div>
       <div class="divider-horizontal"></div>
@@ -142,9 +139,11 @@ import {
 } from '../api'
 import { User } from '@/modules/auth/public.ts'
 import { highlightSearchTerm, createDebounceSearch } from '../utils/search'
-import { renderContent, copyMessageContent } from '../utils/message'
-import { ensureUser, userCache, getDefaultAvatar } from '../utils/user'
+import { copyMessageContent } from '../utils/message'
+import { ensureUser, userCache } from '../utils/user'
 import { convertMessagesToDisplay, sortConversationsByTime } from '../utils/data'
+import { GATEWAY } from '@/modules/core/public.ts'
+import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -155,12 +154,12 @@ const error = ref<string | null>(null)
 
 // 拖动分割线相关状态
 const centerWidth = ref(22) // 中间面板宽度百分比
-const rightWidth = ref(58) // 右侧面板宽度百分比
+const rightWidth = ref(78) // 右侧面板宽度百分比
 const isResizing = ref(false)
 
 // 水平拖动相关状态
-const chatWindowHeight = ref(70) // 聊天窗口高度百分比
-const chatInputHeight = ref(22) // 聊天输入框高度百分比
+const chatWindowHeight = ref(64) // 聊天窗口高度百分比
+const chatInputHeight = ref(28) // 聊天输入框高度百分比
 const isHorizontalResizing = ref(false)
 
 // 用户信息缓存已迁移到 utils/user.ts
@@ -262,7 +261,7 @@ const currentChatMessages = ref<messageDisplay[]>([])
 const myUser = ref<user>({
   id: 0,
   nickname: 'Loading...',
-  avatar: 'https://placehold.co/100x100/facc15/78350f?text=L',
+  avatar: '',
   url: '/user/0',
 })
 
@@ -275,11 +274,9 @@ const myUserId = computed(() => {
 // 初始化用户信息
 onMounted(async () => {
   const user = User.getInstance()
-  console.log('当前用户信息:', user?.userAuth?.userId)
 
   if (user?.userAuth?.userId) {
     const userId = parseInt(user.userAuth.userId)
-    console.log('尝试获取用户ID:', userId)
 
     if (userId > 0) {
       try {
@@ -287,26 +284,19 @@ onMounted(async () => {
         myUser.value = {
           id: userDetail.userId,
           nickname: userDetail.nickname || userDetail.username,
-          avatar: userDetail.avatar || 'https://placehold.co/100x100/facc15/78350f?text=U',
+          avatar: `${GATEWAY}/api/media/${userDetail.avatarUrl}` || '',
           url: `/user/${userDetail.userId}`,
         }
-        console.log('成功获取用户信息:', myUser.value)
       } catch (error) {
-        console.error('获取用户信息失败:', error)
-        console.error('用户ID:', userId)
         // 使用默认用户信息
         myUser.value = {
           id: userId,
-          nickname: '用户' + userId,
-          avatar: 'https://placehold.co/100x100/facc15/78350f?text=U',
+          nickname: userId.toString(),
+          avatar: '',
           url: `/user/${userId}`,
         }
       }
-    } else {
-      console.warn('用户ID无效:', userId)
     }
-  } else {
-    console.warn('用户未登录或用户信息不可用')
   }
 })
 
@@ -321,32 +311,9 @@ const fetchConversationList = async () => {
     loading.value = true
     error.value = null
 
-    // 首先尝试从API获取真实数据
-    console.log('[MessageView] 尝试从API获取会话列表...')
     const apiConversations = await getConversationList()
 
-    // 详细输出会话列表数据
-    console.log('=== 会话列表数据详情 ===')
-    console.log('原始API响应:', apiConversations)
-    console.log('会话数量:', apiConversations.length)
-
-    // 输出每个会话的详细信息
-    apiConversations.forEach((conv, index) => {
-      console.log(`会话 ${index + 1}:`, {
-        otherUserId: conv.otherUserId,
-        unreadCount: conv.unreadCount,
-        lastMessage: conv.lastMessage,
-        lastMessageContent: conv.lastMessage?.content,
-        lastMessageTime: conv.lastMessage?.sentAt,
-        lastMessageSender: conv.lastMessage?.senderId,
-        lastMessageReceiver: conv.lastMessage?.receiverId,
-        isRead: conv.lastMessage?.isRead,
-      })
-    })
-    console.log('=== 会话列表数据详情结束 ===')
-
     if (apiConversations.length > 0) {
-      console.log('[MessageView] 从API获取到会话数据:', apiConversations.length)
       // 并行获取所有会话的对端用户信息，并填充到 contactUser
       const filled = await Promise.all(
         apiConversations.map(async (conv) => {
@@ -360,14 +327,11 @@ const fetchConversationList = async () => {
         })
       )
       conversationListData.value = filled
-      console.log('[MessageView] 使用API会话数据:', conversationListData.value.length)
     } else {
-      console.log('[MessageView] API无数据，显示空列表')
       conversationListData.value = []
     }
   } catch (err) {
     error.value = '获取会话列表失败'
-    console.error('获取会话列表失败:', err)
   } finally {
     loading.value = false
   }
@@ -449,11 +413,6 @@ const fetchChatHistory = async (userId: number) => {
     // 首先尝试从API获取聊天记录
     let messages = await getChatHistory(userId)
 
-    // API没有返回数据时，显示空聊天记录
-    if (messages.length === 0) {
-      console.log(`API无聊天记录数据 for user ${userId}`)
-    }
-
     // 预取涉及到的用户信息（发送者/接收者）
     const ids = new Set<number>()
     messages.forEach((m) => {
@@ -465,8 +424,6 @@ const fetchChatHistory = async (userId: number) => {
     // 转换API数据格式为前端显示格式
     const displayMessages = convertMessagesToDisplay(messages, userCache)
     currentChatMessages.value = displayMessages
-
-    console.log(`加载了 ${displayMessages.length} 条聊天记录 for user ${userId}`)
 
     // 同步更新会话列表的最新消息（以最新一条消息为准）
     if (displayMessages.length > 0) {
@@ -485,22 +442,9 @@ const fetchChatHistory = async (userId: number) => {
         }
       }
     }
-    // 调试：输出聊天记录中的 sender/receiver 信息
-    console.log(
-      '[MessageView] chatHistory users:',
-      currentChatMessages.value.map((m) => ({
-        sender: { id: m.sender.id, nickname: m.sender.nickname, avatar: m.sender.avatar },
-        receiver: { id: m.receiver.id, nickname: m.receiver.nickname, avatar: m.receiver.avatar },
-      }))
-    )
   } catch (err) {
     error.value = '获取聊天记录失败'
-    console.error('获取聊天记录失败:', err)
   }
-  // 移除loading状态，避免点击会话时的加载动画
-  // finally {
-  //   loading.value = false
-  // }
 }
 
 // 切换选中会话
@@ -511,7 +455,7 @@ async function handleConversationSelect(item: conversation) {
     await markMessagesRead(item.otherUserId)
     item.unreadCount = 0
   } catch (err) {
-    console.error('标记消息已读失败:', err)
+    return;
   }
   // 获取聊天记录
   await fetchChatHistory(item.otherUserId)
@@ -521,16 +465,11 @@ async function handleConversationSelect(item: conversation) {
 
 // 当前会话的聊天记录（使用缓存进行用户标准化）
 const currentChatHistory = computed(() => {
-  console.log(
-    '[MessageView] currentChatHistory 计算属性被调用，消息数量:',
-    currentChatMessages.value.length
-  )
   const result = currentChatMessages.value.map((m) => {
     const sender = userCache.get(m.sender.id) || m.sender
     const receiver = userCache.get(m.receiver.id) || m.receiver
     return { ...m, sender, receiver }
   })
-  console.log('[MessageView] currentChatHistory 计算结果:', result.length, '条消息')
   return result
 })
 
@@ -567,8 +506,6 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
 
       // 添加到当前聊天记录
       currentChatMessages.value.push(newMessage)
-      console.log('[MessageView] 新消息已添加到聊天记录:', newMessage)
-      console.log('[MessageView] 当前聊天记录数量:', currentChatMessages.value.length)
 
       // 更新会话列表中的最新消息
       const originalConversation = conversationListData.value.find(
@@ -589,8 +526,8 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
       }
 
       // 滚动到最新消息
-      nextTick(() => {
-        const chatWindow = document.querySelector('.chat-window') as HTMLElement
+      await nextTick(() => {
+        const chatWindow = document.querySelector('.chat-window') as HTMLElement;
         if (chatWindow) {
           chatWindow.scrollTop = chatWindow.scrollHeight
         }
@@ -598,7 +535,6 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
     }
   } catch (err) {
     error.value = '发送消息失败'
-    console.error('发送消息失败:', err)
   }
 }
 
@@ -739,12 +675,6 @@ const startHorizontalResize = (e: MouseEvent) => {
 
 
 <style scoped>
-.page-content-wrapper {
-  display: flex;
-  flex-direction: row;
-  padding: 20px 0;
-  min-height: calc(100vh - 40px);
-}
 
 .center {
   min-width: 200px;
@@ -754,24 +684,15 @@ const startHorizontalResize = (e: MouseEvent) => {
   word-break: break-word;
 }
 
-.message-heading {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  font-size: 20px;
-  font-weight: bold;
-  padding-left: 32px;
-}
-
 .message-search {
-  flex: 1;
+  flex: 8;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .message-list {
-  flex: 11;
+  flex: 84;
 }
 
 .right {
@@ -780,7 +701,7 @@ const startHorizontalResize = (e: MouseEvent) => {
 }
 
 .chat-header {
-  height: 8%;
+  height: 10%;
   display: flex;
   align-items: center;
 }
@@ -789,16 +710,17 @@ const startHorizontalResize = (e: MouseEvent) => {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  background: linear-gradient(135deg, #1f2137 0%, #485a60 100%);
 }
 
 .chat-content {
-  padding: 12px 8px, 12px 8px;
+  padding: 12px 8px;
   flex: 1;
 }
 
 .divider-horizontal {
   width: 100%;
-  border-bottom: 1px solid #444c5c;
+  border-bottom: 1px solid #323345;
 }
 
 .divider-vertical {
@@ -888,9 +810,6 @@ const startHorizontalResize = (e: MouseEvent) => {
 }
 
 @media (max-width: 768px) {
-  .page-content-wrapper {
-    flex-direction: column;
-  }
 
   .center {
     width: 100% !important;
@@ -912,11 +831,11 @@ const startHorizontalResize = (e: MouseEvent) => {
   }
 
   .chat-header {
-    height: 8% !important;
+    height: 10% !important;
   }
 
   .chat-window {
-    height: 70% !important;
+    height: 68% !important;
   }
 
   .chat-input {
@@ -939,10 +858,6 @@ const startHorizontalResize = (e: MouseEvent) => {
     height: 65vh;
   }
 
-  .message-heading {
-    padding-left: 16px;
-    font-size: 18px;
-  }
 }
 
 /* 搜索结果分类样式 */

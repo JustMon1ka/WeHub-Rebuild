@@ -78,7 +78,6 @@
               placeholder="添加标签..."
               @keydown.enter.prevent="addTag"
               @keydown.space.prevent="addTag"
-              @keydown.comma.prevent="addTag"
               maxlength="20"
             />
           </div>
@@ -200,8 +199,8 @@ const getCurrentUserInfo = () => {
   if (userInstance) {
     return {
       userId: userInstance.userAuth?.userId,
-      username: userInstance.userInfo?.username,
-      email: userInstance.userInfo?.email,
+      username: userInstance.userInfo?.value.username,
+      email: userInstance.userInfo?.value.email,
     }
   }
   return null
@@ -258,13 +257,6 @@ const handleSubmit = async (): Promise<void> => {
   try {
     isSubmitting.value = true
 
-    console.log('开始发布帖子...')
-    console.log('🔧 提交前数据检查:')
-    console.log('circleId:', props.circleId, typeof props.circleId)
-    console.log('title:', postData.value.title.trim())
-    console.log('content:', postData.value.content.trim())
-    console.log('tags:', postData.value.tags)
-
     // 🔧 调用发帖API - 注意：暂时传空数组给tags，因为后端需要数字ID
     const response = await PostAPI.publishPost({
       circleId: props.circleId,
@@ -272,8 +264,6 @@ const handleSubmit = async (): Promise<void> => {
       content: postData.value.content.trim(),
       tags: [], // 🔧 暂时传空数组，等确认后端标签处理方式后再修改
     })
-
-    console.log('✅ 发布成功:', response)
     showMessage('帖子发布成功！', 'success')
 
     // 重置表单

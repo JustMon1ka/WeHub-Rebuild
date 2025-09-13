@@ -39,4 +39,4 @@ if (app.Environment.IsDevelopment())
 // 使用路由到控制器
 app.MapControllers();
 
-app.Run("http://localhost:7000");
+app.Run();

@@ -5,7 +5,8 @@ import {
 } from '@/modules/user/scripts/UserDataAPI.ts'
 import { getTagsAPI, setTagsAPI } from '@/modules/user/scripts/UserTagAPI.ts'
 import { uploadMediaAPI, MEDIA_BASE_URL } from '@/modules/user/scripts/MediaAPI.ts'
-import { addTagsAPI, getTagsNameAPI, type SingleTagData } from '@/modules/user/scripts/TagAPI.ts'
+import { addTagsAPI, getTagsNameAPI } from '@/modules/user/scripts/TagAPI.ts'
+import { getFollowCountAPI } from '@/modules/user/scripts/FollowAPI.ts'
 
 class UserInfo implements UserData{
   static readonly errorMsg = {
@@ -78,10 +79,8 @@ class UserInfo implements UserData{
   errorMsg: string = '';
 
 
-  constructor(userId: string, copy: boolean = false) {
+  constructor(userId: string) {
     this.userId = userId;
-    if (copy) return;
-
     if (userId === User.getInstance()?.userAuth?.userId) {
       this.isMe = true;
     }
@@ -132,7 +131,9 @@ class UserInfo implements UserData{
   }
 
   async loadFollow() {
-    // TODO: Get following and follower count
+    const result = await getFollowCountAPI(this.userId);
+    this.followingCount = result.followingCount;
+    this.followerCount = result.followerCount;
   }
 
   async loadTags() {
@@ -157,20 +158,20 @@ class UserInfo implements UserData{
     this.tagsLoaded = true;
   }
 
-  copy(copyUserInfo: UserInfo = new UserInfo(this.userId, true)): UserInfo {
+  copy(copyUserInfo: UserInfo = new UserInfo(this.userId)): UserInfo {
     // 只需要复制可编辑的字段，
     // 假如传入了一个 UserInfo 实例，则复制到该实例中，防止放弃编辑时错误修改原主页内容
-    copyUserInfo.userId = this.userId;
-    copyUserInfo.isMe = this.isMe;
-    copyUserInfo.username = this.username;
+    copyUserInfo.userId = JSON.parse(JSON.stringify(this.userId));
+    copyUserInfo.isMe = JSON.parse(JSON.stringify(this.isMe));
+    copyUserInfo.username = JSON.parse(JSON.stringify(this.username));
 
-    copyUserInfo.profileUrl = this.profileUrl;
-    copyUserInfo.avatarUrl = this.avatarUrl;
+    copyUserInfo.profileUrl = JSON.parse(JSON.stringify(this.profileUrl));
+    copyUserInfo.avatarUrl = JSON.parse(JSON.stringify(this.avatarUrl));
 
-    copyUserInfo.nickname = this.nickname;
-    copyUserInfo.birthday = this.birthday;
-    copyUserInfo.location = this.location;
-    copyUserInfo.bio = this.bio;
+    copyUserInfo.nickname = JSON.parse(JSON.stringify(this.nickname));
+    copyUserInfo.birthday = JSON.parse(JSON.stringify(this.birthday));
+    copyUserInfo.location = JSON.parse(JSON.stringify(this.location));
+    copyUserInfo.bio = JSON.parse(JSON.stringify(this.bio));
 
     copyUserInfo.userTags = new Map(JSON.parse(JSON.stringify(Array.from(this.userTags))));
     return copyUserInfo;
@@ -290,7 +291,6 @@ class UserInfo implements UserData{
 
   handleError(error: any) {
     this.error = true;
-    console.error(error);
     if (error.message && UserInfo.msgTranslation.has(error.message)) {
       this.errorMsg = UserInfo.msgTranslation.get(error.message) || UserInfo.errorMsg.DefaultError;
     } else {

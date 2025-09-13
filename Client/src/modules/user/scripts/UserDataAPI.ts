@@ -1,5 +1,4 @@
 import { fetchFromAPI, GATEWAY } from '@/modules/core/public.ts'
-import User from '@/modules/auth/scripts/User.ts'
 
 interface userReadOnlyData {
   userId: string,
