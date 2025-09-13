@@ -15,9 +15,8 @@ if (currentUserId.value) {
 }
 
 // 监听登录状态变化，重新加载
-watch(currentUserId, (newVal) => {
+watch(() => currentUserId.value, (newVal) => {
   if (newVal) {
-    console.log("✅ 右侧栏组件刷新数据，userId:", newVal)
     store.loadAll()
   }
 })
@@ -35,7 +34,7 @@ watch(currentUserId, (newVal) => {
       <!-- 推荐关注 -->
       <RecommendUsers
         :users="store.recommendUsers"
-        @updated="store.loadAll()"   
+        @updated="store.loadAll()"
       />
     </div>
   </aside>

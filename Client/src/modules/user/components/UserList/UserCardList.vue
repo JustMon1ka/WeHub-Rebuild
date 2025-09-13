@@ -99,14 +99,14 @@ function moveOut(event: MouseEvent, mouseOverType: 'avatar' | 'name' | 'card') {
 
 <template>
   <div class="w-full p-6 border border-slate-800
-    relative flex flex-row items-start justify-between w-full">
+    relative flex flex-row items-start justify-between">
     <!-- Avatar -->
     <router-link :to="{ name: 'UserPage', params: { userId_p: userId } }"
                  @mouseenter="moveIn($event, 'avatar')"
-                 @mouseleave="moveOut($event, 'avatar')" class="pr-4 py-2">
+                 @mouseleave="moveOut($event, 'avatar')" class="pr-4 py-2 flex-none ">
       <img v-if="!!userInfo.avatarUrl" :src="userInfo.avatarUrl"
-           class="w-12 h-12 rounded-full" alt="User Avatar">
-      <PlaceHolder v-else width="100" :text="userInfo.nickname" height="100" class="w-12 h-12 rounded-full"/>
+           class="w-16 h-16 rounded-full" alt="User Avatar">
+      <PlaceHolder v-else width="100" :text="userInfo.nickname" height="100" class="w-16 h-16 rounded-full"/>
     </router-link>
 
 

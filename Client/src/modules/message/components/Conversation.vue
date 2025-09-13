@@ -3,7 +3,7 @@
     <div class="avatar">
       <img v-if="!!props.conversation.contactUser?.avatar"
            :src="props.conversation.contactUser?.avatar"
-           :alt="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
+           alt="user" class="rounded-full w-12 h-12"
       />
       <PlaceHolder v-else width="100" height="100" :text="props.conversation.contactUser?.nickname || `用户${props.conversation.OtherUserId}`"
                    class="w-12 h-12 rounded-full" />
