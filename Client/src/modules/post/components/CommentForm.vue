@@ -100,7 +100,6 @@ const cancelReply = () => {
     </div>
 
     <div class="flex space-x-3">
-      <img class="w-10 h-10 rounded-full flex-shrink-0" :src="userAvatar" alt="你的头像">
       <div class="flex-1">
         <textarea
           v-model="content"
