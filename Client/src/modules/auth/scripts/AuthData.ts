@@ -144,6 +144,7 @@ class AuthData {
         await router.push('/mainpage');
       }
       toggleLoginHover(false);
+      location.reload();
     } else {
       this.error.value = true;
       this.errorMsg.value = result.error || AuthData.errorMsg.DefaultError;

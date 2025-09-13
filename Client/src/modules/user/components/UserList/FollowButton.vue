@@ -2,7 +2,7 @@
 import styles from '@/modules/user/scripts/Styles.ts'
 import { User } from '@/modules/auth/public.ts'
 import { ref, type Ref } from 'vue'
-import { toggleLoginHover } from '@/router.ts'
+import router, { toggleLoginHover } from '@/router.ts'
 
 const { userId } = defineProps<{
   userId: string;
@@ -17,6 +17,15 @@ const emit = defineEmits<{
 const login = !!User.getInstance();
 let following : Ref<boolean> = ref(User.getInstance()?.followingList.has(userId) || false); // 是否关注对方
 let followed: Ref<boolean> = ref(User.getInstance()?.followerList.has(userId) || false); // 是否被对方关注
+let isMe: Ref<boolean> = ref(User.getInstance()?.userAuth.userId === userId); // 是否为自己
+
+if (User.loading) {
+  User.afterLoadCallbacks.push(() => {
+    following.value = User.getInstance()?.followingList.has(userId) || false;
+    followed.value = User.getInstance()?.followerList.has(userId) || false;
+    isMe.value = User.getInstance()?.userAuth.userId === userId;
+  });
+}
 
 function toggleFollow() {
   if (!login) {
@@ -44,7 +53,11 @@ function toggleFollow() {
 <!--    *  false    true        关注对方     => 显示“正在关注”按钮-->
 <!--    *  true     false       被对方关注   => 显示“回关”按钮-->
 <!--    *  true     true        双向关注     => 显示“已互关”按钮-->
-    <button @click="toggleFollow" v-if="!followed && !following" :class="styles.followBtnShape + styles.followBtn">
+    <button @click="router.push('/user_page/Me')" v-if="isMe" :class="styles.followBtnShape"
+            class="0 border-slate-700 border-2">
+      自 己
+    </button>
+    <button @click="toggleFollow" v-else-if="!followed && !following" :class="styles.followBtnShape + styles.followBtn">
       关 注
     </button>
     <button @click="toggleFollow" v-else-if="followed && !following" :class="styles.followBtnShape + styles.followBtn">

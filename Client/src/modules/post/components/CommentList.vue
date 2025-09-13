@@ -46,7 +46,6 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import type { Comment } from '../types';
-import { postService } from '../api';
 import CommentItem from './CommentItem.vue';
 import CommentForm from './CommentForm.vue';
 import { convertCommentResponseToFrontend } from '../types';
@@ -94,8 +93,6 @@ const loadComments = async () => {
       params: { postId: props.postId }
     });
 
-    console.log('📦 API原始响应:', response.data);
-
     if (response.data && response.data.code === 200 && Array.isArray(response.data.data)) {
 
       const rawData = response.data.data;
@@ -121,15 +118,13 @@ const loadComments = async () => {
       });
 
       comments.value = processedComments;
-      console.log('✅ 转换并嵌套后的评论:', comments.value);
-
     } else {
       // 处理空数据或错误码的情况
       comments.value = [];
     }
 
   } catch (error) {
-    console.error('❌ 加载评论失败:', error);
+    return;
   } finally {
     loading.value = false;
   }
@@ -178,13 +173,11 @@ const handleCommentSubmitted = async () => {
 // 监听评论数变化并发射事件
 watch(totalCommentCount, (newCount, oldCount) => {
   if (newCount !== oldCount) {
-    console.log('📊 评论数变化:', oldCount, '→', newCount);
     emit('comment-count-change', newCount);
   }
 }, { immediate: true }); // immediate: true 表示组件挂载时立即触发
 
 onMounted(() => {
-  console.log('🚀 CommentList 组件挂载，帖子ID:', props.postId);
   loadComments();
 });
 </script>

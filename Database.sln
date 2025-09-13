@@ -65,7 +65,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gateway", "Gateway\Gateway.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserTagService.Tests", "Services\Tests\UserTagService.Tests\UserTagService.Tests.csproj", "{4ED42944-CC4F-4697-B41A-D8650581B9AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyBackend", "Services\FoundingService\MyBackend.csproj", "{35DE0A20-9A50-4411-A0A2-51255EB14C8C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoundingService", "Services\FoundingService\FoundingService.csproj", "{0293B983-D5AD-46D7-8E90-FC0C6D456F6D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -185,10 +185,10 @@ Global
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4ED42944-CC4F-4697-B41A-D8650581B9AB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{35DE0A20-9A50-4411-A0A2-51255EB14C8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0293B983-D5AD-46D7-8E90-FC0C6D456F6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0293B983-D5AD-46D7-8E90-FC0C6D456F6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0293B983-D5AD-46D7-8E90-FC0C6D456F6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0293B983-D5AD-46D7-8E90-FC0C6D456F6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

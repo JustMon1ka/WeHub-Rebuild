@@ -8,6 +8,12 @@ import {
   verifyCodeAPI
 } from '@/modules/auth/scripts/UserAuthAPI.ts'
 import { setUserAuthDataAPI } from '@/modules/user/scripts/UserDataAPI.ts'
+import { ref, type Ref } from 'vue'
+import {
+  addFollowingAPI,
+  getFollowCountAPI,
+  getFollowingAPI, removeFollowingAPI
+} from '@/modules/user/scripts/FollowAPI.ts'
 
 interface resultState {
   success: boolean;
@@ -200,14 +206,14 @@ class User {
   refreshTimer: any;
   followingList: Set<string> = new Set<string>();
   followerList: Set<string> = new Set<string>();
-  userInfo: UserInfo | undefined = undefined;
+  userInfo: Ref<UserInfo>;
 
   // 工厂函数，用于创建用户实例，并在创建前检查错误
   static async create(token: string, tokenType: 'session' | 'auth') {
     try {
       User.loading = true;
-      if (User.#singleton) return
-      if (!token) return
+      if (User.#singleton) return;
+      if (!token) return;
 
       if (tokenType === 'auth') {
         token = await User.getSessionToken(token)
@@ -223,7 +229,7 @@ class User {
         try {
           callback();
         } catch (e) {
-          console.error('USER_ERROR_REPORT: Error in afterLoad callback:',callback.toString(),'ERROR_MESSAGE: ', e);
+          return;
         }
       });
       User.afterLoadCallbacks = [];
@@ -247,11 +253,11 @@ class User {
         }
       }
     }, User.CHECK_INTERVAL, { immediate: true }); // 每5分钟检查一次
+    this.userInfo = ref(new UserInfo(this.#userId));
 
     setTimeout(async () => {
-      this.userInfo = new UserInfo(userid, false);
-      this.userInfo.isMe = true; // 显示指定，因为此时用户实例尚未创建完成，拿不到userid
-      await this.userInfo.loadUserData();
+      await this.userInfo.value.loadUserData();
+      await this.loadFollowList();
     }, 0);
   }
 
@@ -275,19 +281,14 @@ class User {
     }
   }
 
-  async reloadUserInfo() {
-    this.userInfo = new UserInfo(this.#userId);
-    await this.userInfo.loadUserData();
-  }
-
   async resetPassword(newPassword: string): Promise<resultState> {
     try {
       const passwordHash = await User.generateHash(newPassword);
       const result = await setUserAuthDataAPI(this.#userId , {
-        username: this.userInfo?.username || '',
+        username: this.userInfo.value?.username || '',
         password: passwordHash,
-        email: this.userInfo?.email || '',
-        phone: this.userInfo?.phone || '',
+        email: this.userInfo.value?.email || '',
+        phone: this.userInfo.value?.phone || '',
       });
 
       return {
@@ -298,14 +299,47 @@ class User {
     }
   }
 
+  async loadFollowList() {
+    try {
+      const followCountResult = await getFollowCountAPI(this.#userId);
+      const followingCount = followCountResult.followingCount;
+      const followerCount = followCountResult.followerCount;
+
+      if (followingCount) {
+        const followingResult = await getFollowingAPI(1, followingCount, this.#userId)
+        for (const followData of followingResult.items) {
+          this.followingList.add(followData.followeeId.toString());
+        }
+      }
+
+      if (followerCount) {
+        const followerResult = await getFollowingAPI(1, followerCount, this.#userId)
+        for (const followData of followerResult.items) {
+          this.followerList.add(followData.followerId.toString());
+        }
+      }
+
+    } catch (error: any) {
+      return User.handleError(error);
+    }
+  }
+
   followUser(userId: string) {
-    this.followingList.add(userId);
-    // TODO: 这里可以添加发送关注请求的逻辑
+    try {
+      const result = addFollowingAPI(userId);
+      this.followingList.add(userId);
+    } catch (error: any) {
+      return User.handleError(error);
+    }
   }
 
   unfollowUser(userId: string) {
-    this.followingList.delete(userId);
-    // TODO: 这里可以添加发送取消关注请求的逻辑
+    try {
+      const result = removeFollowingAPI(userId);
+      this.followingList.delete(userId);
+    } catch (error: any) {
+      return User.handleError(error);
+    }
   }
 }
 

@@ -1,8 +1,9 @@
 // modules/Founding/api.ts
 import type { HotTopic, RecommendUser, TodayHot } from "./types"
 import { currentUserId } from "@/modules/Founding/store/CurrentUser";
+import { GATEWAY } from '@/modules/core/public.ts'
 
-const BASE_URL = "http://127.0.0.1:7000"
+const BASE_URL = GATEWAY;
 
 // 🔹 发现页相关
 const RECOMMEND_URL = `${BASE_URL}/recommend`

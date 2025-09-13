@@ -1,6 +1,4 @@
-﻿import CreatePostView from './views/CreatePostView.vue';
-
-export default {
+﻿export default {
   getRoutes() {
     return [
       {

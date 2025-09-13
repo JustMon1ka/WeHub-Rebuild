@@ -32,25 +32,24 @@ const pending = ref(false);
 async function onShare() {
   if (pending.value) return;
   pending.value = true;
-  
+
   try {
     // 1) 调用后端分享接口 - 添加错误处理
     await handleSharePost(props.postId);
-    
+
     // 2) 拉取原帖信息
     const post = await getPostDetail(props.postId);
-    
+
     // 3) 放到 sessionStorage，供发帖页读取
     stashOriginalPost(post);
-    
+
     // 4) 跳转发帖页
-    router.push({
+    await router.push({
       path: '/post/create',
       query: { shareFrom: String(props.postId) }
     });
-    
+
   } catch (e) {
-    console.error("分享失败：", e);
     handleShareError(e);
   } finally {
     pending.value = false;
@@ -76,22 +75,21 @@ async function handleSharePost(postId: number) {
 async function tryAlternativeShareMethods(postId: number) {
   try {
     // 方法1: 尝试使用GET请求
-    console.log("尝试使用GET方法调用分享API");
     const response = await fetch(`/api/posts/${postId}/share`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`GET请求失败: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (getError) {
     console.warn("GET方法也失败，尝试备用方案", getError);
-    
+
     // 方法2: 使用navigator.share作为备用
     if (navigator.share) {
       try {
@@ -103,10 +101,10 @@ async function tryAlternativeShareMethods(postId: number) {
         });
         return { success: true, method: 'navigator.share' };
       } catch (shareError) {
-        console.log('用户取消了分享', shareError);
+        return;
       }
     }
-    
+
     // 方法3: 复制链接到剪贴板
     try {
       await navigator.clipboard.writeText(window.location.href);

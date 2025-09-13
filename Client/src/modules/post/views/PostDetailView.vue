@@ -51,7 +51,6 @@ async function load() {
     author.value = new UserInfo(String(detail.userId));
     await author.value.loadUserData();
   } catch (e: any) {
-    console.error('[PostDetail] load failed:', e);
     errorText.value = e?.message || '加载失败，请稍后重试';
   } finally {
     loading.value = false;
@@ -64,7 +63,6 @@ onMounted(load);
 
 // 处理评论数变化事件
 function handleCommentCountChange(newCount: number) {
-  console.log('🔄 接收到评论数更新:', newCount);
   commentCount.value = newCount;
 }
 
@@ -89,7 +87,6 @@ function handleCommentDeleted() {
 
 // 处理错误
 function handleError(error: unknown) {
-  console.error('操作失败:', error);
   // 可以在这里添加用户提示
 }
 </script>

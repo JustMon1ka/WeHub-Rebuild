@@ -58,12 +58,26 @@ onMounted(() => {
   const sentinelElement = document.querySelector(`[data-uid="${uid}"]`) as HTMLElement | null;
   if (!sentinelElement) return;
 
+  let intervalId: number | null = null;
+
   observer = new IntersectionObserver(
     (entries) => {
       const [entry] = entries;
-      if (entry.isIntersecting) loadMore();
+      if (entry.isIntersecting) {
+        if (!intervalId) {
+          loadMore();
+          intervalId = window.setInterval(() => {
+            loadMore();
+          }, 200);
+        }
+      } else {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
     },
-    { threshold: 0.1 } // 当哨兵元素 10% 进入视口时触发
+    { threshold: 0.1 }
   );
 
   observer.observe(sentinelElement);
@@ -91,7 +105,7 @@ function errorCounter() {
     <!-- 用户列表 -->
     <div v-for="(user, index) in users" :key="user"
          class="flex items-start space-x-4 hover:bg-slate-800/50 transition-colors duration-200">
-      <UserCardList @error="errorCounter" :user-id="user" :follow-btn="followBtn"/>
+      <UserCardList @error="errorCounter" :user-id="user.toString()" :follow-btn="followBtn"/>
     </div>
 
     <!-- 加载组件 -->

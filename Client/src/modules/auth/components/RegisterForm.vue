@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import styles from '@/modules/auth/scripts/Styles.ts'
 import { AuthData, AuthType } from '@/modules/auth/scripts/AuthData.ts';
-import RegisterForm from '@/modules/auth/components/RegisterForm.vue'
 
 const registerData: AuthData = new AuthData();
 registerData.changeAuthType(AuthType.Register);

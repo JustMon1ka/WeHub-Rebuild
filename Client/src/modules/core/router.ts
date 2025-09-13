@@ -1,5 +1,4 @@
-import HomeView from './views/HomeView.vue'
-import MainPage from './components/MainPage.vue'
+import MainView from './views/MainView.vue'
 
 export default {
   getRoutes() {
@@ -7,7 +6,7 @@ export default {
       {
         path: '/',
         name: 'home',
-        component: HomeView,
+        component: MainView,
         meta: { title: 'Home', navi: true, recommend: true, requireLogin: false },
       },
       {
@@ -16,12 +15,6 @@ export default {
         // route level code-splitting
         component: () => import('./views/AboutView.vue'),
         meta: { title: 'About', navi: true, recommend: true, requireLogin: false },
-      },
-      {
-        path: '/mainPage',
-        name: 'mainPage',
-        component: MainPage,
-        meta: { title: 'Main Page', navi: true, recommend: true, requireLogin: true },
       },
     ]
   }

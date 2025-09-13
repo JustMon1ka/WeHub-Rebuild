@@ -18,12 +18,12 @@ const goDetail = () => router.push({ name:'PostDetail', params:{ id: post.postId
 <template>
   <!-- 整卡点击进入详情 -->
   <article @click="goDetail"
-           class="cursor-pointer group w-full px-4 py-3 border-b border-slate-800 hover:bg-slate-900/40 transition-colors">
+           class="cursor-pointer group w-full p-6 border-b border-slate-800 hover:bg-slate-900/40 transition-colors">
     <div class="flex items-start gap-3">
       <!-- 头像：阻止冒泡，避免点头像也触发整卡跳转 -->
       <router-link @click.stop :to="{ name:'UserPage', params:{ userId_p: String(post.userId) } }" class="shrink-0">
-        <img v-if="userInfo.avatarUrl" :src="userInfo.avatarUrl" class="w-10 h-10 rounded-full" alt="avatar">
-        <PlaceHolder v-else width="80" height="80" :text="userInfo.nickname || ('U'+post.userId)" class="w-10 h-10 rounded-full"/>
+        <img v-if="userInfo.avatarUrl" :src="userInfo.avatarUrl" class="w-16 h-16 rounded-full" alt="avatar">
+        <PlaceHolder v-else width="80" height="80" :text="userInfo.nickname || ('U'+post.userId)" class="w-12 h-12 rounded-full"/>
       </router-link>
 
       <div class="min-w-0 flex-1">

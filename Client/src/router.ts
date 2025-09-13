@@ -31,7 +31,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     ...postCreateRouter.getRoutes(),             // postCreate 模块路由数组
-    // ...yourRouter.getRoutes(),     // 如果有其他模块路由
     ...coreRouter.getRoutes(),
     ...authRouter.getRoutes(),
     ...userRouter.getRoutes(),
@@ -40,9 +39,7 @@ const router = createRouter({
     ...noticeRouter.getRoutes(),
     ...reportRouter.getRoutes(),
     ...postRouter,                   // post 模块路由数组
-     ...foundingRouter.getRoutes(),
-    //  console.log("Founding router object:", foundingRouter),
-    //  console.log("Founding routes:", foundingRouter.getRoutes()),
+    ...foundingRouter.getRoutes(),
     // ...yourRouter.getRoutes(),
     // your router must be imported before NotFound route
     {
