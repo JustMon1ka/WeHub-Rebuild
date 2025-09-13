@@ -6,12 +6,21 @@
       </div>
 
       <div class="report-content">
-        <span style="color: #333"
-          >我要举报的是：{{ reportTargetUserName }}的{{ getReportType(reportTargetType) }}</span
-        >
-        <div v-if="reportTargetContent" class="report-target-content">
-          <strong>举报内容：</strong>
-          <div class="content-preview">{{ reportTargetContent }}</div>
+        <div v-if="loading" class="loading-section">
+          <span style="color: #666">正在加载举报信息...</span>
+        </div>
+        <div v-else>
+          <span style="color: #333"
+            >我要举报的是：{{ reportTargetUserName
+            }}{{ reportTargetType === 'user' ? '' : '的' + getReportType(reportTargetType) }}</span
+          >
+          <div
+            v-if="reportTargetContent && reportTargetType !== 'user'"
+            class="report-target-content"
+          >
+            <strong style="color: #333">举报内容：{{ reportTargetContent }}</strong>
+            <div class="content-preview"></div>
+          </div>
         </div>
 
         <div class="report-section">
@@ -219,19 +228,23 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { getPostDetail } from '@/modules/post/api'
+import { getCommentDetail, getUserInfo } from '@/modules/notice/api'
+import { unwrap } from '@/modules/notice/types'
 
 const route = useRoute()
 const router = useRouter()
 
-// 从URL参数获取举报信息
+// 从路由参数获取举报信息
 const reportTargetId = ref<number>(0)
-const reportTargetType = ref<'message' | 'user' | 'post' | 'comment'>('message')
+const reportTargetType = ref<'user' | 'post' | 'comment'>('post')
 const reportTargetUserName = ref<string>('')
 const reportTargetContent = ref<string>('')
 
 // 举报表单数据
 const reportReasons = ref<string[]>([])
 const description = ref<string>('')
+const loading = ref<boolean>(true)
 
 // 获取举报类型的中文描述
 const getReportType = (type: string) => {
@@ -242,8 +255,6 @@ const getReportType = (type: string) => {
       return '帖子'
     case 'comment':
       return '评论'
-    case 'message':
-      return '消息'
     default:
       return ''
   }
@@ -252,18 +263,16 @@ const getReportType = (type: string) => {
 // 根据举报类型获取目标内容
 const fetchReportTargetInfo = async () => {
   try {
+    loading.value = true
     const type = route.params.type as string
     const id = route.params.id as string
 
     if (type && id) {
-      reportTargetType.value = type as 'message' | 'user' | 'post' | 'comment'
+      reportTargetType.value = type as 'user' | 'post' | 'comment'
       reportTargetId.value = parseInt(id)
 
       // 根据不同类型获取相应的信息
       switch (type) {
-        case 'message':
-          await fetchMessageInfo(parseInt(id))
-          break
         case 'user':
           await fetchUserInfo(parseInt(id))
           break
@@ -277,36 +286,61 @@ const fetchReportTargetInfo = async () => {
     }
   } catch (error) {
     console.error('获取举报目标信息失败:', error)
+  } finally {
+    loading.value = false
   }
-}
-
-// 获取消息信息
-const fetchMessageInfo = async (messageId: number) => {
-  // 这里应该调用实际的API
-  // 暂时使用模拟数据
-  reportTargetUserName.value = '用户小明'
-  reportTargetContent.value = '这是一条测试消息内容，用于演示举报功能。'
 }
 
 // 获取用户信息
 const fetchUserInfo = async (userId: number) => {
-  // 这里应该调用实际的API
-  reportTargetUserName.value = '用户小红'
-  reportTargetContent.value = '用户资料页面'
+  try {
+    // 获取用户详细信息
+    const userInfo = await getUserInfo(userId)
+
+    reportTargetUserName.value = userInfo.nickname || userInfo.username || '未知用户'
+    reportTargetContent.value = '用户资料页面'
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    reportTargetUserName.value = '未知用户'
+    reportTargetContent.value = '用户资料页面'
+  }
 }
 
 // 获取帖子信息
 const fetchPostInfo = async (postId: number) => {
-  // 这里应该调用实际的API
-  reportTargetUserName.value = '用户小李'
-  reportTargetContent.value = '这是一个测试帖子的内容，包含了一些文字描述。'
+  try {
+    // 获取帖子详情
+    const postDetail = await getPostDetail(postId)
+
+    // 获取帖子作者信息
+    const userInfo = await getUserInfo(postDetail.userId)
+
+    reportTargetUserName.value = userInfo.nickname || userInfo.username || '未知用户'
+    reportTargetContent.value = postDetail.title || '无标题帖子'
+  } catch (error) {
+    console.error('获取帖子信息失败:', error)
+    reportTargetUserName.value = '未知用户'
+    reportTargetContent.value = '无法获取帖子内容'
+  }
 }
 
 // 获取评论信息
 const fetchCommentInfo = async (commentId: number) => {
-  // 这里应该调用实际的API
-  reportTargetUserName.value = '用户小王'
-  reportTargetContent.value = '这是一条评论内容，用户发表了个人观点。'
+  try {
+    // 获取评论详情
+    const commentDetailResp = await getCommentDetail(commentId)
+    const commentDetail = unwrap(commentDetailResp)
+
+    // 获取评论作者信息
+    const userInfo = await getUserInfo(commentDetail.userId)
+
+    reportTargetUserName.value = userInfo.nickname || userInfo.username || '未知用户'
+    reportTargetContent.value = commentDetail.content || '无内容评论'
+  } catch (error) {
+    console.error('获取评论信息失败:', error)
+    reportTargetUserName.value = '未知用户'
+    reportTargetContent.value = '无法获取评论内容'
+  }
 }
 
 // 处理提交举报
@@ -440,6 +474,7 @@ onMounted(() => {
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 12px;
+  color: #333;
 }
 
 .report-reason-discription:focus {

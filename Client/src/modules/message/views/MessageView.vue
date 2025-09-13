@@ -536,19 +536,6 @@ const handleMessageAction = async (action: string, message: messageDisplay) => {
     case 'copy':
       await handleMessageCopy(message)
       break
-    case 'report':
-      const to = router.resolve({
-        name: 'report',
-        params: { type: 'message', id: message.messageId },
-        query: {
-          reporterId: myUserId.value,
-          reportedId: message.sender.id,
-          reportTime: new Date().toISOString(),
-        },
-      })
-      const url = new URL(to.href, window.location.origin) // 保证绝对地址
-      window.open(url.toString(), '_blank', 'noopener,noreferrer')
-      break
   }
 }
 
