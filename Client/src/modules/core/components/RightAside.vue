@@ -10,7 +10,7 @@ store.loadAll()
 </script>
 
 <template>
-  <aside class="hidden md:block flex-none md:h-screen py-5 z-100">
+  <aside class="hidden md:block flex-none md:h-screen py-5 z-100 border-l border-slate-800">
     <div class="space-y-6 p-4">
       <!-- 搜索框 -->
       <SearchBar />

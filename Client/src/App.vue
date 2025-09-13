@@ -1,6 +1,5 @@
 <!--APP.vue 中的内容会应用于全局，谨慎添加！！！-->
 <script setup lang="ts">
-import { ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import NavigationBar from '@/modules/core/components/NavigationBar.vue'
@@ -13,6 +12,7 @@ const route = useRoute()
 </script>
 
 <script lang="ts">
+import { ref } from 'vue'
 export const showHoverLogin = ref(false)
 export const showNavigationBar = ref(true)
 export const showRecommendBar = ref(true)
@@ -28,8 +28,7 @@ export const showRecommendBar = ref(true)
         <PostCreate v-if="route.name === 'post-create'" class="h-dvh overflow-y-auto"/>
       </div>
       <RightAside
-        v-show="showRecommendBar && route.name !== 'founding'"
-        id="recommend-bar"
+        v-show="showRecommendBar" id="recommend-bar"
         class="flex-none h-24 overflow-hidden md:h-screen z-100"
       />
     </div>
