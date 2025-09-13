@@ -8,7 +8,7 @@ export default {
                 redirect: '/notice/like'
             },
             {
-                path: '/notice/:type(at|comment|reply|like|repost)?',
+                path: '/notice/:type(mention|comment|reply|like|repost)?',
                 name: 'notice',
                 component: NoticeView,
                 meta: { title: '通知', navi: true, recommend: true, requireLogin: true },

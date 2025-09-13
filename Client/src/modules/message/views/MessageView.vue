@@ -68,7 +68,7 @@
                     height="100"
                     :text="
                       result.conversation.contactUser?.nickname ||
-                      `${result.conversation.otherUserId}`
+                      `${result.conversation.OtherUserId}`
                     "
                     class="w-12 h-12 rounded-full"
                   />
@@ -124,19 +124,6 @@
         :class="{ resizing: isHorizontalResizing }"
       ></div>
       <div class="divider-horizontal"></div>
-
-      <!-- 发送状态提示 -->
-      <div v-if="sendingMessage || sendError" class="send-status">
-        <div v-if="sendingMessage" class="sending-indicator">
-          <span class="spinner"></span>
-          发送中...
-        </div>
-        <div v-if="sendError" class="error-indicator">
-          <span class="error-icon">⚠️</span>
-          {{ sendError }}
-          <button @click="sendError = null" class="dismiss-btn">×</button>
-        </div>
-      </div>
 
       <!-- 聊天输入框 -->
       <div class="chat-input bg-slate-900" :style="{ height: chatInputHeight + '%' }">
@@ -284,10 +271,6 @@ const conversationList = computed(() => {
 const chatHistoryList = ref<chatHistory[]>([])
 const currentChatMessages = ref<messageDisplay[]>([])
 
-// 发送状态
-const sendingMessage = ref(false)
-const sendError = ref<string | null>(null)
-
 // 用户信息
 const myUser = ref<user>({
   id: 0,
@@ -315,7 +298,7 @@ onMounted(async () => {
         myUser.value = {
           id: userDetail.userId,
           nickname: userDetail.nickname || userDetail.username,
-          avatar: `${GATEWAY}/api/media/${userDetail.avatarUrl}` || '',
+          avatar: `${GATEWAY}/api/media/${userDetail.avatar}` || '',
           url: `/user/${userDetail.userId}`,
         }
       } catch (error) {
@@ -499,9 +482,9 @@ const currentChatHistory = computed(() => {
   const result = currentChatMessages.value.map((m) => {
     // 优先使用消息对象中已有的用户信息，避免依赖非响应式的userCache
     const sender = m.sender ||
-      userCache.get(m.senderId) || { id: m.senderId, nickname: '未知用户', avatar: '', url: '' }
+      userCache.get(m.sender.id) || { id: m.senderId, nickname: '未知用户', avatar: '', url: '' }
     const receiver = m.receiver ||
-      userCache.get(m.receiverId) || {
+      userCache.get(m.receiver.id) || {
         id: m.receiverId,
         nickname: '未知用户',
         avatar: '',
@@ -515,67 +498,6 @@ const currentChatHistory = computed(() => {
 async function handleSendMessage(content: string, type: 'text' | 'image') {
   if (!selectedConversation.value) return
 
-  // 设置发送状态
-  sendingMessage.value = true
-  sendError.value = null
-
-  // 先立即在本地添加消息，提供即时反馈
-  const tempMessage: messageDisplay = {
-    messageId: Date.now(), // 临时ID，发送成功后会被替换
-    senderId: myUserId.value,
-    receiverId: selectedConversation.value.otherUserId,
-    content: content,
-    sentAt: new Date().toISOString(),
-    isRead: true,
-    sendTime: new Date().toLocaleString(),
-    sender: myUser.value,
-    receiver: selectedConversation.value.contactUser || {
-      id: selectedConversation.value.otherUserId,
-      nickname: '未知用户',
-      avatar: '',
-      url: '',
-    },
-    type: type,
-  }
-
-  // 立即添加到当前聊天记录中
-  currentChatMessages.value.push(tempMessage)
-
-  // 更新会话列表的最新消息
-  const conv = conversationListData.value.find(
-    (c) => c.otherUserId === selectedConversation.value!.otherUserId
-  )
-
-  // 保存原始状态，用于失败时恢复
-  const originalConvState = conv
-    ? {
-        newestMessage: conv.newestMessage,
-        time: conv.time,
-        lastMessage: conv.lastMessage,
-      }
-    : null
-
-  if (conv) {
-    conv.newestMessage = content
-    conv.time = new Date().toISOString()
-    conv.lastMessage = {
-      messageId: tempMessage.messageId,
-      senderId: tempMessage.senderId,
-      receiverId: tempMessage.receiverId,
-      content: content,
-      sentAt: tempMessage.sentAt,
-      isRead: true,
-    }
-  }
-
-  // 立即滚动到最新消息
-  await nextTick(() => {
-    const chatWindow = document.querySelector('.chat-window') as HTMLElement
-    if (chatWindow) {
-      chatWindow.scrollTop = chatWindow.scrollHeight
-    }
-  })
-
   try {
     // 发送消息到服务器
     const result = await sendMessage({
@@ -584,65 +506,27 @@ async function handleSendMessage(content: string, type: 'text' | 'image') {
       type: type,
     })
 
-    console.log('[发送消息] 服务器响应:', result)
-
     if (result.success) {
-      console.log('[发送消息] 消息发送成功')
+      console.log('[发送消息] 消息发送成功，重新获取聊天记录')
 
-      // 更新临时消息的真实ID
-      const sentMessage = currentChatMessages.value.find(
-        (m) => m.messageId === tempMessage.messageId
-      )
-      if (sentMessage) {
-        sentMessage.messageId = result.messageId
-      }
+      // 重新获取聊天记录以确保数据同步
+      await fetchChatHistory(selectedConversation.value.otherUserId)
 
-      // 更新会话列表中的消息ID
-      if (conv && conv.lastMessage) {
-        conv.lastMessage.messageId = result.messageId
-      }
+      // 重新获取会话列表以确保数据同步
+      await fetchConversationList()
 
-      console.log('[发送消息] ✅ 消息发送成功，本地状态已更新')
-    } else {
-      console.log('[发送消息] 服务器返回失败状态:', result)
+      // 滚动到最新消息
+      await nextTick(() => {
+        const chatWindow = document.querySelector('.chat-window') as HTMLElement
+        if (chatWindow) {
+          chatWindow.scrollTop = chatWindow.scrollHeight
+        }
+      })
 
-      // 发送失败，移除临时消息
-      const index = currentChatMessages.value.findIndex(
-        (m) => m.messageId === tempMessage.messageId
-      )
-      if (index !== -1) {
-        currentChatMessages.value.splice(index, 1)
-      }
-
-      // 恢复会话列表状态 - 恢复到发送前的状态
-      if (conv && originalConvState) {
-        conv.newestMessage = originalConvState.newestMessage
-        conv.time = originalConvState.time
-        conv.lastMessage = originalConvState.lastMessage
-      }
-
-      sendError.value = '发送消息失败，请重试'
-      console.error('[发送消息] 发送失败:', result)
+      console.log('[发送消息] ✅ 消息发送成功，聊天记录和会话列表已更新')
     }
   } catch (err) {
-    // 发送失败，移除临时消息
-    const index = currentChatMessages.value.findIndex((m) => m.messageId === tempMessage.messageId)
-    if (index !== -1) {
-      currentChatMessages.value.splice(index, 1)
-    }
-
-    // 恢复会话列表状态 - 恢复到发送前的状态
-    if (conv && originalConvState) {
-      conv.newestMessage = originalConvState.newestMessage
-      conv.time = originalConvState.time
-      conv.lastMessage = originalConvState.lastMessage
-    }
-
-    sendError.value = '网络错误，请检查连接后重试'
-    console.error('[发送消息] 发送异常:', err)
-  } finally {
-    // 清除发送状态
-    sendingMessage.value = false
+    error.value = '发送消息失败'
   }
 }
 
@@ -817,7 +701,7 @@ const startHorizontalResize = (e: MouseEvent) => {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  background: linear-gradient(135deg, #1f2137 0%, #485a60 100%);
+  background: linear-gradient(135deg, #1f2937 0%, #485a60 100%);
 }
 
 .chat-content {
@@ -1037,71 +921,5 @@ const startHorizontalResize = (e: MouseEvent) => {
   padding: 1px 2px;
   border-radius: 2px;
   font-weight: bold;
-}
-
-/* 发送状态样式 */
-.send-status {
-  padding: 8px 16px;
-  background-color: #1f2937;
-  border-bottom: 1px solid #374151;
-}
-
-.sending-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #60a5fa;
-  font-size: 14px;
-}
-
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #374151;
-  border-top: 2px solid #60a5fa;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.error-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #f87171;
-  font-size: 14px;
-  background-color: #7f1d1d;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #dc2626;
-}
-
-.error-icon {
-  font-size: 16px;
-}
-
-.dismiss-btn {
-  background: none;
-  border: none;
-  color: #f87171;
-  font-size: 18px;
-  cursor: pointer;
-  margin-left: auto;
-  padding: 0 4px;
-  border-radius: 3px;
-  transition: background-color 0.2s;
-}
-
-.dismiss-btn:hover {
-  background-color: #dc2626;
-  color: white;
 }
 </style>

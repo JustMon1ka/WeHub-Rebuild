@@ -18,7 +18,7 @@ namespace NoticeService.Models
         public int? PostId { get; set; }
 
         [Column("COMMENT")]
-        public string Comment { get; set; }
+        public string? Comment { get; set; }
 
         [Column("CREATED_AT")]
         public DateTime? CreatedAt { get; set; }

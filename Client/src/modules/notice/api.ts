@@ -88,7 +88,7 @@ export async function getUnreadNoticeCount(): Promise<unreadNoticeCount> {
 }
 
 // 标记通知已读
-export async function markNotificationsRead(type: 'comment' | 'reply' | 'like' | 'repost' | 'at'): Promise<markReadResponse> {
+export async function markNotificationsRead(type: 'comment' | 'reply' | 'like' | 'repost' | 'mention'): Promise<markReadResponse> {
     const { data } = await apiClient.post<markReadResponse>('/api/notifications/read', { type })
     return data
 }
@@ -149,7 +149,7 @@ export async function getRepostNotices(params?: { page?: number; pageSize?: numb
 }
 
 
-export async function getAtNotices(params?: { page?: number; pageSize?: number; unreadOnly?: boolean }): Promise<atNoticeResponse> {
+export async function getMentionNotices(params?: { page?: number; pageSize?: number; unreadOnly?: boolean }): Promise<atNoticeResponse> {
     try {
         const { page = 1, pageSize = 20, unreadOnly = false } = params ?? {}
         const { data } = await apiClient.get<atNoticeResponse>('/api/notifications/mentions', {

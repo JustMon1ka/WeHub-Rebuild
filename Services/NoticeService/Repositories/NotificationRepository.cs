@@ -121,7 +121,7 @@ namespace NoticeService.Repositories
                 .ToListAsync();
 
             // 在内存中过滤已删除的回复
-            var filteredReplies = allReplies.Where(r => !r.IsDeleted).ToList();
+            var filteredReplies = allReplies.Where(r => r.IsDeletedNumber == 0).ToList();
 
             List<Reply> result;
             if (unreadOnly)
@@ -219,7 +219,7 @@ namespace NoticeService.Repositories
                 .ToListAsync();
 
             // 在内存中过滤已删除的评论
-            var filteredComments = allComments.Where(c => !c.IsDeleted).ToList();
+            var filteredComments = allComments.Where(c => c.IsDeletedNumber == 0).ToList();
 
             List<Comment> result;
             if (unreadOnly)
