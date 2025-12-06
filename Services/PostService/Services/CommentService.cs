@@ -31,7 +31,7 @@ public class CommentService : ICommentService
         var userExists = await _repo.UserExistsAsync(userId);
         if (!userExists)
         {
-            return BaseHttpResponse<CommentResponse>.Fail(401,"User not found");
+            return BaseHttpResponse<CommentResponse>.Fail(401, "User not found");
         }
 
         if (request.Type == CommentRequest.CommentType.Comment)
@@ -40,8 +40,11 @@ public class CommentService : ICommentService
             var postExists = await _repo.PostExistsAsync(request.TargetId);
             if (!postExists)
             {
-                return BaseHttpResponse<CommentResponse>.Fail(404, "Post not found" );
+                return BaseHttpResponse<CommentResponse>.Fail(404, "Post not found");
             }
+
+            // 获取帖子作者ID
+            var postAuthorId = await _repo.GetUserIdByPostIdAsync(request.TargetId);
 
             var comment = new Comments
             {
@@ -50,7 +53,8 @@ public class CommentService : ICommentService
                 Content = request.Content,
                 CreatedAt = DateTime.UtcNow,
                 Likes = 0,
-                IsDeleted = 0
+                IsDeleted = 0,
+                TargetUserId = postAuthorId  // 设置目标用户ID为帖子作者
             };
 
             var saved = await _repo.AddCommentAsync(comment);
@@ -172,12 +176,12 @@ public class CommentService : ICommentService
 
         return BaseHttpResponse<List<GetCommentResponse>>.Success(result);
     }
-    
+
     public async Task<List<GetCommentResponse>> GetCommentsByUserIdAsync(long userId)
     {
         // 1. 获取用户发表的评论
         var comments = await _repo.GetCommentsByUserIdAsync(userId);
-        
+
         // 2. 获取用户发表的回复
         var replies = await _repo.GetRepliesByUserIdAsync(userId);
 
@@ -220,7 +224,7 @@ public class CommentService : ICommentService
                 Likes = 0 // 回复没有点赞字段
             });
         }
-        
+
         // 5. 按时间排序所有评论和回复，并返回
         return result.OrderByDescending(x => x.CreatedAt).ToList();
     }

@@ -42,7 +42,15 @@
             to="/notice"
             :class="['router-link', { 'router-link-active': isActive('/notice').value }]"
           >
-            <img src="@/modules/core/assets/notifications.svg" alt="Notifications" class="svg" />
+            <div class="relative">
+              <img src="@/modules/core/assets/notifications.svg" alt="Notifications" class="svg" />
+              <span
+                v-if="unreadNoticeCount > 0"
+                class="absolute -top-1 -right-0 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center min-w-[20px]"
+              >
+                {{ unreadNoticeCount > 99 ? '99+' : unreadNoticeCount }}
+              </span>
+            </div>
             通知
           </router-link>
         </li>
@@ -140,6 +148,7 @@ import { User } from '@/modules/auth/public'
 import { UserInfo } from '@/modules/user/public'
 import PlaceHolder from '@/modules/user/components/PlaceHolder.vue'
 import { getUnreadMessageCount } from '@/modules/message/api'
+import { getUnreadNoticeCount } from '@/modules/notice/api'
 import { eventBus, EVENTS } from '@/modules/core/utils/eventBus'
 
 const router = useRouter()
@@ -147,6 +156,7 @@ const route = useRoute()
 
 const postButton = ref<HTMLButtonElement | null>(null)
 const unreadCount = ref(0)
+const unreadNoticeCount = ref(0)
 let refreshInterval: number | null = null
 
 const openPostCreate = () => {
@@ -200,15 +210,37 @@ const fetchUnreadCount = async () => {
   }
 }
 
+// 获取未读通知数量
+const fetchUnreadNoticeCount = async () => {
+  try {
+    // 检查用户是否已登录
+    const user = User.getInstance()
+    if (!user?.userAuth?.token) {
+      unreadNoticeCount.value = 0
+      return
+    }
+
+    const response = await getUnreadNoticeCount()
+    unreadNoticeCount.value = response.data.totalUnread || 0
+  } catch (error) {
+    console.error('获取未读通知数量失败:', error)
+    unreadNoticeCount.value = 0
+  }
+}
+
 // 启动定时刷新
 const startRefresh = () => {
   if (refreshInterval) return
 
   // 立即获取一次
   fetchUnreadCount()
+  fetchUnreadNoticeCount()
 
   // 每30秒刷新一次
-  refreshInterval = setInterval(fetchUnreadCount, 30000)
+  refreshInterval = setInterval(() => {
+    fetchUnreadCount()
+    fetchUnreadNoticeCount()
+  }, 30000)
 }
 
 // 停止定时刷新
