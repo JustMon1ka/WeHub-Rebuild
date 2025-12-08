@@ -6,6 +6,7 @@ using Models;
 using PostService.DTOs;
 using PostService.Services;
 using Microsoft.Extensions.Caching.Distributed;
+using PostService.Command;
 
 namespace PostService.Controllers;
 
@@ -228,30 +229,15 @@ public class PostController : ControllerBase
     {
         try
         {
-            // 从 token 中提取 userId
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            if (userIdClaim == null)
-            {
-                return BaseHttpResponse<PostPublishResponse>.Fail(401, "无法从Token中提取用户信息");
-            }
+            var userIdStr = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (userIdStr == null)
+                return BaseHttpResponse<PostPublishResponse>.Fail(401, "无法从 Token 中获取用户信息");
 
-            long userId = long.Parse(userIdClaim.Value);
+            long userId = long.Parse(userIdStr);
 
-            // 如果未填 CircleId，用 100000 作为默认值
-            long circleId = postPublishRequest.CircleId ?? 100000;
+            var command = new PublishPostCommand(postPublishRequest, userId);
 
-            // 发布帖子
-            var post = await _postService.PublishPostAsync(userId,
-                circleId,
-                postPublishRequest.Title ?? string.Empty,
-                postPublishRequest.Content ?? string.Empty,
-                postPublishRequest.Tags ?? new List<long>());
-
-            return BaseHttpResponse<PostPublishResponse>.Success(new PostPublishResponse
-            {
-                PostId = post.PostId,
-                CreatedAt = post.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""
-            });
+            return await _postService.PublishAsync(command);
         }
         catch (Exception ex)
         {

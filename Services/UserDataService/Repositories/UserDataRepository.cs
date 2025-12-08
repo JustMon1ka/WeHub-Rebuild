@@ -15,6 +15,7 @@ namespace UserDataService.Repositories
         Task SaveChangesAsync();
         Task<bool> ExistsByUsernameAsync(string username, int excludeUserId);
         Task<bool> ExistsByEmailOrPhoneAsync(string email, string phone, int excludeUserId);
+        Task<bool> ExistsAsync(long userId);
     }
     
     public class UserDataRepository : IUserDataRepository
@@ -80,6 +81,11 @@ namespace UserDataService.Repositories
                 .CountAsync();
 
             return count > 0;
+        }
+
+        public Task<bool> ExistsAsync(long userId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

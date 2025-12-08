@@ -1,9 +1,13 @@
 ﻿using System.Text.RegularExpressions;
+using DTOs;
 using PostService.DTOs;
 using Models;
 using PostService.Repositories;
 using JiebaNet.Segmenter;
+using PostService.Command;
+using PostService.Factory;
 using PostService.Utils;
+using PostService.Validator;
 
 namespace PostService.Services
 {
@@ -12,7 +16,7 @@ namespace PostService.Services
         Task<List<Post>> GetPostsByIdsAsync(List<long> ids);
         Task<Post?> GetPostByIdAsync(long postId);
         Task DeletePostAsync(long postId);
-        Task<Post> PublishPostAsync(long userId, long circleId, string title, string content, List<long> tags);
+        Task<BaseHttpResponse<PostPublishResponse>> PublishAsync(PublishPostCommand command);
         Task<List<string>> GetTagsByPostIdAsync(long postId);
         Task<List<SearchResponse>> SearchPostsAsync(string? query, int? limits);
         Task<List<SearchSuggestResponse>> GetSearchSuggestionsAsync(string? keyword, int limits);
@@ -50,9 +54,64 @@ namespace PostService.Services
             await _postRepository.MarkAsDeletedAsync(postId);
         }
         
-        public async Task<Post> PublishPostAsync(long userId, long circleId, string title, string content, List<long> tags)
+        /// <summary>
+        /// 发布帖子（Command + Template Method）
+        /// 将校验、默认值处理、仓储调用全部封装
+        /// </summary>
+        public async Task<BaseHttpResponse<PostPublishResponse>> PublishAsync(PublishPostCommand command)
         {
-            return await _postRepository.InsertPostAsync(userId, circleId, title, content, tags);
+            var request = command.Request;
+
+            // 1. 构建责任链
+            var validatorChain = new TitleValidator();
+            validatorChain.SetNext(new ContentValidator());
+
+            // 2. 校验
+            string? validation = validatorChain.Validate(request);
+            if (validation != null)
+                return BaseHttpResponse<PostPublishResponse>.Fail(400, validation);
+
+            // 3. 默认值处理
+            long circleId = request.CircleId ?? 100000;
+
+            // 4. 使用工厂创建实体
+            var post = PostFactory.Create(
+                command.UserId,
+                circleId,
+                request.Title!,
+                request.Content!
+            );
+
+            List<long> tags = request.Tags ?? new();
+
+            // 5. 调用 Repository
+            var inserted = await _postRepository.InsertPostAsync(post, tags);
+
+            // 6. DTO 返回
+            var response = new PostPublishResponse
+            {
+                PostId = inserted.PostId,
+                CreatedAt = inserted.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""
+            };
+
+            return BaseHttpResponse<PostPublishResponse>.Success(response);
+        }
+        
+        /// <summary>
+        /// 发布帖子请求的校验（可扩展）
+        /// </summary>
+        private string? ValidatePublishRequest(PostPublishRequest request)
+        {
+            if (request == null)
+                return "请求体为空";
+
+            if (string.IsNullOrWhiteSpace(request.Title))
+                return "标题不能为空";
+
+            if (string.IsNullOrWhiteSpace(request.Content))
+                return "内容不能为空";
+
+            return null; // 校验通过
         }
         
         public async Task<List<string>> GetTagsByPostIdAsync(long postId)

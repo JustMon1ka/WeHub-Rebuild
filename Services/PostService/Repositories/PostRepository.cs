@@ -15,7 +15,7 @@ namespace PostService.Repositories
         Task<Post?> GetByIdAsync(long postId);
         Task<List<Post>> GetPostsByUserIdAsync(long userId);
         Task MarkAsDeletedAsync(long postId);
-        Task<Post> InsertPostAsync(long userId, long circleId, string title, string content, List<long> tags);
+        Task<Post> InsertPostAsync(Post post, List<long> tags);
         Task<List<string>> GetTagNamesByPostIdAsync(long postId);
         Task<int?> IncrementViewsAsync(long postId, CancellationToken ct = default);
         Task<List<Post>> GetByAuthorNotDeletedAsync(long authorId, CancellationToken ct = default);
@@ -124,24 +124,11 @@ namespace PostService.Repositories
             }
         }
 
-        public async Task<Post> InsertPostAsync(long userId, long circleId, string title, string content, List<long> tags)
+        public async Task<Post> InsertPostAsync(Post post, List<long> tags)
         {
             await using var context = _contextFactory.CreateDbContext();
-            var post = new Post
-            {
-                UserId = userId,
-                CircleId = (int)circleId,
-                Title = title,
-                Content = content,
-                CreatedAt = DateTime.UtcNow,
-                IsDeleted = 0,
-                IsHidden = 0,
-                Views = 0,
-                Likes = 0,
-                Dislikes = 0,
-            };
 
-            // 生成 search_text
+            // 获取 tagNames
             var tagNames = new List<string>();
             if (tags != null && tags.Count > 0)
             {
@@ -151,38 +138,39 @@ namespace PostService.Repositories
                 tagNames = tagEntities.Select(t => t.TagName).ToList();
             }
 
-            // 可以通过 User / Circle 的导航属性或者直接查询
+            // 获取用户名称
             var user = await context.Users
-                .Where(u => u.UserId == userId)
+                .Where(u => u.UserId == post.UserId)
                 .Select(u => u.Username)
                 .FirstOrDefaultAsync();
 
+            // 获取圈子名称
             var circle = await context.Circles
-                .Where(c => c.CircleId == circleId)
+                .Where(c => c.CircleId == post.CircleId)
                 .Select(c => c.Name)
                 .FirstOrDefaultAsync();
 
+            // 生成 SearchText
             post.SearchText =
-                $"<TITLE>{title}</TITLE>" +
-                $"<CONTENT>{content}</CONTENT>" +
+                $"<TITLE>{post.Title}</TITLE>" +
+                $"<CONTENT>{post.Content}</CONTENT>" +
                 $"<TAGS>{string.Join(" ", tagNames)}</TAGS>" +
                 $"<USER>{user}</USER>" +
                 $"<CIRCLE>{circle}</CIRCLE>";
 
             context.Posts.Add(post);
-            await context.SaveChangesAsync();  // 一次性插入 Post + search_text，生成 PostId
+            await context.SaveChangesAsync(); // 生成 PostId
 
-            // 处理 Tags → POSTTAG
+            // 插入 PostTag
             if (tags != null && tags.Count > 0)
             {
                 foreach (var tagId in tags)
                 {
-                    var postTag = new PostTag
+                    context.PostTags.Add(new PostTag
                     {
                         PostId = post.PostId,
                         TagId = tagId
-                    };
-                    context.Set<PostTag>().Add(postTag);
+                    });
                 }
                 await context.SaveChangesAsync();
             }
@@ -190,6 +178,7 @@ namespace PostService.Repositories
             await context.Entry(post).ReloadAsync();
             return post;
         }
+
 
         public async Task<List<string>> GetTagNamesByPostIdAsync(long postId)
         {

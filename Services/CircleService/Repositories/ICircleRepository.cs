@@ -49,4 +49,6 @@ public interface ICircleRepository
     /// <param name="circleId">圈子ID（可选，不提供时返回所有帖子的ID）</param>
     /// <returns>返回帖子ID列表</returns>
     Task<IEnumerable<int>> GetPostIdsByCircleIdAsync(int? circleId = null);
+
+    Task<bool> ExistsAsync(long circleId);
 } 

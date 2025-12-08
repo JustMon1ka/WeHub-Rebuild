@@ -108,4 +108,9 @@ public class CircleRepository : ICircleRepository
             throw;
         }
     }
+
+    public Task<bool> ExistsAsync(long circleId)
+    {
+        throw new NotImplementedException();
+    }
 } 

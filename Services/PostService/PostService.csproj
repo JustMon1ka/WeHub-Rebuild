@@ -24,15 +24,13 @@
         <Content Remove="Resources\pos_prob_trans.json" />
         <Content Remove="Resources\prob_emit.json" />
         <Content Remove="Resources\prob_trans.json" />
+        <ProjectReference Include="..\CircleService\CircleService.csproj" />
       <ProjectReference Include="..\Shared\DTOs\DTOs.csproj" />
       <ProjectReference Include="..\TagService\TagService.csproj" />
       <Content Include="Resources\**\*">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Models\" />
+      <ProjectReference Include="..\UserDataService\UserDataService.csproj" />
     </ItemGroup>
 
 </Project>
