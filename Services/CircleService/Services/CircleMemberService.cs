@@ -1,6 +1,7 @@
 using CircleService.DTOs;
 using CircleService.Models;
 using CircleService.Repositories;
+using CircleService.Services.JoinHandlers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ public class CircleMemberService : ICircleMemberService
     private readonly ICircleMemberRepository _memberRepository;
     private readonly ICircleRepository _circleRepository;
     private readonly IActivityParticipantRepository _activityParticipantRepository;
+    private readonly JoinHandlerFactory _joinHandlerFactory;
 
     public CircleMemberService(
         ICircleMemberRepository memberRepository, 
@@ -239,4 +241,15 @@ public class CircleMemberService : ICircleMemberService
             Role = member.Status == CircleMemberStatus.Approved ? member.Role : null
         };
     }
+
+    public async Task JoinCircleAsync(int circleId, int userId)
+{
+    var circle = await _circleRepository.GetByIdAsync(circleId);
+    if (circle == null)
+        throw new Exception("Circle not found.");
+
+    var handler = _joinHandlerFactory.Create(circle.JoinType);
+
+    await handler.HandleJoinAsync(circleId, userId);
+}
 } 

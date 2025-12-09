@@ -610,4 +610,15 @@ public class CirclesController : ControllerBase
             return StatusCode(500, BaseHttpResponse.Fail(500, $"获取所有帖子ID列表失败: {ex.Message}"));
         }
     }
+
+    [HttpPost("{circleId}/members/join")]
+    public async Task<IActionResult> JoinCircleAsync(int circleId)
+    {
+        var userId = GetUserIdFromToken();
+
+        await _circleMemberService.JoinCircleAsync(circleId, userId);
+
+        return Ok(new { message = "Join request processed." });
+    }
+
 } 
