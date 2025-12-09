@@ -1,6 +1,11 @@
 using CircleService.Data;
 using CircleService.Repositories;
 using CircleService.Services;
+using CircleService.Services.JoinHandlers;
+using CircleService.Services.Decorators;
+using CircleService.Builders;
+using CircleService.Facades;
+using CircleService.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +22,27 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // 2. 注册 Services 和 Repositories
 builder.Services.AddScoped<ICircleRepository, CircleRepository>();
-builder.Services.AddScoped<ICircleService, CircleService.Services.CircleService>();
+builder.Services.AddScoped<ICircleService>(sp =>
+{
+    // 原本真正的 CircleService
+    var real = new CircleService(
+        sp.GetRequiredService<ICircleRepository>(),
+        sp.GetRequiredService<IUserRepository>(),
+        sp.GetRequiredService<IFileService>(),
+        sp.GetRequiredService<CircleBuilder>(),
+        sp.GetRequiredService<CircleCreationFacade>()
+    );
+
+    // 加日志
+    var logger = sp.GetRequiredService<ILogger<LoggingCircleServiceDecorator>>();
+    var logging = new LoggingCircleServiceDecorator(real, logger);
+
+    // 加计时
+    var timed = new TimingCircleServiceDecorator(logging);
+
+    return timed;
+});
+
 builder.Services.AddScoped<ICircleMemberRepository, CircleMemberRepository>();
 builder.Services.AddScoped<ICircleMemberService, CircleMemberService>();
 builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
@@ -25,6 +50,25 @@ builder.Services.AddScoped<IActivityService, ActivityService>();
 builder.Services.AddScoped<IActivityParticipantRepository, ActivityParticipantRepository>();
 builder.Services.AddScoped<IActivityParticipantService, ActivityParticipantService>();
 builder.Services.AddScoped<IActivityAutoCompleteService, ActivityAutoCompleteService>();
+builder.Services.AddScoped<ICircleCreationFacade, CircleCreationFacade>();
+builder.Services.AddScoped<JoinHandlerFactory>();
+builder.Services.AddSingleton<ICircleSubject, CircleEventSubject>();
+
+builder.Services.AddSingleton<ICircleObserver, LoggingCircleObserver>();
+builder.Services.AddSingleton<ICircleObserver, RecommendationCircleObserver>();
+
+builder.Services.AddSingleton(sp =>
+{
+    var subject = sp.GetRequiredService<ICircleSubject>();
+
+    foreach (var obs in sp.GetServices<ICircleObserver>())
+        subject.Register(obs);
+
+    return subject; // 让 DI 完成 observer 绑定
+});
+
+
+
 
 // 3. 配置 FileBrowser 服务
 builder.Services.Configure<FileBrowserOptions>(builder.Configuration.GetSection("FileBrowser"));

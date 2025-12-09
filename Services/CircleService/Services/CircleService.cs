@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
+using CircleService.Builders;
+using CircleService.Events;
 
 namespace CircleService.Services;
 
@@ -17,13 +19,18 @@ public class CircleService : ICircleService
     private readonly ICircleMemberRepository _memberRepository;
     private readonly IActivityRepository _activityRepository;
     private readonly IFileBrowserClient _fileBrowserClient;
+    private readonly ICircleCreationFacade _circleCreationFacade;
+    private readonly ICircleMemberRepository _circleMemberRepository;
+     private readonly ICircleSubject _subject;
 
-    public CircleService(ICircleRepository circleRepository, ICircleMemberRepository memberRepository, IActivityRepository activityRepository, IFileBrowserClient fileBrowserClient)
+
+    public CircleService(ICircleRepository circleRepository, ICircleMemberRepository memberRepository, IActivityRepository activityRepository, IFileBrowserClient fileBrowserClient, ICircleCreationFacade circleCreationFacade, ICircleMemberRepository circleMemberRepository, ICircleSubject subject)
     {
         _circleRepository = circleRepository;
         _memberRepository = memberRepository;
         _activityRepository = activityRepository;
         _fileBrowserClient = fileBrowserClient;
+        _subject = subject;
     }
 
     public async Task<CircleDto?> GetCircleByIdAsync(int id)
@@ -56,36 +63,19 @@ public class CircleService : ICircleService
 
     public async Task<CircleDto> CreateCircleAsync(CreateCircleDto createCircleDto, int ownerId)
     {
-        var circle = new Circle
-        {
-            Name = createCircleDto.Name,
-            Description = createCircleDto.Description,
-            Categories = createCircleDto.Categories,
-            OwnerId = ownerId,
-            CreatedAt = DateTime.UtcNow,
-            AvatarUrl = null,  // 新创建的圈子默认没有头像
-            BannerUrl = null   // 新创建的圈子默认没有背景图
-        };
+        // 1. 使用 Facade 完成创建圈子完整流程
+        var circle = await _circleCreationFacade.CreateNewCircleAsync(createCircleDto, ownerId);
 
-        await _circleRepository.AddAsync(circle);
+        // 2. 获取成员数量（用于构建 DTO）
+        var memberCount = await _circleMemberRepository.GetMemberCountAsync(circle.Id);
         
-        // 圈主自动成为第一个成员，角色为管理员
-        var ownerMember = new CircleMember
-        {
-            CircleId = circle.CircleId,
-            UserId = ownerId,
-            Role = CircleMemberRole.Admin,
-            Status = CircleMemberStatus.Approved,
-            Points = 0,
-            ApplyTime = DateTime.UtcNow,
-            ProcessedTime = DateTime.UtcNow
-        };
-        
-        await _memberRepository.AddAsync(ownerMember);
-        
-        // 新创建的圈子成员数为1（即圈主自己）
-        return MapToCircleDto(circle, 1);
+        // 通知观察者圈子已创建
+        _subject.NotifyCircleCreated(circle);
+
+        // 3. 返回 CircleDto（你项目已有的 DTO 构建函数）
+        return MapToCircleDto(circle, memberCount);
     }
+
 
     public async Task<bool> UpdateCircleAsync(int id, UpdateCircleDto updateCircleDto)
     {
