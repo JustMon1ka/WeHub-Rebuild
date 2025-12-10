@@ -2,6 +2,7 @@
 using Models;
 using PostService.Data;
 using PostService.DTOs;
+using PostService.Specifications;
 using PostService.Utils;
 using JiebaNet.Segmenter;
 using LinqKit;
@@ -195,19 +196,18 @@ namespace PostService.Repositories
             int num,
             bool desc = true,
             int PostMode = 0,
-            string? tagName = null)   // ✅ 新增参数
+            string? tagName = null)   // 新增参数: 按标签筛选
         {
             await using var context = _contextFactory.CreateDbContext();
 
-            // 基础条件：必须未删除未隐藏
-            var q = context.Posts
-                .Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
+            // 使用规格模式构建基础查询: 可见帖子 + 可选标签过滤
+            var baseSpec = new PostSpecificationCollection(
+                new VisiblePostSpecification(),
+                new TagFilterSpecification(tagName)
+            );
 
-            // ✅ 如果传了 tagName，就只取包含该标签的帖子
-            if (!string.IsNullOrEmpty(tagName))
-            {
-                q = q.Where(p => p.PostTags.Any(pt => pt.Tag != null && pt.Tag.TagName == tagName));
-            }
+            // 应用规格后得到基础查询(已经包含未删除、未隐藏等规则)
+            IQueryable<Post> q = baseSpec.Apply(context.Posts);
 
             // 排序逻辑
             switch (PostMode)
@@ -223,10 +223,11 @@ namespace PostService.Repositories
                         if (lastPost != null)
                         {
                             q = q.Where(p =>
-                                (p.Views < lastPost.Views) ||
-                                (p.Views == lastPost.Views && p.PostId < lastPost.PostId));
+                                (p.Views ?? 0) < (lastPost.Views ?? 0) ||
+                                ((p.Views ?? 0) == (lastPost.Views ?? 0) && p.PostId < lastPost.PostId));
                         }
                     }
+
                     q = q.OrderByDescending(p => p.Views ?? 0)
                         .ThenByDescending(p => p.PostId);
                     break;
@@ -242,14 +243,16 @@ namespace PostService.Repositories
                         if (lastPost != null)
                         {
                             q = q.Where(p =>
-                                (p.Likes < lastPost.Likes) ||
-                                (p.Likes == lastPost.Likes && p.PostId < lastPost.PostId));
+                                (p.Likes ?? 0) < (lastPost.Likes ?? 0) ||
+                                ((p.Likes ?? 0) == (lastPost.Likes ?? 0) && p.PostId < lastPost.PostId));
                         }
                     }
+
                     q = q.OrderByDescending(p => p.Likes ?? 0)
                         .ThenByDescending(p => p.PostId);
                     break;
-                case 3: // 首页推荐（热度综合公式）  热度分数 = 浏览量 * 0.5 + 点赞 * 0.3 – 踩 * 0.2
+
+                case 3: // 首页推荐(热度综合公式): 热度分数 = 浏览量 * 0.5 + 点赞 * 0.3 – 踩 * 0.2
                     if (lastId.HasValue && lastId.Value > 0)
                     {
                         var lastPost = await context.Posts
@@ -258,28 +261,32 @@ namespace PostService.Repositories
                             {
                                 p.PostId,
                                 Score = (p.Views ?? 0) * 0.5
-                                    + (p.Likes ?? 0) * 0.3
-                                    - (p.Dislikes ?? 0) * 0.2
+                                      + (p.Likes ?? 0) * 0.3
+                                      - (p.Dislikes ?? 0) * 0.2
                             })
                             .FirstOrDefaultAsync();
 
                         if (lastPost != null)
                         {
                             q = q.Where(p =>
-                                ((p.Views ?? 0) * 0.5 + (p.Likes ?? 0) * 0.3 - (p.Dislikes ?? 0) * 0.2) < lastPost.Score
-                                || (((p.Views ?? 0) * 0.5 + (p.Likes ?? 0) * 0.3 - (p.Dislikes ?? 0) * 0.2) == lastPost.Score
+                                ((p.Views ?? 0) * 0.5
+                                 + (p.Likes ?? 0) * 0.3
+                                 - (p.Dislikes ?? 0) * 0.2) < lastPost.Score
+                                || (((p.Views ?? 0) * 0.5
+                                     + (p.Likes ?? 0) * 0.3
+                                     - (p.Dislikes ?? 0) * 0.2) == lastPost.Score
                                     && p.PostId < lastPost.PostId));
                         }
                     }
 
-                    q = q.OrderByDescending(p => (p.Views ?? 0) * 0.5
-                                            + (p.Likes ?? 0) * 0.3
-                                            - (p.Dislikes ?? 0) * 0.2)
+                    q = q.OrderByDescending(p =>
+                            (p.Views ?? 0) * 0.5
+                          + (p.Likes ?? 0) * 0.3
+                          - (p.Dislikes ?? 0) * 0.2)
                         .ThenByDescending(p => p.PostId);
                     break;
 
-
-                case 4: // 发现页推荐（最新帖子）
+                case 4: // 发现页推荐(最新帖子)
                     if (lastId.HasValue && lastId.Value > 0)
                     {
                         q = q.Where(p => p.PostId < lastId.Value);
@@ -289,31 +296,35 @@ namespace PostService.Repositories
                         .ThenByDescending(p => p.PostId);
                     break;
 
-                default: // 按时间（PostId）
+                default: // 按时间(PostId)
                     if (desc)
                     {
                         if (lastId.HasValue && lastId.Value > 0)
                             q = q.Where(p => p.PostId < lastId.Value);
+
                         q = q.OrderByDescending(p => p.PostId);
                     }
                     else
                     {
                         if (lastId.HasValue && lastId.Value > 0)
                             q = q.Where(p => p.PostId > lastId.Value);
+
                         q = q.OrderBy(p => p.PostId);
                     }
                     break;
             }
 
-            // 分页
             var posts = await q.Take(num).ToListAsync();
-            if (!posts.Any()) return posts;
 
-            // 填充标签
-            var ids = posts.Select(p => p.PostId).ToList();
+            if (!posts.Any())
+                return posts;
+
+            var postIds = posts.Select(p => p.PostId).ToList();
+
+            // 查询所有相关的标签
             var postTags = await (from pt in context.PostTags
                                   join t in context.Tags on pt.TagId equals t.TagId
-                                  where ids.Contains(pt.PostId)
+                                  where postIds.Contains(pt.PostId)
                                   select new { pt.PostId, t.TagName }).ToListAsync();
 
             var tagLookup = postTags
@@ -321,7 +332,12 @@ namespace PostService.Repositories
                 .ToDictionary(g => g.Key, g => g.Select(x => x.TagName).ToList());
 
             foreach (var p in posts)
-                if (tagLookup.TryGetValue(p.PostId, out var tags)) p.TagNames = tags;
+            {
+                if (tagLookup.TryGetValue(p.PostId, out var tags))
+                {
+                    p.TagNames = tags;
+                }
+            }
 
             return posts;
         }
@@ -431,13 +447,18 @@ ORDER BY Post_Id
         public async Task<List<SearchSuggestResponse>> SearchPostsByTitleAsync(string keyword, int limits)
         {
             await using var context = _contextFactory.CreateDbContext();
-            return await context.Posts
-                .Where(p => p.Title != null && p.Title.Contains(keyword) && p.IsDeleted == 0 && p.IsHidden == 0)
-                .OrderByDescending(p => p.Views) // 假设按浏览量排序，更热门的排在前面
+
+            // 使用可见帖子规格,确保搜索结果中不包含已删除/已隐藏的帖子
+            var visibleSpec = new VisiblePostSpecification();
+            var baseQuery = visibleSpec.Apply(context.Posts);
+
+            return await baseQuery
+                .Where(p => p.Title != null && p.Title.Contains(keyword))
+                .OrderByDescending(p => p.Views) // 假设按浏览量排序,更热门的排在前面
                 .Take(limits)
                 .Select(p => new SearchSuggestResponse
                 {
-                    Keyword = p.Title,
+                    Keyword = p.Title!,
                     Type = SearchSuggestResponse.KeywordType.Title
                 })
                 .ToListAsync();
@@ -449,14 +470,20 @@ ORDER BY Post_Id
         public async Task<List<SearchSuggestResponse>> SearchPostsByContentAsync(string keyword, int limits)
         {
             await using var context = _contextFactory.CreateDbContext();
-            return await context.Posts
-                .Where(p => p.Content != null && p.Content.Contains(keyword) && p.IsDeleted == 0 && p.IsHidden == 0)
+
+            // 使用可见帖子规格,确保搜索结果中不包含已删除/已隐藏的帖子
+            var visibleSpec = new VisiblePostSpecification();
+            var baseQuery = visibleSpec.Apply(context.Posts);
+
+            return await baseQuery
+                .Where(p => p.Content != null && p.Content.Contains(keyword))
                 .OrderByDescending(p => p.Views) // 假设按浏览量排序
                 .Take(limits)
                 .Select(p => new SearchSuggestResponse
                 {
-                    // 截取部分内容作为建议，避免过长
-                    Keyword = p.Content!.Length > 50 ? p.Content.Substring(0, 50) + "..." : p.Content,
+                    Keyword = p.Content!.Length > 50
+                        ? p.Content.Substring(0, 50) + "..."
+                        : p.Content,
                     Type = SearchSuggestResponse.KeywordType.Content
                 })
                 .ToListAsync();
