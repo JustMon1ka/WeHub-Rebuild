@@ -1,3 +1,5 @@
+/*
+原有代码：
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
@@ -114,4 +116,76 @@ public class DbTestController : ControllerBase
         return Ok(new { tags });
     }
 
+}
+*/
+/*
+重构代码：
+*/
+using Microsoft.AspNetCore.Mvc;
+using MyBackend.Services;
+
+namespace MyBackend.Controllers;
+
+[ApiController]
+[Route("dbtest")]
+public class DbTestController : ControllerBase
+{
+    private readonly DatabaseToolService _service;
+
+    // 注入数据库工具服务
+    public DbTestController(DatabaseToolService service)
+    {
+        _service = service;
+    }
+
+    // GET: /dbtest/tables
+    [HttpGet("tables")]
+    public async Task<IActionResult> GetTables()
+    {
+        try
+        {
+            var tables = await _service.GetAllTablesAsync();
+            return Ok(new { tables });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // GET: /dbtest/columns?table=USERS
+    [HttpGet("columns")]
+    public async Task<IActionResult> GetColumns([FromQuery] string table)
+    {
+        if (string.IsNullOrWhiteSpace(table))
+        {
+            return BadRequest(new { error = "Table name is required." });
+        }
+
+        try
+        {
+            var columns = await _service.GetTableColumnsAsync(table);
+            return Ok(new { table, columns });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // GET: /dbtest/tag
+    // 原有的 GetTags 逻辑移到了 DatabaseToolService 中
+    [HttpGet("tag")]
+    public async Task<IActionResult> GetTags()
+    {
+        try
+        {
+            var tags = await _service.GetAllTagsRawAsync();
+            return Ok(new { tags });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

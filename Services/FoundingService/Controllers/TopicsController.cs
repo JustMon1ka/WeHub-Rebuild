@@ -1,3 +1,5 @@
+/*
+原来代码：
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 
@@ -41,6 +43,44 @@ public class TopicsController : ControllerBase
         }
         catch (Exception ex)
         {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+}
+*/
+/*
+重构代码：
+*/
+using Microsoft.AspNetCore.Mvc;
+using MyBackend.Services;
+
+namespace MyBackend.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class TopicsController : ControllerBase
+{
+    private readonly TopicService _service;
+
+    // 注入话题业务服务
+    public TopicsController(TopicService service)
+    {
+        _service = service;
+    }
+
+    // GET: /api/topics/{tagName}
+    [HttpGet("{tagName}")]
+    public async Task<IActionResult> GetTopicCount(string tagName)
+    {
+        try 
+        {
+            // 调用 Service 获取统计数据
+            var result = await _service.GetTopicStatsAsync(tagName);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            // 简单的异常处理，实际项目中可以使用全局异常过滤器
             return BadRequest(new { error = ex.Message });
         }
     }
