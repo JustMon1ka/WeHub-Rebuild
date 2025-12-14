@@ -8,3 +8,6 @@ public class RecommendResult
     public string SubCategory { get; set; } = "";
     public string Desc { get; set; } = "";
 }
+/*
+保持不变
+*/

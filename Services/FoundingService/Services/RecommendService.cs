@@ -1,3 +1,5 @@
+/*
+原有代码：
 using MyBackend.Models;
 using Oracle.ManagedDataAccess.Client;
 using Microsoft.Extensions.Configuration;
@@ -222,5 +224,94 @@ public class RecommendService
             normB += vb * vb;
         }
         return (normA == 0 || normB == 0) ? 0 : dot / (Math.Sqrt(normA) * Math.Sqrt(normB));
+    }
+}
+*/
+
+/*
+重构代码：
+*/
+
+using MyBackend.Facades.Interfaces;
+using MyBackend.Models;
+using MyBackend.Strategies.Interfaces;
+
+namespace MyBackend.Services;
+
+public class RecommendService
+{
+    private readonly IRecommendDbFacade _dbFacade;
+    private readonly ISimilarityStrategy _simStrategy;
+
+    // 构造函数注入：需要数据外观(Facade) 和 算法策略(Strategy)
+    public RecommendService(IRecommendDbFacade dbFacade, ISimilarityStrategy simStrategy)
+    {
+        _dbFacade = dbFacade;
+        _simStrategy = simStrategy;
+    }
+
+    // 1. 个性化话题推荐
+    public async Task<IEnumerable<RecommendResult>> RecommendTopicsAsync(int userId, int topK = 4)
+    {
+        return await _dbFacade.FetchPersonalizedTopicsAsync(userId, topK);
+    }
+
+    // 2. 全局热点推荐
+    public async Task<IEnumerable<RecommendResult>> RecommendHotAsync(int topK = 3)
+    {
+        return await _dbFacade.FetchGlobalHotTopicsAsync(topK);
+    }
+
+    // 3. 用户推荐 (最复杂的逻辑：数据获取 -> 过滤 -> 算法计算 -> 详情补充)
+    public async Task<IEnumerable<object>> RecommendUsersAsync(int userId, int topN = 2)
+    {
+        // A. 准备数据
+        var allProfiles = await _dbFacade.FetchAllUserTagProfilesAsync();
+        
+        // 如果当前用户没有画像，无法计算相似度，直接返回空
+        if (!allProfiles.ContainsKey(userId)) 
+            return new List<object>();
+
+        // 获取已关注列表（避免推荐已关注的人）
+        var followedIds = await _dbFacade.FetchFollowedUserIdsAsync(userId);
+        var targetProfile = allProfiles[userId];
+        
+        var scores = new List<(int Uid, double Score)>();
+
+        // B. 执行算法 (Strategy Pattern)
+        foreach (var kv in allProfiles)
+        {
+            int candidateId = kv.Key;
+            
+            // 排除自己 和 已关注的人
+            if (candidateId == userId || followedIds.Contains(candidateId)) 
+                continue;
+
+            // 调用算法策略计算相似度
+            double sim = _simStrategy.Calculate(targetProfile, kv.Value);
+            
+            if (sim > 0) 
+                scores.Add((candidateId, sim));
+        }
+
+        // C. 排序并截取 Top N
+        var topCandidates = scores.OrderByDescending(s => s.Score).Take(topN).ToList();
+        var candidateIds = topCandidates.Select(s => s.Uid);
+
+        // D. 补充用户详情 (头像、昵称等)
+        var userDetails = await _dbFacade.FetchUserDetailsAsync(candidateIds);
+
+        // E. 组装最终结果
+        var result = userDetails.Select(u => new 
+        {
+            u.user_id,
+            u.username,
+            u.nickname,
+            u.avatar_url,
+            // 匹配回对应的相似度分数
+            similarity = topCandidates.First(s => s.Uid == u.user_id).Score
+        });
+
+        return result;
     }
 }
