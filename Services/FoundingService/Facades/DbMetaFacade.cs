@@ -1,5 +1,6 @@
 /*
 重构代码：
+refactoring with Facade Pattern+Data Transfer Object
 */
 using System.Data;
 using MyBackend.Facades.Interfaces;

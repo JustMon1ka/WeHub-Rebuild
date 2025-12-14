@@ -1,5 +1,6 @@
 /*
 重构代码：
+refactoring with Facade Pattern+Factory Method Pattern
 */
 using System.Data;
 using MyBackend.Facades.Interfaces;

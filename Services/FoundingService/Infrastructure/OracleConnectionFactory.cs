@@ -1,5 +1,6 @@
 /*
 重构代码：
+refactoring with Factory Method Pattern
 */
 using System.Data;
 using Microsoft.Extensions.Configuration;

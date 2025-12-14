@@ -1,5 +1,5 @@
 /*
-重构代码：
+重构代码：refactoring with Facade Pattern
 */
 namespace MyBackend.Facades.Interfaces;
 

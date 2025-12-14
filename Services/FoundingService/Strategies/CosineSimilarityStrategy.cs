@@ -1,5 +1,6 @@
 /*
 重构代码：
+refactoring with Strategies Pattern
 */
 using MyBackend.Strategies.Interfaces;
 
