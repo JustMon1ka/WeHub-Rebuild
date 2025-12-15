@@ -19,6 +19,7 @@ public class CircleService : ICircleService
     private readonly ICircleMemberRepository _memberRepository;
     private readonly IActivityRepository _activityRepository;
     private readonly IFileBrowserClient _fileBrowserClient;
+    //Refactoring classes under
     private readonly ICircleCreationFacade _circleCreationFacade;
     private readonly ICircleMemberRepository _circleMemberRepository;
      private readonly ICircleSubject _subject;
@@ -60,7 +61,8 @@ public class CircleService : ICircleService
 
         return circles.Select(c => MapToCircleDto(c, memberCounts.GetValueOrDefault(c.CircleId, 0)));
     }
-
+    
+    //Refactored Function with builder and Facade
     public async Task<CircleDto> CreateCircleAsync(CreateCircleDto createCircleDto, int ownerId)
     {
         // 1. 使用 Facade 完成创建圈子完整流程
