@@ -229,7 +229,7 @@ public class CircleMemberService : ICircleMemberService
             ProcessedApplications = processedApplications
         };
     }
-
+    //Refactored
     private ApplicationDto MapToApplicationDto(CircleMember member)
     {
         return new ApplicationDto
