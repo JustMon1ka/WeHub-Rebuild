@@ -45,6 +45,7 @@ app.Run();
 */
 /*
 现有代码：
+refactoring with Singleton Pattern+Dependency Injection
 */
 using MyBackend.Facades;
 using MyBackend.Facades.Interfaces;

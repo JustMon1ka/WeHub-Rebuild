@@ -230,6 +230,7 @@ public class RecommendService
 
 /*
 重构代码：
+refactoring with Facade Pattern+Strategies Pattern+Dependency Injection
 */
 
 using MyBackend.Facades.Interfaces;
