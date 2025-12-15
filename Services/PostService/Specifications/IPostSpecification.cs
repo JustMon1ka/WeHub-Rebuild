@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Refactoring with `Specification Pattern` - Start
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models;
@@ -43,3 +44,4 @@ public sealed class PostSpecificationCollection : IPostSpecification
         return query;
     }
 }
+// Refactoring with `Specification Pattern` - End

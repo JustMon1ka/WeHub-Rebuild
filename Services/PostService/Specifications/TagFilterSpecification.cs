@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿// Refactoring with `Specification Pattern` - Start
+using System.Linq;
 using Models;
 
 namespace PostService.Specifications;
@@ -29,3 +30,4 @@ public sealed class TagFilterSpecification : IPostSpecification
             p.PostTags.Any(pt => pt.Tag != null && pt.Tag.TagName == _tagName));
     }
 }
+// Refactoring with `Specification Pattern` - End

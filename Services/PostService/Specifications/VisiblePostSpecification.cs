@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿// Refactoring with `Specification Pattern` - Start
+using System.Linq;
 using Models;
 
 namespace PostService.Specifications;
@@ -16,3 +17,4 @@ public sealed class VisiblePostSpecification : IPostSpecification
         return query.Where(p => p.IsDeleted == 0 && p.IsHidden == 0);
     }
 }
+// Refactoring with `Specification Pattern` - End

@@ -194,6 +194,7 @@ namespace PostService.Repositories
                 .ToListAsync();
         }
 
+        // Refactoring with `Specification Pattern` - Start
         public async Task<List<Post>> GetPagedAsync(
             long? lastId,
             int num,
@@ -344,6 +345,7 @@ namespace PostService.Repositories
 
             return posts;
         }
+        // Refactoring with `Specification Pattern` - End
 
         public async Task<int?> IncrementViewsAsync(long postId, CancellationToken ct = default)
         {
@@ -444,6 +446,7 @@ ORDER BY Post_Id
             return posts;
         }
 
+        // Refactoring with `Specification Pattern` - Start
         /// <summary>
         /// 根据关键词从帖子标题中搜索建议
         /// </summary>
@@ -466,7 +469,9 @@ ORDER BY Post_Id
                 })
                 .ToListAsync();
         }
+        // Refactoring with `Specification Pattern` - End
 
+        // Refactoring with `Specification Pattern` - Start
         /// <summary>
         /// 根据关键词从帖子正文中搜索建议
         /// </summary>
@@ -491,6 +496,7 @@ ORDER BY Post_Id
                 })
                 .ToListAsync();
         }
+        // Refactoring with `Specification Pattern` - End
 
         /// <summary>
         /// 根据关键词从标签中搜索建议
