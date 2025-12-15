@@ -1,4 +1,5 @@
-﻿using PostService.DTOs;
+﻿// refactoring begin
+using PostService.DTOs;
 
 namespace PostService.Validator;
 
@@ -11,3 +12,4 @@ public class ContentValidator : PublishValidator
         return null;
     }
 }
+// refactoring end

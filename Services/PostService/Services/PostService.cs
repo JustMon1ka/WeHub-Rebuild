@@ -16,7 +16,9 @@ namespace PostService.Services
         Task<List<Post>> GetPostsByIdsAsync(List<long> ids);
         Task<Post?> GetPostByIdAsync(long postId);
         Task DeletePostAsync(long postId);
+        // refactoring begin
         Task<BaseHttpResponse<PostPublishResponse>> PublishAsync(PublishPostCommand command);
+        // refactoring end
         Task<List<string>> GetTagsByPostIdAsync(long postId);
         Task<List<SearchResponse>> SearchPostsAsync(string? query, int? limits);
         Task<List<SearchSuggestResponse>> GetSearchSuggestionsAsync(string? keyword, int limits);
@@ -54,6 +56,7 @@ namespace PostService.Services
             await _postRepository.MarkAsDeletedAsync(postId);
         }
         
+        // refactoring begin
         /// <summary>
         /// 发布帖子（Command + Template Method）
         /// 将校验、默认值处理、仓储调用全部封装
@@ -96,6 +99,7 @@ namespace PostService.Services
 
             return BaseHttpResponse<PostPublishResponse>.Success(response);
         }
+        // refactoring end
         
         /// <summary>
         /// 发布帖子请求的校验（可扩展）

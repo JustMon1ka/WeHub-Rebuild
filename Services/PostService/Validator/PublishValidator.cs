@@ -1,4 +1,5 @@
-﻿using PostService.DTOs;
+﻿// refactoring begin
+using PostService.DTOs;
 
 namespace PostService.Validator;
 
@@ -22,3 +23,4 @@ public abstract class PublishValidator
 
     protected abstract string? DoValidate(PostPublishRequest request);
 }
+// refactoring end

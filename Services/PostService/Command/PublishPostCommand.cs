@@ -1,4 +1,5 @@
-﻿using PostService.DTOs;
+﻿// refactoring begin
+using PostService.DTOs;
 
 namespace PostService.Command;
 
@@ -13,3 +14,4 @@ public class PublishPostCommand
         UserId = userId;
     }
 }
+// refactoring end

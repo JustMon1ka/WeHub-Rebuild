@@ -16,7 +16,9 @@ namespace PostService.Repositories
         Task<Post?> GetByIdAsync(long postId);
         Task<List<Post>> GetPostsByUserIdAsync(long userId);
         Task MarkAsDeletedAsync(long postId);
+        // refactoring begin
         Task<Post> InsertPostAsync(Post post, List<long> tags);
+        // refactoring end
         Task<List<string>> GetTagNamesByPostIdAsync(long postId);
         Task<int?> IncrementViewsAsync(long postId, CancellationToken ct = default);
         Task<List<Post>> GetByAuthorNotDeletedAsync(long authorId, CancellationToken ct = default);
@@ -125,6 +127,7 @@ namespace PostService.Repositories
             }
         }
 
+        // refactoring begin
         public async Task<Post> InsertPostAsync(Post post, List<long> tags)
         {
             await using var context = _contextFactory.CreateDbContext();
@@ -179,7 +182,7 @@ namespace PostService.Repositories
             await context.Entry(post).ReloadAsync();
             return post;
         }
-
+        // refactoring end
 
         public async Task<List<string>> GetTagNamesByPostIdAsync(long postId)
         {

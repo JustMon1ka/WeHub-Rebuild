@@ -1,4 +1,5 @@
-﻿using Models;
+﻿// refactoring begin
+using Models;
 
 namespace PostService.Factory;
 
@@ -21,3 +22,4 @@ public static class PostFactory
         };
     }
 }
+// refactoring end

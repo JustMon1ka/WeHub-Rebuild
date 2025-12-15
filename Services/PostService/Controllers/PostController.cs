@@ -222,6 +222,7 @@ public class PostController : ControllerBase
         }
     }
 
+    // refactoring begin
     [HttpPost("publish")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<BaseHttpResponse<PostPublishResponse>> PublishPost(
@@ -244,6 +245,7 @@ public class PostController : ControllerBase
             return BaseHttpResponse<PostPublishResponse>.Fail(500, "发帖失败: " + ex.Message);
         }
     }
+    // refactoring end
 
     [HttpGet("search")]
     public async Task<BaseHttpResponse<List<SearchResponse>>> SearchPosts([FromQuery] int? limits,
